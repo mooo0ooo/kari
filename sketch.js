@@ -132,6 +132,7 @@ function setup() {
   backButton.mousePressed(() => {
     state = "select";
     updateButtonVisibility();
+	layoutDOMButtons();
     selectedLabel = null;
   });
 
