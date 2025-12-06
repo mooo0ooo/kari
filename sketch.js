@@ -675,8 +675,8 @@ function drawGallery2D() {
     textSize(24); // 少し小さく
     textAlign(LEFT, TOP);
     let monthNames = [
-      "1月", "2月", "3月", "4月", "5月", "6月",
-      "7月", "8月", "9月", "10月", "11月", "12月"
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
     ];
     text(monthNames[month], 20, y);  
     y += 35;
@@ -688,9 +688,9 @@ function drawGallery2D() {
       let x = rowStartX + col * (thumbSize + gutter);
       let ty = y + row * (thumbSize + gutter + 25); // 日付表示分の余白を追加
       
-      // サムネイルの背景（シンプルな四角形）
+      // サムネイルの背景
       noFill();
-      stroke(100, 150, 255, 100);
+      stroke(150, 80); 
       strokeWeight(1);
       rect(x, ty, thumbSize, thumbSize, 4);
       
@@ -724,12 +724,17 @@ function drawGallery2D() {
 
 function generate2DThumbnail(cons, size) {
   let pg = createGraphics(size, size);
-  pg.background(20, 25, 40);
+
+  // 枠の描画（日記ページと同じスタイル）
+  pg.stroke(150, 80);  // 薄いグレーの枠線
+  pg.strokeWeight(1);
+  pg.noFill();
+  pg.rect(0, 0, size, size, 4);
   
   // 星の位置を計算
   let stars = [];
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  
+
   // 星の位置を正規化
   for (let s of cons.stars) {
     let x = s.pos.x;
@@ -747,8 +752,9 @@ function generate2DThumbnail(cons, size) {
   let centerY = (minY + maxY) / 2;
   
   // 星同士を線でつなぐ
-  pg.stroke(100, 150, 255, 80);
+  pg.stroke(180, 200, 255, 90);
   pg.strokeWeight(1.5);
+  pg.blendMode(ADD);
   for (let i = 0; i < stars.length; i++) {
     for (let j = i + 1; j < stars.length; j++) {
       let x1 = map(stars[i].x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
@@ -762,6 +768,7 @@ function generate2DThumbnail(cons, size) {
       }
     }
   }
+  pg.blendMode(BLEND);
   
   // 星を描画
   pg.noStroke();
