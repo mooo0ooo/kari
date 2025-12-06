@@ -139,7 +139,6 @@ function setup() {
       state = "select";
     } else {
       state = "gallery";
-      // ギャラリー用の星を初期化
       galleryStars = [];
       for (let i = 0; i < 400; i++) {
         galleryStars.push({
@@ -152,6 +151,8 @@ function setup() {
       }
     }
     updateButtonVisibility();
+	layoutDOMButtons();
+	computeBtnSize();
   });
 
   // 初期状態のボタン表示を更新
@@ -160,7 +161,9 @@ function setup() {
   computeBtnSize();
 }
 
-// ボタンの表示/非表示を更新する関数
+/* =========================================================
+   ボタンの表示/非表示を更新
+   ========================================================= */
 function updateButtonVisibility() {
   // すべてのボタンを非表示に
   addButton.hide();
@@ -176,29 +179,35 @@ function updateButtonVisibility() {
   } 
   else if (state === "gallery") {
     // 日記一覧画面
-    backButton.show();
     galleryButton.show();
   }
   else if (state === "visual") {
     // 日記表示画面
     backButton.show();
-    galleryButton.show();
   }
 }
 
+/* =========================================================
+   ボタンレイアウト
+   ========================================================= */
 function layoutDOMButtons() {
   if (state === "select") {
-    // PAD選択画面
+    // PAD選択画面のレイアウト
     let sidePad = max(8, floor(width * 0.03));
     let bottomPad = max(10, floor(height * 0.04));
     addButton.position(sidePad, height - 80 - bottomPad);
     okButton.position(width/2 - 30, height - 80 - bottomPad);
-    galleryButton.position(width - 130, 20);
+    galleryButton.position(width - 130, 20);  // 右上に配置
   } 
-  else if (state === "gallery" || state === "visual") {
-    // 日記一覧・表示画面
-    backButton.position(20, 20);
-    galleryButton.position(width - 130, 20);
+  else if (state === "gallery") {
+    // 日記一覧画面のレイアウト
+    backButton.position(20, 20);  // 左上
+    galleryButton.position(width - 130, 20);  // 右上
+  }
+  else if (state === "visual") {
+    // 日記表示画面のレイアウト
+    backButton.position(20, 20);  // 左上
+    galleryButton.position(width - 130, 20);  // 右上
   }
 }
 
