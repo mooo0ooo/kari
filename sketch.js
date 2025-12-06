@@ -884,7 +884,7 @@ function generate2DThumbnail(cons, size) {
     // 星の光の輪
     let gradient = pg.drawingContext.createRadialGradient(
       x, y, 0, 
-      x, y, 6 // 光の広がりを小さく
+      x, y, 3
     );
     gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
     gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
@@ -892,13 +892,13 @@ function generate2DThumbnail(cons, size) {
     
     pg.drawingContext.fillStyle = gradient;
     pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 6, 0, TWO_PI); // サイズを小さく
+    pg.drawingContext.arc(x, y, 3, 0, TWO_PI); 
     pg.drawingContext.fill();
     
     // 星の中心（小さな白い点）
     pg.noStroke();
     pg.fill(255, 255, 255);
-    pg.ellipse(x, y, 2, 2);
+    pg.ellipse(x, y, 1, 1);
   }
   
   return pg;
