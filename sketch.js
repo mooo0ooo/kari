@@ -143,6 +143,10 @@ function setup() {
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
 	    state = "select";
+		galleryStars = [];
+	    targetScrollY = 0;
+	    scrollY = 0;
+	    selectedLabel = null;
 	  } else {
 	    state = "gallery";
 	    galleryStars = [];
