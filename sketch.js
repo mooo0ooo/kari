@@ -819,8 +819,8 @@ function drawGallery2D() {
 function generate2DThumbnail(cons, size) {
   let pg = createGraphics(size, size);
 
-  // 枠の描画（日記ページと同じスタイル）
-  pg.stroke(150, 80);  // 薄いグレーの枠線
+  // 枠の描画
+  pg.stroke(150, 80);  
   pg.strokeWeight(1);
   pg.noFill();
   pg.rect(0, 0, size, size, 4);
