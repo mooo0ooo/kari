@@ -845,43 +845,79 @@ function generate2DThumbnail(cons, size) {
   let centerX = (minX + maxX) / 2;
   let centerY = (minY + maxY) / 2;
   
-  // 星同士を線でつなぐ
-  pg.stroke(180, 200, 255, 90);
-  pg.strokeWeight(1.5);
-  pg.blendMode(ADD);
+  // 星を描画
   for (let i = 0; i < stars.length; i++) {
+    let s = stars[i];
+    let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
+    let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
+    
+    // 星同士を線でつなぐ
     for (let j = i + 1; j < stars.length; j++) {
-      let x1 = map(stars[i].x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
-      let y1 = map(stars[i].y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
-      let x2 = map(stars[j].x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
-      let y2 = map(stars[j].y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
+      let s2 = stars[j];
+      let x2 = map(s2.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
+      let y2 = map(s2.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
       
-      let d = dist(x1, y1, x2, y2);
+      let d = dist(x, y, x2, y2);
       if (d < size * 0.4) {
-        pg.line(x1, y1, x2, y2);
+        // 線のグラデーション
+        let gradient = pg.drawingContext.createLinearGradient(x, y, x2, y2);
+        gradient.addColorStop(0, 'rgba(180, 200, 255, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)');
+        gradient.addColorStop(1, 'rgba(180, 200, 255, 0.8)');
+        
+        pg.drawingContext.strokeStyle = gradient;
+        pg.drawingContext.lineWidth = 1.5;
+        pg.drawingContext.beginPath();
+        pg.drawingContext.moveTo(x, y);
+        pg.drawingContext.lineTo(x2, y2);
+        pg.drawingContext.stroke();
       }
     }
   }
-  pg.blendMode(BLEND);
   
   // 星を描画
-  pg.noStroke();
   for (let s of stars) {
     let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
     let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
     
-    // 星のグラデーション
-    let gradient = pg.drawingContext.createRadialGradient(x, y, 0, x, y, 6);
-    gradient.addColorStop(0, 'rgba(255, 255, 220, 1)');
-    gradient.addColorStop(0.7, 'rgba(200, 200, 255, 0.8)');
-    gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+    // 星の外側の光
+    let outerGlow = pg.drawingContext.createRadialGradient(
+      x, y, 0, 
+      x, y, 12
+    );
+    outerGlow.addColorStop(0, 'rgba(180, 200, 255, 0.8)');
+    outerGlow.addColorStop(1, 'rgba(100, 150, 255, 0)');
     
-    pg.drawingContext.fillStyle = gradient;
-    pg.ellipse(x, y, 12, 12);
+    pg.drawingContext.fillStyle = outerGlow;
+    pg.drawingContext.beginPath();
+    pg.drawingContext.arc(x, y, 12, 0, TWO_PI);
+    pg.drawingContext.fill();
+    
+    // 星の中間の光
+    let midGlow = pg.drawingContext.createRadialGradient(
+      x, y, 0, 
+      x, y, 8
+    );
+    midGlow.addColorStop(0, 'rgba(200, 220, 255, 0.9)');
+    midGlow.addColorStop(1, 'rgba(150, 180, 255, 0)');
+    
+    pg.drawingContext.fillStyle = midGlow;
+    pg.drawingContext.beginPath();
+    pg.drawingContext.arc(x, y, 8, 0, TWO_PI);
+    pg.drawingContext.fill();
     
     // 星の中心
-    pg.fill(255, 255, 200);
-    pg.ellipse(x, y, 3, 3);
+    let innerGlow = pg.drawingContext.createRadialGradient(
+      x, y, 0, 
+      x, y, 4
+    );
+    innerGlow.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    innerGlow.addColorStop(1, 'rgba(220, 240, 255, 0.8)');
+    
+    pg.drawingContext.fillStyle = innerGlow;
+    pg.drawingContext.beginPath();
+    pg.drawingContext.arc(x, y, 4, 0, TWO_PI);
+    pg.drawingContext.fill();
   }
   
   return pg;
