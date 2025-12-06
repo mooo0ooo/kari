@@ -54,8 +54,11 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
+/* =========================================================
+   preload
+   ========================================================= */
 function preload() {
-  myFont = loadFont("assets/nicomoji_1.00.ttf");
+  myFont = loadFont("nicomoji-plus_v2-5.ttf");
 }
 
 function setup() {
