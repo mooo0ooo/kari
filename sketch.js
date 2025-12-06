@@ -179,11 +179,11 @@ function updateButtonVisibility() {
   } 
   else if (state === "gallery") {
     // 日記一覧画面
-    galleryButton.show();
+	backButton.show();
   }
   else if (state === "visual") {
     // 日記表示画面
-    backButton.show();
+    galleryButton.show();
   }
 }
 
@@ -197,17 +197,17 @@ function layoutDOMButtons() {
     let bottomPad = max(10, floor(height * 0.04));
     addButton.position(sidePad, height - 80 - bottomPad);
     okButton.position(width/2 - 30, height - 80 - bottomPad);
-    galleryButton.position(width - 130, 20);  // 右上に配置
+    galleryButton.position(width - 130, 20);
   } 
   else if (state === "gallery") {
     // 日記一覧画面のレイアウト
-    backButton.position(20, 20);  // 左上
-    galleryButton.position(width - 130, 20);  // 右上
+    backButton.position(20, 20);
+    galleryButton.position(width - 130, 20);
   }
   else if (state === "visual") {
     // 日記表示画面のレイアウト
-    backButton.position(20, 20);  // 左上
-    galleryButton.position(width - 130, 20);  // 右上
+    backButton.position(20, 20);
+    galleryButton.position(width - 130, 20);
   }
 }
 
@@ -267,22 +267,21 @@ function prepareVisual() {
    draw
    ========================================================= */
 function draw() {
-  background(5,5,20);
+  background(5, 5, 20);
 
   if (state === "select") {
     camera();
     drawPADButtons();
     return;
   } 
-  
-  if (state === "gallery") {
+  else if (state === "gallery") {
     drawGallery2D();
     return;
   }
-
-  // 3Dビジュアライズ画面の描画
-  orbitControl();
-
+  else if (state === "visual") {
+    orbitControl();
+  }
+	
   // ★ 星空の描画
   push(); 
   noStroke();
