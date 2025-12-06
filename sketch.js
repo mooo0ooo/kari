@@ -274,12 +274,12 @@ function draw() {
     drawPADButtons();
     return;
   } 
+  else if (state === "visual") {
+	orbitControl();
+  }
   else if (state === "gallery") {
     drawGallery2D();
     return;
-  }
-  else if (state === "visual") {
-    orbitControl();
   }
 	
   // ★ 星空の描画
