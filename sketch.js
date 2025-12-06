@@ -124,23 +124,15 @@ function setup() {
   });
 
   backButton.mousePressed(() => {
-    if (state === "gallery") {
-	    // ギャラリーページから戻る場合
+	  if (state === "gallery" || state === "visual") {
 	    state = "select";
 	    addButton.show();
-	    okButton.show();
-	    backButton.hide();
-	    selectedLabel = null;
-	  } else if (state === "visual") {
-	    // ビジュアライズページから戻る場合
-	    state = "select";
-	    addButton.show();
-	    okButton.show();
+	    okButton.hide();
 	    backButton.hide();
 	    selectedLabel = null;
 	  }
-  });
-
+	});
+	
   layoutDOMButtons();
 
   computeBtnSize();
@@ -225,21 +217,23 @@ function prepareVisual() {
    draw
    ========================================================= */
 function draw() {
-
   background(5,5,20);
 
   if (state === "select") {
     camera();
     drawPADButtons();
     return;
-  } else if (state === "gallery") {
+  } 
+  
+  if (state === "gallery") {
     drawGallery2D();
     return;
   }
- 
+
+  // 3Dビジュアライズ画面の描画
   orbitControl();
 
-  // ★ 星空
+  // ★ 星空の描画
   push(); 
   noStroke();
   for (let s of stars) {
