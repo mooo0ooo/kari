@@ -2,7 +2,6 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: 'Nico Moji', sans-serif;
 }
 
 button {
@@ -24,4 +23,9 @@ button:hover {
 
 button:active {
   transform: scale(0.98);
+}
+
+@font-face {
+  font-family: 'Nico Moji';
+  src: url('assets/nicomoji_1.00.ttf') format('truetype');
 }
