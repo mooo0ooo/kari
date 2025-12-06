@@ -814,6 +814,9 @@ function drawGallery2D() {
   }
 }
 
+/* =========================================================
+   generate2DThumbnail
+   ========================================================= */
 function generate2DThumbnail(cons, size) {
   let pg = createGraphics(size, size);
 
@@ -878,44 +881,24 @@ function generate2DThumbnail(cons, size) {
     let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
     let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
     
-    // 星の外側の光
-    let outerGlow = pg.drawingContext.createRadialGradient(
+    // 星の光の輪
+    let gradient = pg.drawingContext.createRadialGradient(
       x, y, 0, 
-      x, y, 12
+      x, y, 6 // 光の広がりを小さく
     );
-    outerGlow.addColorStop(0, 'rgba(180, 200, 255, 0.8)');
-    outerGlow.addColorStop(1, 'rgba(100, 150, 255, 0)');
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
     
-    pg.drawingContext.fillStyle = outerGlow;
+    pg.drawingContext.fillStyle = gradient;
     pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 12, 0, TWO_PI);
+    pg.drawingContext.arc(x, y, 6, 0, TWO_PI); // サイズを小さく
     pg.drawingContext.fill();
     
-    // 星の中間の光
-    let midGlow = pg.drawingContext.createRadialGradient(
-      x, y, 0, 
-      x, y, 8
-    );
-    midGlow.addColorStop(0, 'rgba(200, 220, 255, 0.9)');
-    midGlow.addColorStop(1, 'rgba(150, 180, 255, 0)');
-    
-    pg.drawingContext.fillStyle = midGlow;
-    pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 8, 0, TWO_PI);
-    pg.drawingContext.fill();
-    
-    // 星の中心
-    let innerGlow = pg.drawingContext.createRadialGradient(
-      x, y, 0, 
-      x, y, 4
-    );
-    innerGlow.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    innerGlow.addColorStop(1, 'rgba(220, 240, 255, 0.8)');
-    
-    pg.drawingContext.fillStyle = innerGlow;
-    pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 4, 0, TWO_PI);
-    pg.drawingContext.fill();
+    // 星の中心（小さな白い点）
+    pg.noStroke();
+    pg.fill(255, 255, 255);
+    pg.ellipse(x, y, 2, 2);
   }
   
   return pg;
