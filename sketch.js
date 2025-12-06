@@ -80,25 +80,32 @@ function setup() {
     }
   }
  
+  // ボタン作成
   addButton = createButton("追加");
-  addButton.style('position', 'absolute');
-  addButton.style('z-index', '10');
-
   okButton = createButton("OK");
-  okButton.style('position', 'absolute');
-  okButton.style('z-index', '10');
-
   backButton = createButton("← 記録ページ");
-  backButton.style('position', 'absolute');
-  backButton.style('z-index', '10');
-  backButton.hide();
+  galleryButton = createButton("日記一覧");
 
+  // ボタンスタイルの設定
+  [addButton, okButton, backButton, galleryButton].forEach(btn => {
+    btn.style('position', 'absolute');
+    btn.style('z-index', '10');
+    btn.style('padding', '8px 16px');
+    btn.style('border-radius', '4px');
+    btn.style('border', '1px solid #666');
+    btn.style('background', 'rgba(50, 60, 90, 0.8)');
+    btn.style('color', '#fff');
+    btn.style('cursor', 'pointer');
+    btn.style('font-family', 'sans-serif');
+    btn.style('font-size', '14px');
+  });
+
+  // ボタンクリックイベント
   addButton.mousePressed(addPAD);
-
+  
   okButton.mousePressed(() => {
     if (padValues.length > 0) {
       prepareVisual();
-      
       let now = new Date();
       let timestamp = now.toLocaleString();
       let serialStars = points.map(s => {
@@ -116,49 +123,83 @@ function setup() {
       localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
 
       state = "visual";
-      addButton.hide();
-      okButton.hide();
-      backButton.show();
+      updateButtonVisibility();
       visualStartTime = millis();
     }
   });
 
   backButton.mousePressed(() => {
-	  if (state === "gallery" || state === "visual") {
-	    state = "select";
-	    addButton.show();
-	    okButton.hide();
-	    backButton.hide();
-	    selectedLabel = null;
-	  }
-	});
-	
-  layoutDOMButtons();
-
-  computeBtnSize();
-
-  // gallery
-  galleryButton = createButton("日記一覧");
-  galleryButton.style('position', 'absolute');
-  galleryButton.style('z-index', '10');
-  galleryButton.position(width - 130, 20);
-  galleryButton.mousePressed(() => {
-	  state = "gallery";
-	  addButton.hide();
-	  okButton.hide();
-	  backButton.show();
-
-	  galleryStars = [];
-  　 for (let i = 0; i < 400; i++) {
-    　galleryStars.push({
-      x: random(-2000, 2000),
-		y: random(-2000, 2000),
-		z: random(-2000, 2000),
-		twinkle: random(1000),
-		baseSize: random(1, 4)
-      });
-    }
+    state = "select";
+    updateButtonVisibility();
+    selectedLabel = null;
   });
+
+  galleryButton.mousePressed(() => {
+    if (state === "gallery") {
+      state = "select";
+    } else {
+      state = "gallery";
+      // ギャラリー用の星を初期化
+      galleryStars = [];
+      for (let i = 0; i < 400; i++) {
+        galleryStars.push({
+          x: random(-2000, 2000),
+          y: random(-2000, 2000),
+          z: random(-2000, 2000),
+          twinkle: random(1000),
+          baseSize: random(1, 4)
+        });
+      }
+    }
+    updateButtonVisibility();
+  });
+
+  // 初期状態のボタン表示を更新
+  updateButtonVisibility();
+  layoutDOMButtons();
+  computeBtnSize();
+}
+
+// ボタンの表示/非表示を更新する関数
+function updateButtonVisibility() {
+  // すべてのボタンを非表示に
+  addButton.hide();
+  okButton.hide();
+  backButton.hide();
+  galleryButton.hide();
+
+  if (state === "select") {
+    // PAD選択画面
+    addButton.show();
+    okButton.show();
+    galleryButton.show();
+  } 
+  else if (state === "gallery") {
+    // 日記一覧画面
+    backButton.show();
+    galleryButton.show();
+  }
+  else if (state === "visual") {
+    // 日記表示画面
+    backButton.show();
+    galleryButton.show();
+  }
+}
+
+function layoutDOMButtons() {
+  if (state === "select") {
+    // PAD選択画面
+    let sidePad = max(8, floor(width * 0.03));
+    let bottomPad = max(10, floor(height * 0.04));
+    addButton.position(sidePad, height - 80 - bottomPad);
+    okButton.position(width/2 - 30, height - 80 - bottomPad);
+    galleryButton.position(width - 130, 20);
+  } 
+  else if (state === "gallery" || state === "visual") {
+    // 日記一覧・表示画面
+    backButton.position(20, 20);
+    galleryButton.position(width - 130, 20);
+  }
 }
 
 /* =========================================================
@@ -166,8 +207,8 @@ function setup() {
    ========================================================= */
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  layoutDOMButtons();
   computeBtnSize();
+  layoutDOMButtons();
 }
 
 function layoutDOMButtons(){
