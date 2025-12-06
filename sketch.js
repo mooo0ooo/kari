@@ -641,22 +641,31 @@ function drawGallery2D() {
       rectMode(CORNER);
 
       // サムネ背景
-      fill(255, 255, 255, 25);
-      noStroke();
-      rect(0, 0, thumbSize, thumbSize, 10);
+      fill(255, 255, 255, 10);
+      stroke(255, 255, 255, 30);
+	  strokeWeight(1);
+      rect(0, 0, thumbSize, thumbSize, 8);
 
       // 星座サムネ
       if (!cons.thumbnail) {
-		  cons.thumbnail = generateThumbnail(cons, thumbSize);
+		  cons.thumbnail = generateThumbnail(cons, thumbSize - 20);
 	  }
-
-		image(cons.thumbnail, 0, 0);
-
+      image(cons.thumbnail, 10, 10, thumbSize - 20, thumbSize - 20);
       // 日付ラベル
-      fill(230);
+	  let date = new Date(cons.created);
+	  let options = {
+		  year: 'numeric',
+		  month: '2-digit',
+		  day: '2-digit',
+		  weekday: 'short'
+	  };
+	  let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      let dayOfWeek = weekdays[date.getDay()];
+      let formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${dayOfWeek}`;
+      fill(200, 200, 255);
       textSize(12);
-      textAlign(LEFT, TOP);
-      text(cons.created, 0, thumbSize + 8);
+      textAlign(CENTER, TOP);
+      text(formattedDate, thumbSize/2, thumbSize + 5);
 
       pop();
 
@@ -677,35 +686,36 @@ function drawGallery2D() {
 
 function generateThumbnail(cons, size) {
 	let pg = createGraphics(size, size);
-	pg.background(5, 5, 20);
+	pg.background(0, 0, 0,0 ,0);
 
 	let ax = radians(-30);
 	let ay = radians(30);
 
-	// 線
-	pg.push();
-	pg.stroke(180, 200, 255, 90);
-	pg.strokeWeight(1);
-	pg.noFill();
-
-	for (let i = 0; i < cons.stars.length; i++) {
-		for (let j = 0; j < cons.stars.length; j++) {
-			let a = projectPoint(cons.stars[i].pos, ax, ay, size);
-			let b = projectPoint(cons.stars[j].pos, ax, ay, size);
-			pg.line(a.x, a.y, b.x, b.y);
-		}
-	}
-
 	// 星
 	pg.noStroke();
-	pg.fill(255, 240, 200, 230);
+	pg.fill(255, 240, 200, 200);
 	for (let s of cons.stars) {
-		let p = projectPoint(s.pos, ax, ay, size);
-		pg.circle(p.x, p.y, 5);
-	}
+	    let p = s.pos;
+	    pg.push();
+	    pg.translate(p.x * 0.4, p.y * 0.4, p.z * 0.4);
+	    pg.sphere(2);
+	    pg.pop();
+	  }
 
-	pg.pop();
-	return pg;
+	// 線
+	pg.stroke(180, 200, 255, 120);  // 青みがかった白
+	pg.strokeWeight(0.5);
+    pg.noFill();
+	for (let i = 0; i < cons.stars.length; i++) {
+	    for (let j = i + 1; j < cons.stars.length; j++) {
+	      let a = cons.stars[i].pos;
+	      let b = cons.stars[j].pos;
+	      pg.line(a.x * 0.4, a.y * 0.4, a.z * 0.4, 
+	              b.x * 0.4, b.y * 0.4, b.z * 0.4);
+	    }
+	  }
+	  
+	  return pg;
 }
 
 function projectPoint (pos, ax, ay, size) {
