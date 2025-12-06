@@ -608,11 +608,15 @@ function mouseWheel(event) {
   }
 }
 
+/* =========================================================
+   drawGallery
+   ========================================================= */
 function drawGallery2D() {
   resetMatrix();
   camera();
-  
   background(5, 5, 20); 
+  
+  // 背景の星を描画
   push(); 
   noStroke(); 
   for (let s of galleryStars) { 
@@ -627,40 +631,27 @@ function drawGallery2D() {
   }
   pop();
   
+  // 画面中央に配置するためのオフセットを計算
   translate(-width / 2, -height / 2);
 
+  // デザイン幅とスケールを計算
   let designWidth = 430;
   let galleryScale = min(1, width / designWidth);
 
-  // スクロール
+  // スクロール処理
   scrollY = lerp(scrollY, targetScrollY, 0.4);
 
   push();
   scale(galleryScale);
   translate(0, scrollY / galleryScale);
 
-  let maxThumb = 180;  // 少し大きくする
-  let scaledWidth = width / galleryScale;
-
-  let colCount = floor((scaledWidth - outerPad * 2) / (maxThumb + gutter));
-  colCount = constrain(colCount, 1, 6);
-
-  let totalGutter = gutter * (colCount - 1);
-  let availableWidth = scaledWidth - outerPad * 2 - totalGutter;
-
-  let thumbSize = floor(availableWidth / colCount);
-  thumbSize = constrain(thumbSize, 60, maxThumb);
-
-  // 月名
-  let monthNames = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-
-  // --- 月ごとに分類 ---
-  let monthLabelOffset = 20; 
+  // サムネイルサイズとレイアウトを計算
+  let thumbSize = 150; // 固定サイズに変更
+  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
 
+  // 月ごとに分類
   let grouped = {};
   for (let m = 0; m < 12; m++) grouped[m] = [];
   for (let c of allConstellations) {
@@ -670,121 +661,65 @@ function drawGallery2D() {
     grouped[monthIndex].push(c);
   }
 
+  // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
     if (list.length === 0) continue;
 
     // 月の見出し
     fill(255);
-    textSize(32);
+    textSize(24); // 少し小さく
     textAlign(LEFT, TOP);
-    text(monthNames[month], monthLabelOffset, y);  
-    y += 45;
+    let monthNames = [
+      "1月", "2月", "3月", "4月", "5月", "6月",
+      "7月", "8月", "9月", "10月", "11月", "12月"
+    ];
+    text(monthNames[month], 20, y);  
+    y += 35;
 
-    // サムネイルの行
-    let index = 0;
-    let rows = ceil(list.length / colCount);
-    
-    let rowWidth = thumbSize * colCount + gutter * (colCount - 1);
-    let rowStartX = (scaledWidth - rowWidth) / 2;
-    
-    for (let cons of list) {
-      let col = index % colCount;
-      let row = floor(index / colCount);
-    
+    // サムネイルをグリッド状に配置
+    for (let i = 0; i < list.length; i++) {
+      let col = i % colCount;
+      let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + 60);  // 余白を広げる
-    
-      push();
-      translate(x, ty);
+      let ty = y + row * (thumbSize + gutter + 25); // 日付表示分の余白を追加
       
-      // 3D風の影を描画
-      // 影（下側）
-      fill(20, 30, 50, 150);
-      noStroke();
-      rect(8, 8, thumbSize, thumbSize, 8);
+      // サムネイルの背景（シンプルな四角形）
+      noFill();
+      stroke(100, 150, 255, 100);
+      strokeWeight(1);
+      rect(x, ty, thumbSize, thumbSize, 4);
       
-      // 側面（右側）
-      fill(30, 40, 70, 200);
-      beginShape();
-      vertex(thumbSize, 0);
-      vertex(thumbSize + 8, 8);
-      vertex(thumbSize + 8, thumbSize + 8);
-      vertex(thumbSize, thumbSize);
-      endShape(CLOSE);
-      
-      // 側面（下側）
-      fill(20, 25, 50, 200);
-      beginShape();
-      vertex(0, thumbSize);
-      vertex(thumbSize, thumbSize);
-      vertex(thumbSize + 8, thumbSize + 8);
-      vertex(8, thumbSize + 8);
-      endShape(CLOSE);
-      
-      // メインの面
-      fill(40, 50, 90);
-      rect(0, 0, thumbSize, thumbSize, 8);
-      
-      // サムネイルを描画
-      if (!cons.thumbnail) {
-        cons.thumbnail = generate2DThumbnail(cons, thumbSize);
+      // 星座を描画
+      if (!list[i].thumbnail) {
+        list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
       }
+      image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
       
-      // サムネイルに枠を追加
-      push();
-      translate(thumbSize/2, thumbSize/2);
-      rotate(QUARTER_PI * 0.1);  // 少し傾ける
-      imageMode(CENTER);
-      image(cons.thumbnail, 0, 0, thumbSize * 0.8, thumbSize * 0.8);
-      pop();
-      
-      // 日付ラベル
-      let date = new Date(cons.created);
-      let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-      let formattedDate = `${date.getFullYear()}. ${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
+      // 日付を表示
+      let date = new Date(list[i].created);
+      let formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
       fill(200, 220, 255);
       textSize(12);
       textAlign(CENTER, TOP);
-      text(formattedDate, thumbSize/2, thumbSize + 10);
-      
-      // ホバーエフェクト
-      let mx = (mouseX / galleryScale) - (x - width/2/galleryScale);
-      let my = (mouseY / galleryScale) - (ty - height/2/galleryScale - scrollY/galleryScale);
-      if (mx > 0 && mx < thumbSize && my > 0 && my < thumbSize) {
-        // ホバー時のハイライト
-        noFill();
-        stroke(100, 150, 255, 150);
-        strokeWeight(2);
-        rect(0, 0, thumbSize, thumbSize, 8);
-      }
-      
-      pop();
-      index++;
+      text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
     }
-
-    y += rows * (thumbSize + 60) + 40;  // 行間を広げる
+    
+    // 次の月の開始位置を計算
+    y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
   }
 
   pop();
 
-  let scaledY = y * galleryScale;
-  let minScroll = -max(0, scaledY - height + 40);
-
+  // スクロール範囲を制限
+  let minScroll = -max(0, y * galleryScale - height + 40);
   targetScrollY = constrain(targetScrollY, minScroll, 0);
   scrollY = constrain(scrollY, minScroll, 0);
 }
 
 function generate2DThumbnail(cons, size) {
   let pg = createGraphics(size, size);
-  pg.angleMode(DEGREES);
-  
-  // 背景をグラデーションで描画
-  let gradient = pg.drawingContext.createLinearGradient(0, 0, size, size);
-  gradient.addColorStop(0, color(30, 40, 80));
-  gradient.addColorStop(1, color(20, 25, 50));
-  pg.drawingContext.fillStyle = gradient;
-  pg.rect(0, 0, size, size);
+  pg.background(20, 25, 40);
   
   // 星の位置を計算
   let stars = [];
@@ -802,21 +737,19 @@ function generate2DThumbnail(cons, size) {
   }
   
   // 正規化用の範囲を計算
-  let rangeX = maxX - minX;
-  let rangeY = maxY - minY;
-  let maxRange = max(rangeX, rangeY, 1);
+  let range = max(maxX - minX, maxY - minY, 1);
+  let centerX = (minX + maxX) / 2;
+  let centerY = (minY + maxY) / 2;
   
   // 星同士を線でつなぐ
   pg.stroke(100, 150, 255, 80);
   pg.strokeWeight(1.5);
   for (let i = 0; i < stars.length; i++) {
     for (let j = i + 1; j < stars.length; j++) {
-      let s1 = stars[i];
-      let s2 = stars[j];
-      let x1 = map(s1.x, minX, maxX, size * 0.1, size * 0.9);
-      let y1 = map(s1.y, minY, maxY, size * 0.1, size * 0.9);
-      let x2 = map(s2.x, minX, maxX, size * 0.1, size * 0.9);
-      let y2 = map(s2.y, minY, maxY, size * 0.1, size * 0.9);
+      let x1 = map(stars[i].x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
+      let y1 = map(stars[i].y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
+      let x2 = map(stars[j].x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
+      let y2 = map(stars[j].y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
       
       let d = dist(x1, y1, x2, y2);
       if (d < size * 0.4) {
@@ -828,31 +761,22 @@ function generate2DThumbnail(cons, size) {
   // 星を描画
   pg.noStroke();
   for (let s of stars) {
-    let x = map(s.x, minX, maxX, size * 0.1, size * 0.9);
-    let y = map(s.y, minY, maxY, size * 0.1, size * 0.9);
+    let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
+    let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
     
-    // グラデーションで星を描画
-    let grad = pg.drawingContext.createRadialGradient(
-      x, y, 0, 
-      x, y, 8
-    );
-    grad.addColorStop(0, 'rgba(255, 255, 220, 1)');
-    grad.addColorStop(0.7, 'rgba(255, 200, 100, 0.8)');
-    grad.addColorStop(1, 'rgba(255, 150, 50, 0)');
+    // 星のグラデーション
+    let gradient = pg.drawingContext.createRadialGradient(x, y, 0, x, y, 6);
+    gradient.addColorStop(0, 'rgba(255, 255, 220, 1)');
+    gradient.addColorStop(0.7, 'rgba(200, 200, 255, 0.8)');
+    gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
     
-    pg.drawingContext.fillStyle = grad;
-    pg.ellipse(x, y, 16, 16);
+    pg.drawingContext.fillStyle = gradient;
+    pg.ellipse(x, y, 12, 12);
     
-    // 星の中心に光を追加
+    // 星の中心
     pg.fill(255, 255, 200);
-    pg.ellipse(x, y, 4, 4);
+    pg.ellipse(x, y, 3, 3);
   }
-  
-  // 枠を追加
-  pg.noFill();
-  pg.stroke(100, 150, 255, 100);
-  pg.strokeWeight(2);
-  pg.rect(2, 2, size-4, size-4, 4);
   
   return pg;
 }
