@@ -653,15 +653,8 @@ function drawGallery2D() {
       image(cons.thumbnail, 10, 10, thumbSize - 20, thumbSize - 20);
       // 日付ラベル
 	  let date = new Date(cons.created);
-	  let options = {
-		  year: 'numeric',
-		  month: '2-digit',
-		  day: '2-digit',
-		  weekday: 'short'
-	  };
 	  let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      let dayOfWeek = weekdays[date.getDay()];
-      let formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${dayOfWeek}`;
+	  let formattedDate = `${date.getFullYear()}. ${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]}`;
       fill(200, 200, 255);
       textSize(12);
       textAlign(CENTER, TOP);
