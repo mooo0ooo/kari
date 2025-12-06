@@ -55,3 +55,23 @@ button:active {
   font-size: 12px;
   opacity: 0.8;
 }
+
+/* スクロールバーのスタイリング */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(20, 20, 40, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 150, 255, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 170, 255, 0.7);
+}
