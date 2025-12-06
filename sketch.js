@@ -88,17 +88,18 @@ function setup() {
 
   // ボタンスタイルの設定
   [addButton, okButton, backButton, galleryButton].forEach(btn => {
-    btn.style('position', 'absolute');
-    btn.style('z-index', '10');
-    btn.style('padding', '8px 16px');
-    btn.style('border-radius', '4px');
-    btn.style('border', '1px solid #666');
-    btn.style('background', 'rgba(50, 60, 90, 0.8)');
-    btn.style('color', '#fff');
-    btn.style('cursor', 'pointer');
-    btn.style('font-family', 'sans-serif');
-    btn.style('font-size', '14px');
-  });
+	  btn.style('position', 'absolute');
+	  btn.style('z-index', '10');
+	  btn.style('padding', '8px 16px');
+	  btn.style('border-radius', '4px');
+	  btn.style('border', '1px solid #666');
+	  btn.style('background', 'rgba(50, 60, 90, 0.8)');
+	  btn.style('color', '#fff');
+	  btn.style('cursor', 'pointer');
+	  btn.style('font-family', 'sans-serif');
+	  btn.style('font-size', '14px');
+	  btn.style('transition', 'all 0.2s');
+	});
 
   // ボタンクリックイベント
   addButton.mousePressed(addPAD);
@@ -180,9 +181,11 @@ function updateButtonVisibility() {
   else if (state === "gallery") {
     // 日記一覧画面
 	backButton.show();
+	galleryButton.show();
   }
   else if (state === "visual") {
     // 日記表示画面
+	backButton.show();
     galleryButton.show();
   }
 }
@@ -218,14 +221,6 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   computeBtnSize();
   layoutDOMButtons();
-}
-
-function layoutDOMButtons(){
-  let sidePad = max(8, floor(width * 0.03));
-  let bottomPad = max(10, floor(height * 0.04));
-  addButton.position(sidePad, height - 80 - bottomPad);
-  okButton.position(width/2 - 40, height - 60 - bottomPad);
-  backButton.position(sidePad, sidePad + 6);
 }
 
 function computeBtnSize(){
