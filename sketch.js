@@ -50,6 +50,10 @@ let scrollY = 0;
 let targetScrollY = 0;
 let galleryStars = [];
 
+let selectedThumbnail = null;
+let zoomAnim = 0;
+let targetZoom = 0;
+
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
@@ -278,6 +282,9 @@ function draw() {
   } 
   else if (state === "gallery") {
     drawGallery2D();
+		if (selectedThumbnail && targetZoom > 0.5) {
+	    return;
+	  }
     return;
   }
   else if (state === "visual") {
@@ -491,6 +498,9 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   pop();
 }
 
+/* =========================================================
+   mousePressed
+   ========================================================= */
 function mousePressed() {
   if (state === "visual") {
     if (allConstellations.length === 0) return;
@@ -513,6 +523,72 @@ function mousePressed() {
     }
     return;
   } 
+  else if (state === "gallery") {
+    // ギャラリー状態のクリック処理
+    let designWidth = 430;
+    let galleryScale = min(1, width / designWidth);
+    let mx = (mouseX - (width - designWidth * galleryScale) / 2) / galleryScale;
+    let my = (mouseY - scrollY) / galleryScale;
+    
+    let thumbSize = 150;
+    let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+    let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+    
+    let y = topOffset;
+    
+    // 月ごとのリストを処理
+    for (let month = 0; month < 12; month++) {
+      // 月の日記リストを取得
+      let list = allConstellations.filter(c => {
+        let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+        return m && int(m[2]) - 1 === month;
+      });
+      
+      if (list.length === 0) continue;
+      
+      y += 35; // 月の見出し分の高さを追加
+      
+      // サムネイルのクリックを検出
+      for (let i = 0; i < list.length; i++) {
+        let col = i % colCount;
+        let row = floor(i / colCount);
+        let tx = rowStartX + col * (thumbSize + gutter);
+        let ty = y + row * (thumbSize + gutter + 25);
+        
+        // サムネイルの範囲内をクリックしたかチェック
+        if (mx >= tx && mx <= tx + thumbSize && 
+            my >= ty && my <= ty + thumbSize) {
+          selectedThumbnail = list[i];
+          targetZoom = 1;
+          return;
+        }
+      }
+      
+      // 次の月の開始位置を計算
+      y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+    }
+    
+    // 背景をクリックしたらズームをリセット
+    if (selectedThumbnail) {
+      // 閉じるボタンのクリック判定
+      let thumbSize = min(width, height) * 0.7;
+      let closeX = width/2 + (thumbSize/2 - 20);
+      let closeY = height/2 - (thumbSize/2 - 20);
+      let d = dist(mouseX, mouseY, closeX, closeY);
+      
+      if (d < 15) { // 閉じるボタンをクリック
+        targetZoom = 0;
+        setTimeout(() => {
+          if (targetZoom === 0) selectedThumbnail = null;
+        }, 300);
+      } else if (zoomAnim > 0.9) { // 拡大中の背景をクリック
+        targetZoom = 0;
+        setTimeout(() => {
+          if (targetZoom === 0) selectedThumbnail = null;
+        }, 300);
+      }
+    }
+  }
   else if (state === "select") {
     let mx = (mouseX - width/2) / padLayout.scl;
     let my = (mouseY - height/2) / padLayout.scl;
@@ -570,6 +646,9 @@ function findClosestEmotion(p,a,d){
   return best;
 }
 
+/* =========================================================
+   screenPos
+   ========================================================= */
 function screenPos(x, y, z) {
   const mv = this._renderer.uMVMatrix.mat4;
   const p = this._renderer.uPMatrix.mat4;
@@ -599,15 +678,24 @@ function screenPos(x, y, z) {
   return createVector(sx, sy);
 }
 
+/* =========================================================
+   mouseWheel
+   ========================================================= */
 // gallery
 function mouseWheel(event) {
   if (state === "gallery") {
-    targetScrollY -= event.delta * 0.5;
 
-	 let maxScroll = 0;
-	 let minScroll = -3000;
-	 targetScrollY = constrain(targetScrollY, minScroll, maxScroll);
+	if (selectedThumbnail && targetZoom > 0.5) {
+      return false;
+    }
+	  
+    targetScrollY -= event.delta * 0.5;
+    let maxScroll = 0;
+    let minScroll = -3000;
+    targetScrollY = constrain(targetScrollY, minScroll, maxScroll);
+    return false;
   }
+  return true;
 }
 
 /* =========================================================
@@ -718,6 +806,14 @@ function drawGallery2D() {
   let minScroll = -max(0, y * galleryScale - height + 40);
   targetScrollY = constrain(targetScrollY, minScroll, 0);
   scrollY = constrain(scrollY, minScroll, 0);
+
+  // 拡大表示を描画
+　if (selectedThumbnail) {
+    push();
+    translate(width/2, height/2);
+    drawZoomedThumbnail();
+    pop();
+  }
 }
 
 function generate2DThumbnail(cons, size) {
@@ -807,3 +903,60 @@ function projectPoint (pos, ax, ay, size) {
 
   return createVector(px, py);
 }
+
+function drawZoomedThumbnail() {
+  if (!selectedThumbnail) return;
+  
+  zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
+  if (zoomAnim < 0.01 && targetZoom === 0) {
+    return;
+  }
+  
+  push();
+  fill(0, 0, 0, zoomAnim * 200);
+  rectMode(CORNER);
+  rect(-width/2, -height/2, width, height);
+  
+  let scale = 0.5 + zoomAnim * 0.5;
+  translate(0, 0);
+  scale(scale);
+  
+  let thumbSize = min(width, height) * 0.7;
+  
+  // サムネイルの背景
+  fill(15, 20, 40);
+  stroke(100, 150, 255, 80);
+  strokeWeight(1);
+  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, 8);
+  
+  // サムネイルを描画
+  if (!selectedThumbnail.thumbnail) {
+    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
+  }
+  imageMode(CENTER);
+  image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
+  
+  // 日付を表示
+  let date = new Date(selectedThumbnail.created);
+  let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  let formattedDate = `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  
+  textAlign(CENTER, TOP);
+  textSize(18);
+  fill(200, 220, 255);
+  text(formattedDate, 0, thumbSize/2 + 20);
+  
+  // 閉じるボタン
+  if (zoomAnim > 0.9) {
+    fill(255, 100, 100, 200);
+    noStroke();
+    circle(thumbSize/2 - 20, -thumbSize/2 + 20, 30);
+    fill(255);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text("×", thumbSize/2 - 20, -thumbSize/2 + 20);
+  }
+  
+  pop();
+}
+
