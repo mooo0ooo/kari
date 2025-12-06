@@ -61,6 +61,9 @@ function preload() {
   myFont = loadFont("nicomoji-plus_v2-5.ttf");
 }
 
+/* =========================================================
+   setup
+   ========================================================= */
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   textFont(myFont);
@@ -121,11 +124,21 @@ function setup() {
   });
 
   backButton.mousePressed(() => {
-    state = "select";
-    addButton.show();
-    okButton.show();
-    backButton.hide();
-    selectedLabel = null;
+    if (state === "gallery") {
+	    // ギャラリーページから戻る場合
+	    state = "select";
+	    addButton.show();
+	    okButton.show();
+	    backButton.hide();
+	    selectedLabel = null;
+	  } else if (state === "visual") {
+	    // ビジュアライズページから戻る場合
+	    state = "select";
+	    addButton.show();
+	    okButton.show();
+	    backButton.hide();
+	    selectedLabel = null;
+	  }
   });
 
   layoutDOMButtons();
@@ -156,6 +169,9 @@ function setup() {
   });
 }
 
+/* =========================================================
+   windowResized
+   ========================================================= */
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   layoutDOMButtons();
@@ -205,13 +221,19 @@ function prepareVisual() {
   }
 }
 
+/* =========================================================
+   draw
+   ========================================================= */
 function draw() {
 
   background(5,5,20);
 
-  if(state === "select"){
+  if (state === "select") {
     camera();
     drawPADButtons();
+    return;
+  } else if (state === "gallery") {
+    drawGallery2D();
     return;
   }
  
