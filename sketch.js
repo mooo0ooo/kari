@@ -134,6 +134,7 @@ function setup() {
     updateButtonVisibility();
 	layoutDOMButtons();
     selectedLabel = null;
+	redraw();
   });
 
   galleryButton.mousePressed(() => {
