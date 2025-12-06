@@ -827,24 +827,26 @@ function generate2DThumbnail(cons, size) {
   pg.rect(0, 0, size, size, 4);
   
   // 星の位置を計算
-  let stars = [];
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  let stars = cons.stars.map(s => ({
+    x: s.pos.x,
+    y: s.pos.y,
+    size: s.size || 1  // 星のサイズ情報があれば使う
+  }));
 
   // 星の位置を正規化
-  for (let s of cons.stars) {
-    let x = s.pos.x;
-    let y = s.pos.y;
-    minX = min(minX, x);
-    maxX = max(maxX, x);
-    minY = min(minY, y);
-    maxY = max(maxY, y);
-    stars.push({x, y});
-  }
+  let minX = min(...stars.map(s => s.x));
+  let maxX = max(...stars.map(s => s.x));
+  let minY = min(...stars.map(s => s.y));
+  let maxY = max(...stars.map(s => s.y));
   
   // 正規化用の範囲を計算
   let range = max(maxX - minX, maxY - minY, 1);
   let centerX = (minX + maxX) / 2;
   let centerY = (minY + maxY) / 2;
+
+  const normalize = (val, minVal, maxVal, newMin, newMax) => {
+    return ((val - minVal) / (maxVal - minVal)) * (newMax - newMin) + newMin;
+  };
   
   // 星を描画
   for (let i = 0; i < stars.length; i++) {
@@ -852,29 +854,29 @@ function generate2DThumbnail(cons, size) {
     let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
     let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
     
-    // 星同士を線でつなぐ
+    // 星同士を線でつなぐ（すべての星を繋ぐ）
+  pg.stroke(255, 200, 255, 0.8);
+  pg.strokeWeight(0.8);
+  pg.blendMode(ADD);
+  
+  // すべての星の組み合わせに対して線を引く
+  for (let i = 0; i < stars.length; i++) {
+    let x1 = normalize(stars[i].x, minX, maxX, size * 0.15, size * 0.85);
+    let y1 = normalize(stars[i].y, minY, maxY, size * 0.15, size * 0.85);
+    
     for (let j = i + 1; j < stars.length; j++) {
-      let s2 = stars[j];
-      let x2 = map(s2.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
-      let y2 = map(s2.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
+      let x2 = normalize(stars[j].x, minX, maxX, size * 0.15, size * 0.85);
+      let y2 = normalize(stars[j].y, minY, maxY, size * 0.15, size * 0.85);
       
-      let d = dist(x, y, x2, y2);
-      if (d < size * 0.4) {
-        // 線のグラデーション
-        let gradient = pg.drawingContext.createLinearGradient(x, y, x2, y2);
-        gradient.addColorStop(0, 'rgba(180, 200, 255, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.9)');
-        gradient.addColorStop(1, 'rgba(180, 200, 255, 0.8)');
-        
-        pg.drawingContext.strokeStyle = gradient;
-        pg.drawingContext.lineWidth = 1.5;
-        pg.drawingContext.beginPath();
-        pg.drawingContext.moveTo(x, y);
-        pg.drawingContext.lineTo(x2, y2);
-        pg.drawingContext.stroke();
-      }
+      let d = dist(x1, y1, x2, y2);
+      let alpha = map(d, 0, size * 0.7, 100, 20, true);
+      pg.stroke(255, 200, 255, alpha);
+      
+      // 線を引く
+      pg.line(x1, y1, x2, y2);
     }
   }
+  pg.blendMode(BLEND);
   
   // 星を描画
   for (let s of stars) {
