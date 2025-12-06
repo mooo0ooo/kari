@@ -736,7 +736,7 @@ function drawGallery2D() {
   translate(0, scrollY / galleryScale);
 
   // サムネイルサイズとレイアウトを計算
-  let thumbSize = 150; // 固定サイズに変更
+  let thumbSize = 150; 
   let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
   let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
@@ -772,10 +772,10 @@ function drawGallery2D() {
       let col = i % colCount;
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25); // 日付表示分の余白を追加
+      let ty = y + row * (thumbSize + gutter + 25); 
       
       // サムネイルの背景
-      fill(15, 20, 40, 200);
+      fill(5, 5, 20);
       stroke(150, 80); 
       strokeWeight(1);
       rect(x, ty, thumbSize, thumbSize, 4);
