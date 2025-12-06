@@ -193,11 +193,9 @@ function updateButtonVisibility() {
   } 
   else if (state === "gallery") {
     // 日記一覧画面
-	backButton.show();
   }
   else if (state === "visual") {
     // 日記表示画面
-    galleryButton.show();
   }
 }
 
