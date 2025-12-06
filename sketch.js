@@ -703,7 +703,7 @@ function drawGallery2D() {
       // 日付を表示
 	  let date = new Date(list[i].created);
 	  let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	  let formattedDate = `${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+	  let formattedDate = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 	  fill(200, 220, 255);
 	  textSize(12);
 	  textAlign(CENTER, TOP);
