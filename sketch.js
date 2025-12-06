@@ -130,37 +130,36 @@ function setup() {
   });
 
   backButton.mousePressed(() => {
-    state = "select";
-    updateButtonVisibility();
-	layoutDOMButtons();
-    selectedLabel = null;
-	redraw();
-
-	galleryStars = [];
-	targetScrollY = 0;
-    scrollY = 0;
-  });
+	  state = "select";
+	  updateButtonVisibility();
+	  layoutDOMButtons();
+	  selectedLabel = null;
+	  redraw();
+	  galleryStars = [];
+	  targetScrollY = 0;
+	  scrollY = 0;
+	});
 
   galleryButton.mousePressed(() => {
-    if (state === "gallery") {
-      state = "select";
-    } else {
-      state = "gallery";
-      galleryStars = [];
-      for (let i = 0; i < 400; i++) {
-        galleryStars.push({
-          x: random(-2000, 2000),
-          y: random(-2000, 2000),
-          z: random(-2000, 2000),
-          twinkle: random(1000),
-          baseSize: random(1, 4)
-        });
-      }
-    }
-    updateButtonVisibility();
-	layoutDOMButtons();
-	computeBtnSize();
-  });
+	  if (state === "gallery") {
+	    state = "select";
+	  } else {
+	    state = "gallery";
+	    galleryStars = [];
+	    for (let i = 0; i < 400; i++) {
+	      galleryStars.push({
+	        x: random(-2000, 2000),
+	        y: random(-2000, 2000),
+	        z: random(-2000, 2000),
+	        twinkle: random(1000),
+	        baseSize: random(1, 4)
+	      });
+	    }
+	  }
+	  updateButtonVisibility();
+	  layoutDOMButtons();
+	  redraw();
+	});
 
   // 初期状態のボタン表示を更新
   updateButtonVisibility();
@@ -280,8 +279,8 @@ function draw() {
     return;
   }
   else if (state === "visual") {
-      orbitControl();
-	
+    orbitControl();
+	  
 	  // ★ 星空の描画
 	  push(); 
 	  noStroke();
