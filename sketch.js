@@ -190,11 +190,9 @@ function updateButtonVisibility() {
   else if (state === "gallery") {
     // 日記一覧画面
 	backButton.show();
-	galleryButton.show();
   }
   else if (state === "visual") {
     // 日記表示画面
-	backButton.show();
     galleryButton.show();
   }
 }
@@ -689,7 +687,7 @@ function drawGallery2D() {
       let ty = y + row * (thumbSize + gutter + 25); // 日付表示分の余白を追加
       
       // サムネイルの背景
-      noFill();
+      fill(15, 20, 40, 200);
       stroke(150, 80); 
       strokeWeight(1);
       rect(x, ty, thumbSize, thumbSize, 4);
