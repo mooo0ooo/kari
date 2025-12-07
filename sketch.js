@@ -854,6 +854,26 @@ function generate2DThumbnail(cons, size) {
     let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
     let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
     
+    // 星の光の輪
+    let gradient = pg.drawingContext.createRadialGradient(
+      x, y, 0, 
+      x, y, 3
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
+    
+    pg.drawingContext.fillStyle = gradient;
+    pg.drawingContext.beginPath();
+    pg.drawingContext.arc(x, y, 3, 0, TWO_PI); 
+    pg.drawingContext.fill();
+    
+    // 星の中心（小さな白い点）
+    pg.noStroke();
+    pg.fill(255, 255, 255);
+    pg.ellipse(x, y, 1, 1);
+  }
+    
     // 星同士を線でつなぐ（すべての星を繋ぐ）
   pg.stroke(255, 200, 255, 0.8);
   pg.strokeWeight(0.8);
@@ -877,31 +897,6 @@ function generate2DThumbnail(cons, size) {
     }
   }
   pg.blendMode(BLEND);
-  
-  // 星を描画
-  for (let s of stars) {
-    let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
-    let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
-    
-    // 星の光の輪
-    let gradient = pg.drawingContext.createRadialGradient(
-      x, y, 0, 
-      x, y, 3
-    );
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
-    
-    pg.drawingContext.fillStyle = gradient;
-    pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 3, 0, TWO_PI); 
-    pg.drawingContext.fill();
-    
-    // 星の中心（小さな白い点）
-    pg.noStroke();
-    pg.fill(255, 255, 255);
-    pg.ellipse(x, y, 1, 1);
-  }
   
   return pg;
 }
