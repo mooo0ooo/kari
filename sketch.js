@@ -770,28 +770,50 @@ function drawGallery2D() {
       let col = i % colCount;
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25); 
+      let ty = y + row * (thumbSize + gutter + 25);
+      
+      // マウスオーバー判定
+      let mx = (mouseX - width/2) / galleryScale;
+      let my = (mouseY - height/2 - scrollY) / galleryScale;
+      let isHovered = (mx > x && mx < x + thumbSize && 
+                      my > ty && my < ty + thumbSize);
       
       // サムネイルの背景
-      fill(5, 5, 20);
-      stroke(150, 80); 
-      strokeWeight(1);
-      rect(x, ty, thumbSize, thumbSize, 4);
+      fill(isHovered ? 'rgba(80, 100, 160, 0.3)' : 'rgba(5, 5, 20, 0.8)');
+      stroke(isHovered ? 'rgba(150, 180, 255, 0.8)' : 'rgba(150, 150, 150, 0.5)');
+      strokeWeight(isHovered ? 2 : 1);
+      rect(x, ty, thumbSize, thumbSize, 8);
       
       // 星座を描画
       if (!list[i].thumbnail) {
         list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
       }
-      image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
+      
+      // ホバー時に少し拡大
+      let scale = isHovered ? 1.05 : 1.0;
+      let offset = (thumbSize * scale - thumbSize) / 2;
+      image(list[i].thumbnail, 
+           x + (thumbSize - thumbSize * scale)/2, 
+           ty + (thumbSize - thumbSize * scale)/2, 
+           thumbSize * scale, thumbSize * scale);
       
       // 日付を表示
-	  let date = new Date(list[i].created);
-	  let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	  let formattedDate = `${date.getMonth() + 1}.${date.getDate()} ${weekdays[date.getDay()]} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-	  fill(200, 220, 255);
-	  textSize(12);
-	  textAlign(CENTER, TOP);
-	  text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
+      let date = new Date(list[i].created);
+      let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      fill(200, 220, 255);
+      textSize(12);
+      textAlign(CENTER, TOP);
+      text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
+      
+      // クリック判定
+      if (isHovered && mouseIsPressed) {
+        selectedThumbnail = list[i];
+        targetZoom = 1;
+        // 画面中央にスクロール
+        let targetY = -(ty + thumbSize/2 - height/galleryScale/2);
+        targetScrollY = constrain(targetY, -y, 0);
+      }
     }
     
     // 次の月の開始位置を計算
@@ -806,7 +828,7 @@ function drawGallery2D() {
   scrollY = constrain(scrollY, minScroll, 0);
 
   // 拡大表示を描画
-　if (selectedThumbnail) {
+  if (selectedThumbnail) {
     push();
     translate(width/2, height/2);
     drawZoomedThumbnail();
@@ -817,7 +839,7 @@ function drawGallery2D() {
 /* =========================================================
    generate2DThumbnail
    ========================================================= */
-function generate2DThumbnail(cons, size) {
+function generate2DThumbnail(cons, size) {	
   let pg = createGraphics(size, size);
 
   // 枠の描画
@@ -830,7 +852,7 @@ function generate2DThumbnail(cons, size) {
   let stars = cons.stars.map(s => ({
     x: s.pos.x,
     y: s.pos.y,
-    size: s.size || 1  // 星のサイズ情報があれば使う
+    size: s.size || 1 
   }));
 
   // 星の位置を正規化
@@ -899,6 +921,81 @@ function generate2DThumbnail(cons, size) {
   pg.blendMode(BLEND);
   
   return pg;
+}
+
+/* =========================================================
+   drawZoomedThumbnail
+   ========================================================= */
+function drawZoomedThumbnail() {
+  if (!selectedThumbnail) return;
+  
+  // スムーズなズームアニメーション
+  zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
+  if (zoomAnim < 0.01 && targetZoom === 0) {
+    selectedThumbnail = null;
+    return;
+  }
+  
+  // 背景のオーバーレイ
+  fill(0, 0, 0, zoomAnim * 200);
+  rectMode(CORNER);
+  rect(-width/2, -height/2, width, height);
+  
+  // スケール計算
+  let scale = 0.7 + zoomAnim * 0.3;
+  scale(scale);
+  
+  // サムネイルサイズ
+  let thumbSize = min(width, height) * 0.7;
+  
+  // サムネイルの背景
+  fill(15, 20, 40);
+  stroke(100, 150, 255, 80);
+  strokeWeight(1);
+  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, 12);
+  
+  // サムネイルを描画
+  if (!selectedThumbnail.thumbnail) {
+    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
+  }
+  imageMode(CENTER);
+  image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
+  
+  // 日付を表示
+  let date = new Date(selectedThumbnail.created);
+  let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  let formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  
+  textAlign(CENTER, TOP);
+  textSize(18);
+  fill(200, 220, 255);
+  text(formattedDate, 0, thumbSize/2 + 20);
+  
+  // 閉じるボタン
+  if (zoomAnim > 0.9) {
+    // 閉じるボタンの背景（円形）
+    fill(255, 100, 100, 200);
+    noStroke();
+    circle(thumbSize/2 - 25, -thumbSize/2 + 25, 40);
+    
+    // 閉じるボタンの「×」マーク
+    fill(255);
+    textSize(24);
+    textAlign(CENTER, CENTER);
+    text("×", thumbSize/2 - 25, -thumbSize/2 + 25);
+    
+    // 閉じるボタンのホバーエフェクト
+    let closeBtnX = width/2 + (thumbSize/2 - 25) * (0.7 + 0.3 * zoomAnim);
+    let closeBtnY = height/2 - (thumbSize/2 - 25) * (0.7 + 0.3 * zoomAnim);
+    let d = dist(mouseX, mouseY, closeBtnX, closeBtnY);
+    
+    if (d < 20) {
+      cursor('pointer');
+      if (mouseIsPressed) {
+        targetZoom = 0;
+      }
+    }
+  }
 }
 
 function projectPoint (pos, ax, ay, size) {
