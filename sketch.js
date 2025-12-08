@@ -206,6 +206,7 @@ function setup() {
 	  } else {
 	    state = "gallery";
 	    galleryStars = [];
+	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
 	        x: random(-2000, 2000),
@@ -215,12 +216,18 @@ function setup() {
 	        baseSize: random(1, 4)
 	      });
 	    }
+	    // サムネイルの再生成
+	    allConstellations.forEach(c => {
+	      if (c.thumbnail) {
+	        c.thumbnail.remove();
+	        c.thumbnail = null;
+	      }
+	    });
 	  }
-	  
 	  updateButtonVisibility();
 	  layoutDOMButtons();
 	  redraw();
-	});
+  });
 
   setupButtonInteractions();
 
@@ -1080,21 +1087,22 @@ function drawGallery2D() {
   background(5, 5, 20); 
   
   // 背景の星を描画
-  push(); 
-  noStroke(); 
-  for (let s of galleryStars) { 
-    if (random() < 0.02) s.on = !s.on; 
-    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle); 
-    let starSize = s.baseSize + pulse * random(0.5, 2); 
-    fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180); 
-    push(); 
-    translate(s.x, s.y, s.z); 
-    sphere(starSize); 
-    pop(); 
+  push();
+  noStroke();
+  for (let s of galleryStars) {
+    if (s.on === undefined) s.on = true;
+    if (random() < 0.02) s.on = !s.on;
+    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
+    let starSize = s.baseSize + pulse * random(0.5, 2);
+    fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180);
+    push();
+    translate(s.x, s.y, s.z);
+    sphere(starSize);
+    pop();
   }
   pop();
-  
-  // 画面中央に配置するためのオフセットを計算
+
+  // 画面中央に配置
   translate(-width / 2, -height / 2);
 
   // デザイン幅とスケールを計算
