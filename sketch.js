@@ -627,12 +627,9 @@ function mousePressed() {
     }
     return;
   } 
-  else if (state === "gallery") {
-    // ギャラリー状態のクリック処理
-    let designWidth = 430;
-    let galleryScale = min(1, width / designWidth);
-    let mx = (mouseX - (width - designWidth * galleryScale) / 2) / galleryScale;
-    let my = (mouseY - scrollY) / galleryScale; 
+  else if (state === "gallery" && !('ontouchstart' in window)) {
+    handleGalleryClick();
+    return false;
   }
   else if (state === "select") {
     let mx = (mouseX - width/2) / padLayout.scl;
@@ -668,11 +665,7 @@ function mousePressed() {
       }
     }
   }
-
-	if (state === "gallery" && !('ontouchstart' in window)) {
-      handleGalleryClick();
-    }
-    return false;
+  return false;
 }
 
 /* =========================================================
