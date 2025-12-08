@@ -84,9 +84,7 @@ let selectedThumbnail = null;
 let zoomAnim = 0;
 let targetZoom = 0;
 
-let touchStartY = 0;
 let isScrolling = false;
-let touchStartTime = 0;
 const SCROLL_THRESHOLD = 10;
 
 let outerPad = 20;
