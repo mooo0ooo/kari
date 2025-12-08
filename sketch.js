@@ -200,7 +200,7 @@ function setup() {
 
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
-	    changeState = "select";
+	    state = "select";
 	    galleryStars = [];
 	    targetScrollY = 0;
 	    scrollY = 0;
@@ -398,9 +398,9 @@ function draw() {
   } 
   else if (state === "gallery") {
     drawGallery2D();
-		if (selectedThumbnail && targetZoom > 0.5) {
+	if (selectedThumbnail && targetZoom > 0.5) {
 	    return;
-	    }
+	}
     return;
   }
   else if (state === "visual") {
