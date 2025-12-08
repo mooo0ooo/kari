@@ -353,7 +353,7 @@ function draw() {
   }
   else if (state === "visual") {
       orbitControl();
-	  // ３D操作
+	  // 3D操作
 	  rotationX = lerp(rotationX, targetRotationX, 0.1);
 	  rotationY = lerp(rotationY, targetRotationY, 0.1);
 	  rotateX(rotationX);
@@ -509,13 +509,16 @@ function draw() {
 	  }
 	} 
 	
-	if (touchFeedback.alpha > 0) {
-    push();
-    noStroke();
-    fill(255, 255, 255, touchFeedback.alpha);
-    ellipse(touchFeedback.x, touchFeedback.y, 50, 50);
-    touchFeedback.alpha -= 5;
-    pop();
+	// タッチフィードバックの描画
+  if (touchFeedback.alpha > 0) {
+	  touchFeedback.alpha -= 5;
+	  if (touchFeedback.alpha > 0) {
+	    push();
+	    noStroke();
+	    fill(255, 255, 255, touchFeedback.alpha);
+	    ellipse(touchFeedback.x, touchFeedback.y, 50, 50);
+	    pop();
+	  }
   }
 }
 
@@ -667,9 +670,9 @@ function mousePressed() {
   }
 
 	if (state === "gallery" && !('ontouchstart' in window)) {
-	    handleGalleryClick();
-	  }
-	  return false;
+      handleGalleryClick();
+    }
+    return false;
 }
 
 /* =========================================================
@@ -681,9 +684,9 @@ function touchStarted() {
     touchFeedback.alpha = 100;
 
 	if (state === "gallery") {
-	    mousePressed();
-	    return false; 
-	  }
+        handleGalleryClick();
+        return false;
+    }
 	
 	if (touches.length === 2) {
 		// ズーム
@@ -691,7 +694,7 @@ function touchStarted() {
 			touches[0].x, touches[0].y,
 			touches[1].x, touches[1].y
 		);
-		initialPinchDistance = targetZoomLevel;
+		initialZoom = targetZoomLevel;;
 	} else {
 		// 回転
 		touchStartX = mouseX;
@@ -702,56 +705,53 @@ function touchStarted() {
 }
 
 function touchMoved() {
-	const currentTime = millis();
+    const currentTime = millis();
     const timeDiff = currentTime - lastTouchTime;
-	
-	if (touches.length === 2) {
-	    // ズーム
-	    let currentDistance = dist(
-	      touches[0].x, touches[0].y,
-	      touches[1].x, touches[1].y
-	    );
-	    let scale = currentDistance / initialPinchDistance;
-	    targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
-	  } else if (touches.length === 1 && isDragging) {
-	    // 回転
-	    let dx = mouseX - touchStartX;
-	    let dy = mouseY - touchStartY;
-	    targetRotationY = dx * 0.01;
-	    targetRotationX = dy * 0.01;
-
-		// 速度を計算
-	    const currentX = mouseX;
-	    const currentY = mouseY;
-	    
-	    if (timeDiff > 0) {
-	      velocityX = (currentX - lastTouchX) / timeDiff;
-	      velocityY = (currentY - lastTouchY) / timeDiff;
-	    }
-	    
-	    lastTouchX = currentX;
-	    lastTouchY = currentY;
-	    lastTouchTime = currentTime;
-	    
-	    // 回転を更新
-	    targetRotationY += velocityX * 0.1;
-	    targetRotationX += velocityY * 0.1;
-	  }
-	  return false;
+    
+    if (touches.length === 2) {
+        // ズーム処理
+        let currentDistance = dist(
+            touches[0].x, touches[0].y,
+            touches[1].x, touches[1].y
+        );
+        let scale = currentDistance / initialPinchDistance;
+        targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
+    } else if (touches.length === 1 && isDragging) {
+        // 回転処理（重複を削除）
+        let dx = mouseX - touchStartX;
+        let dy = mouseY - touchStartY;
+        
+        // 速度計算
+        if (timeDiff > 0) {
+            velocityX = (mouseX - lastTouchX) / timeDiff;
+            velocityY = (mouseY - lastTouchY) / timeDiff;
+        }
+        
+        lastTouchX = mouseX;
+        lastTouchY = mouseY;
+        lastTouchTime = currentTime;
+        
+        // 回転更新（0.01 に統一）
+        targetRotationY = dx * 0.01;
+        targetRotationX = dy * 0.01;
+    }
+    return false;
 }
 
-function touchend() {
-	const currentTime = new Date().getTime();
-	const tapLength = currentTime - lastTap;
+function touchEnded() {
+  const currentTime = millis();
+  const tapLength = currentTime - lastTap;
 
-	if (tapLength < 300 && tapLength > 0) {
-		// ダブルタップでリセット
-		resetView();
-	}
-	
-	lastTap = currentTime;
-	isDragging = false;
-	return false;
+  if (tapLength < 300 && tapLength > 0) {
+    // ダブルタップの処理
+    resetView();
+    lastTap = 0; 
+  } else {
+    lastTap = currentTime;
+  }
+  
+  isDragging = false;
+  return false;
 }
 
 // リセット
@@ -772,37 +772,37 @@ function handleGalleryClick() {
     let my = (mouseY - scrollY) / galleryScale;
 
 	let thumbSize = 150;
-  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+    let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+    let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   
-  let y = topOffset;
+    let y = topOffset;
   
-  // 月ごとのリストを処理
-  for (let month = 0; month < 12; month++) {
-    let list = allConstellations.filter(c => {
-      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      return m && int(m[2]) - 1 === month;
-    });
+    // 月ごとのリストを処理
+    for (let month = 0; month < 12; month++) {
+      let list = allConstellations.filter(c => {
+        let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+        return m && int(m[2]) - 1 === month;
+      });
     
-    if (list.length === 0) continue;
+      if (list.length === 0) continue;
     
-    y += 35; // 月の見出し分の高さを追加
+      y += 35; // 月の見出し分の高さを追加
     
-    // サムネイルのクリックを検出
-    for (let i = 0; i < list.length; i++) {
-      let col = i % colCount;
-      let row = floor(i / colCount);
-      let tx = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25);
+      // サムネイルのクリックを検出
+      for (let i = 0; i < list.length; i++) {
+        let col = i % colCount;
+        let row = floor(i / colCount);
+        let tx = rowStartX + col * (thumbSize + gutter);
+        let ty = y + row * (thumbSize + gutter + 25);
       
-      // サムネイルの範囲内をクリック/タップしたかチェック
-      if (mx >= tx && mx <= tx + thumbSize && 
-          my >= ty && my <= ty + thumbSize) {
-        selectedThumbnail = list[i];
-        targetZoom = 1;
-        return;
+        // サムネイルの範囲内をクリック/タップしたかチェック
+        if (mx >= tx && mx <= tx + thumbSize && 
+            my >= ty && my <= ty + thumbSize) {
+          selectedThumbnail = list[i];
+          targetZoom = 1;
+          return;
+        }
       }
-    }
     
     // 次の月の開始位置を計算
     y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
@@ -828,32 +828,27 @@ function handleGalleryClick() {
       }, 300);
     }
   }
+	return false;
 }
 
 /* =========================================================
    mouseWheel
    ========================================================= */
-// gallery
 function mouseWheel(event) {
-  if (state === "gallery") {
-	  // スクロール
-	  if (selectedThumbnail && targetZoom > 0.5) {
+    if (state === "gallery") {
+        if (selectedThumbnail && targetZoom > 0.5) {
+            return false;
+        }
+        targetScrollY -= event.delta * 0.5;
+        targetScrollY = constrain(targetScrollY, -3000, 0);
         return false;
-      }
-      targetScrollY -= event.delta * 0.5;
-      let maxScroll = 0;
-      let minScroll = -3000;
-      targetScrollY = constrain(targetScrollY, minScroll, maxScroll);
-      return false;
-  } else if (state === "visual") {
-	  // ズーム
-	  targetZoomLevel -= event.delta * 0.001;
-	  targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
-	  return false;
-  }
-  return true;
+    } else if (state === "visual") {
+        targetZoomLevel -= event.delta * 0.001;
+        targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
+        return false;
+    }
+    return true;
 }
-
 
 /* =========================================================
    polygon
@@ -967,10 +962,18 @@ function drawGallery2D() {
     grouped[monthIndex].push(c);
   }
 
+  const viewportTop = -scrollY / galleryScale;
+  const viewportBottom = viewportTop + height / galleryScale;
+
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
     if (list.length === 0) continue;
+
+	if (y + 35 < viewportTop - 100 || y > viewportBottom) {
+        y += 35 + ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+        continue;
+    }
 
     // 月の見出し
     fill(255);
@@ -1003,10 +1006,21 @@ function drawGallery2D() {
       rect(x, ty, thumbSize, thumbSize, 8);
       
       // 星座を描画
-      if (!list[i].thumbnail) {
-        list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
-      }
-      
+      const visibleStart = Math.max(0, Math.floor(-scrollY / (thumbSize + gutter + 25)) - 1);
+	  const visibleEnd = Math.min(list.length, visibleStart + 10);
+		
+	  for (let j = visibleStart; j < visibleEnd; j++) {
+	    for (let j = visibleStart; j < visibleEnd; j++) {
+        if (!list[j].thumbnail) {
+            list[j].thumbnail = generate2DThumbnail(list[j], thumbSize);
+        }
+	    if (j < visibleStart || j >= visibleEnd) {
+	        if (j % colCount === colCount - 1) {
+	            y += thumbSize + gutter + 25;
+	        }
+	        continue;
+	    }
+
       // ホバー時に少し拡大
       let scale = isHovered ? 1.05 : 1.0;
       let offset = (thumbSize * scale - thumbSize) / 2;
@@ -1058,11 +1072,19 @@ function drawGallery2D() {
    generate2DThumbnail
    ========================================================= */
 function generate2DThumbnail(cons, size) {	
-  if (cons.thumbnail && cons.thumbnail.width === size) {
-    return cons.thumbnail;
-  }
-	
-  let pg = createGraphics(size, size);
+  if (cons.thumbnail) {
+        if (cons.thumbnail) {
+        if (cons.thumbnail.width === size) {
+            cons.lastAccessed = Date.now();
+            return cons.thumbnail;
+        }
+        // 古いサムネイルを削除
+        cons.thumbnail.remove();
+        cons.thumbnail = null;
+    }
+    
+    // 新しいサムネイルを生成
+    let pg = createGraphics(size, size);
 
   // 枠の描画
   pg.stroke(150, 80);  
@@ -1143,6 +1165,7 @@ function generate2DThumbnail(cons, size) {
   pg.blendMode(BLEND);
 
   cons.thumbnail = pg;
+  cons.lastAccessed = Date.now();
   return pg;
 }
 
@@ -1151,13 +1174,18 @@ function generate2DThumbnail(cons, size) {
    ========================================================= */
 function drawZoomedThumbnail() {
   if (!selectedThumbnail) return;
-  
-  // スムーズなズームアニメーション
-  zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
-  if (zoomAnim < 0.01 && targetZoom === 0) {
-    selectedThumbnail = null;
-    return;
-  }
+    
+    // スムーズなズームアニメーション
+    zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
+    if (zoomAnim < 0.01 && targetZoom === 0) {
+        // クリーンアップ
+        if (selectedThumbnail.thumbnail) {
+            selectedThumbnail.thumbnail.remove();
+            selectedThumbnail.thumbnail = null;
+        }
+        selectedThumbnail = null;
+        return;
+    }
   
   push();
   // 背景のオーバーレイ（タッチ操作を可能にするため）
@@ -1180,8 +1208,12 @@ function drawZoomedThumbnail() {
   rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, cornerRadius);
   
   // サムネイルを描画
-  if (!selectedThumbnail.thumbnail) {
-    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
+  if (!selectedThumbnail.thumbnail || 
+    selectedThumbnail.thumbnail.width !== thumbSize) {
+    if (selectedThumbnail.thumbnail) {
+      selectedThumbnail.thumbnail.remove(); // 古いグラフィックスをクリーンアップ
+    }
+  selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
   }
   imageMode(CENTER);
   image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
@@ -1236,16 +1268,23 @@ function drawZoomedThumbnail() {
    galleryメモリ管理
    ========================================================= */
 function cleanupThumbnails() {
-  const MAX_CACHED = 20;
-  if (allConstellations.length > MAX_CACHED) {
-    // 古い順にキャッシュを削除
-    allConstellations.slice(0, -MAX_CACHED).forEach(c => {
-      if (c.thumbnail) {
-        c.thumbnail.remove();
-        delete c.thumbnail;
-      }
+    const MAX_CACHED = 20;
+    if (allConstellations.length <= MAX_CACHED) return;
+    
+    // 最後にアクセスされた日時でソート
+    const sorted = [...allConstellations].sort((a, b) => {
+        return (b.lastAccessed || 0) - (a.lastAccessed || 0);
     });
-  }
+    
+    // 古いものから削除
+    for (let i = MAX_CACHED; i < sorted.length; i++) {
+        const c = sorted[i];
+        if (c !== selectedThumbnail && c.thumbnail) {
+            c.thumbnail.remove();
+            c.thumbnail = null;
+            delete c.thumbnail;
+        }
+    }
 }
 
 /* =========================================================
@@ -1253,9 +1292,11 @@ function cleanupThumbnails() {
    ========================================================= */
 function parseDate(dateStr) {
   try {
-    return new Date(dateStr);
+    if (!dateStr) return new Date();
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? new Date() : date;
   } catch (e) {
     console.error('日付のパースに失敗しました:', e);
-    return new Date(); 
+    return new Date();
   }
 }
