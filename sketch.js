@@ -52,6 +52,9 @@ let touchStartX, touchStartY;
 let rotationX = 0, rotationY = 0;
 let targetRotationX = 0, targetRotationY = 0;
 let isDragging = false;
+let isTouching = false;
+let touchStartTime = 0;
+let touchStartPos = { x: 0, y: 0 };
 // ズーム
 let zoomLevel = 1;
 let targetZoomLevel = 1;
@@ -403,6 +406,18 @@ function draw() {
   else if (state === "visual") {
 	  camera();
       orbitControl();
+
+	  if (touches.length > 0 && isTouching) {
+	    let touch = touches[0];
+	    let dx = touch.x - touchStartPos.x;
+	    let dy = touch.y - touchStartPos.y;
+	    
+	    targetRotationY += dx * 0.01;
+	    targetRotationX += dy * 0.01;
+	    
+	    touchStartPos = { x: touch.x, y: touch.y };
+	  }
+	  
 	  // 3D操作
 	  rotationX = lerp(rotationX, targetRotationX, 0.1);
 	  rotationY = lerp(rotationY, targetRotationY, 0.1);
@@ -752,43 +767,64 @@ function mousePressed() {
    タッチイベント
    ========================================================= */
 function touchStarted() {
-  touchFeedback.x = touches[0]?.x || mouseX;
-  touchFeedback.y = touches[0]?.y || mouseY;
-  touchFeedback.alpha = 100;
-
-  mouseX = touches[0].x;
-  mouseY = touches[0].y;
-  mousePressed();
-  } else {
-    touchFeedback.x = mouseX;
-    touchFeedback.y = mouseY;
-    touchFeedback.alpha = 100;
-  }
-  
-  // ボタンのタッチ判定
-  if (state === "select" || state === "gallery") {
-    let touch = touches[0] || {x: mouseX, y: mouseY};
-    let buttons = [addButton, okButton, backButton, galleryButton, resetViewButton];
+  if (touches.length > 0) {
+    isTouching = true;
+    touchStartTime = millis();
+    touchStartPos = { x: touches[0].x, y: touches[0].y };
     
-    for (let btn of buttons) {
-      if (btn && btn.elt) {
-        let rect = btn.elt.getBoundingClientRect();
-        if (touch.x >= rect.left && touch.x <= rect.right && 
-            touch.y >= rect.top && touch.y <= rect.bottom) {
-          // ボタンのタッチフィードバック
-          btn.elt.style.transform = 'scale(0.98)';
-          btn.elt.style.opacity = '0.9';
-          // ボタンのクリックイベントを発火
-          setTimeout(() => {
-            if (btn.mousePressed) btn.mousePressed();
-            btn.elt.style.transform = '';
-            btn.elt.style.opacity = '';
-          }, 50);
-          break;
+    // タッチフィードバック
+    touchFeedback.x = touches[0].x;
+    touchFeedback.y = touches[0].y;
+    touchFeedback.alpha = 100;
+    
+    // マウス座標の同期
+    mouseX = touches[0].x;
+    mouseY = touches[0].y;
+    
+    // ボタンのタッチ判定
+    if (state === "select" || state === "gallery" || state === "visual") {
+      let buttons = [addButton, okButton, backButton, galleryButton, resetViewButton];
+      
+      for (let btn of buttons) {
+        if (btn && btn.elt) {
+          let rect = btn.elt.getBoundingClientRect();
+          if (mouseX >= rect.left && mouseX <= rect.right && 
+              mouseY >= rect.top && mouseY <= rect.bottom) {
+            btn.elt.style.transform = 'scale(0.95)';
+            btn.elt.style.opacity = '0.9';
+            setTimeout(() => {
+              if (btn.mousePressed) btn.mousePressed();
+              btn.elt.style.transform = '';
+              btn.elt.style.opacity = '';
+            }, 50);
+            return false;
+          }
+        }
       }
     }
+    
+    // ギャラリーモードでサムネイルをタップした場合
+    if (state === "gallery" && selectedThumbnail) {
+      // 閉じるボタンの判定
+      let buttonSize = 30 * zoomAnim;
+      let buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+      let buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+      
+      if (dist(mouseX, mouseY, buttonX, buttonY) < buttonSize/2) {
+        targetZoom = 0;
+        setTimeout(() => {
+          if (targetZoom === 0) selectedThumbnail = null;
+        }, 300);
+        return false;
+      }
+    }
+    
+    // その他のタッチ処理
+    if (state === "visual") {
+      mousePressed();
+    }
   }
-  return false; 
+  return false;
 }
 
 function touchStarted(e) {
@@ -836,33 +872,63 @@ function touchMoved(e) {
 }
 
 function touchEnded(event) {
+  isTouching = false;
+  
+  let touchX, touchY;
+  if (event.touches && event.touches.length > 0) {
+    touchX = event.touches[0].clientX;
+    touchY = event.touches[0].clientY;
+  } else if (event.changedTouches && event.changedTouches.length > 0) {
+    touchX = event.changedTouches[0].clientX;
+    touchY = event.changedTouches[0].clientY;
+  } else {
+    touchX = mouseX;
+    touchY = mouseY;
+  }
+
   if (state === "visual") {
-    isDragging = false;
-    // タッチ操作の慣性を計算
-    if (touches.length === 0) {
-      let now = millis();
-      let deltaTime = now - lastTouchTime;
-      if (deltaTime > 0) {
-        let touch = event.touches ? event.touches[0] : event;
-        velocityX = (touch.clientX - lastTouchX) / deltaTime * 1000;
-        velocityY = (touch.clientY - lastTouchY) / deltaTime * 1000;
+    // 慣性スクロールの計算
+    let now = millis();
+    let deltaTime = now - lastTouchTime;
+    
+    if (deltaTime > 0 && lastTouchX !== undefined && lastTouchY !== undefined) {
+      velocityX = (touchX - lastTouchX) / deltaTime * 15; // 減速係数を調整
+      velocityY = (touchY - lastTouchY) / deltaTime * 15;
+    }
+    
+    lastTouchTime = now;
+    lastTouchX = touchX;
+    lastTouchY = touchY;
+    
+  } else if (state === "gallery") {
+    // タップ判定（短いタッチ）
+    if (millis() - touchStartTime < 200) {
+      let dx = touchX - touchStartPos.x;
+      let dy = touchY - touchStartPos.y;
+      
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        if (selectedThumbnail) {
+          // 閉じるボタンの判定
+          let buttonSize = 30;
+          let buttonX = width/2 + (selectedThumbnail.thumbnail.width * targetZoom)/2 - 20;
+          let buttonY = height/2 - (selectedThumbnail.thumbnail.height * targetZoom)/2 - 20;
+          
+          if (dist(touchX, touchY, buttonX, buttonY) < buttonSize) {
+            targetZoom = 0;
+            setTimeout(() => {
+              if (targetZoom === 0) selectedThumbnail = null;
+            }, 300);
+          }
+        }
       }
     }
-  } else if (state === "gallery" && selectedThumbnail) {
-    // ギャラリービューでサムネイルが選択されている場合の処理
-    let touch = event.touches ? event.touches[0] : event;
-    let buttonSize = 40 * 0.7; // ズーム時の閉じるボタンサイズに合わせる
-    let buttonX = width/2 + (selectedThumbnail.thumbnail.width/2 - 25);
-    let buttonY = height/2 - (selectedThumbnail.thumbnail.height/2 - 25);
-    
-    if (dist(touch.clientX, touch.clientY, buttonX, buttonY) < buttonSize/2) {
-      targetZoom = 0;
-      setTimeout(() => {
-        if (targetZoom === 0) selectedThumbnail = null;
-      }, 300);
-    }
   }
-  return false; 
+  
+  // デフォルトのタッチ動作を防ぐ
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  return false;
 }
 
 function touchEnded(e) {
@@ -917,6 +983,10 @@ function changeState(newState) {
       }
     }
   }
+}
+
+function touchCanceled(event) {
+  return touchEnded(event);
 }
 
 function touchCanceled(e) {
