@@ -676,13 +676,14 @@ function mousePressed() {
     let last = allConstellations[allConstellations.length - 1];
     let minDist = 50;
     let nearest = null;
+	
 	let mx = mouseX;
     let my = mouseY;
     
-    let last = allConstellations[allConstellations.length - 1];
+    let currentConstellation = allConstellations[allConstellations.length - 1];
     let minDist = 50;
     let nearest = null;
-    for (let p of last.stars) {
+    for (let p of currentConstellation.stars) {
       let px = p.pos?.x ?? 0;
       let py = p.pos?.y ?? 0;
       let pz = p.pos?.z ?? 0;
@@ -698,7 +699,7 @@ function mousePressed() {
     if (nearest) {
       let emo = nearest.emo || {en:"", ja:""};
       selectedLabel = emo.en + "(" + (emo.ja || "") + ")";
-	  setTimeout(() => { selectedLabel = null; }, 3000);
+      setTimeout(() => { selectedLabel = null; }, 3000);
     }
     return;
   } 
