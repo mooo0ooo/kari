@@ -661,6 +661,12 @@ function mousePressed() {
     let last = allConstellations[allConstellations.length - 1];
     let minDist = 50;
     let nearest = null;
+	let mx = mouseX;
+    let my = mouseY;
+    
+    let last = allConstellations[allConstellations.length - 1];
+    let minDist = 50;
+    let nearest = null;
     for (let p of last.stars) {
       let px = p.pos?.x ?? 0;
       let py = p.pos?.y ?? 0;
@@ -668,12 +674,16 @@ function mousePressed() {
       let sp = screenPos(px, py, pz);
       let sx = sp.x;
       let sy = sp.y;
-      let d = dist(mouseX, mouseY, sx, sy);
-      if (d < minDist) { minDist = d; nearest = p; }
+      let d = dist(mx, my, sx, sy);
+      if (d < minDist) {
+        minDist = d; 
+        nearest = p; 
+      }
     }
     if (nearest) {
       let emo = nearest.emo || {en:"", ja:""};
       selectedLabel = emo.en + "(" + (emo.ja || "") + ")";
+	  setTimeout(() => { selectedLabel = null; }, 3000);
     }
     return;
   } 
@@ -745,6 +755,15 @@ function touchStarted() {
   touchFeedback.x = touches[0]?.x || mouseX;
   touchFeedback.y = touches[0]?.y || mouseY;
   touchFeedback.alpha = 100;
+
+  mouseX = touches[0].x;
+  mouseY = touches[0].y;
+  mousePressed();
+  } else {
+    touchFeedback.x = mouseX;
+    touchFeedback.y = mouseY;
+    touchFeedback.alpha = 100;
+  }
   
   // ボタンのタッチ判定
   if (state === "select" || state === "gallery") {
@@ -756,13 +775,20 @@ function touchStarted() {
         let rect = btn.elt.getBoundingClientRect();
         if (touch.x >= rect.left && touch.x <= rect.right && 
             touch.y >= rect.top && touch.y <= rect.bottom) {
+          // ボタンのタッチフィードバック
           btn.elt.style.transform = 'scale(0.98)';
           btn.elt.style.opacity = '0.9';
-        }
+          // ボタンのクリックイベントを発火
+          setTimeout(() => {
+            if (btn.mousePressed) btn.mousePressed();
+            btn.elt.style.transform = '';
+            btn.elt.style.opacity = '';
+          }, 50);
+          break;
       }
     }
   }
-  return true; 
+  return false; 
 }
 
 function touchStarted(e) {
