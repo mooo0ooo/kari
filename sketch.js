@@ -816,12 +816,12 @@ function handleGalleryClick() {
     let closeY = height/2 - (thumbSize/2 - 20);
     let d = dist(mouseX, mouseY, closeX, closeY);
     
-    if (d < 30) { // 閉じるボタンをタップ（判定範囲を少し広げる）
+    if (d < 30) { // 閉じるボタンをタップ
       targetZoom = 0;
       setTimeout(() => {
         if (targetZoom === 0) selectedThumbnail = null;
       }, 300);
-    } else if (zoomAnim > 0.5) { // 拡大中の背景をタップ（閾値を下げる）
+    } else if (zoomAnim > 0.5) { // 拡大中の背景をタップ
       targetZoom = 0;
       setTimeout(() => {
         if (targetZoom === 0) selectedThumbnail = null;
