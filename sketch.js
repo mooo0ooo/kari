@@ -206,7 +206,7 @@ function setup() {
 	    scrollY = 0;
 	    selectedLabel = null;
 	  } else {
-	    changeState = "gallery";
+	    State = "gallery";
 	    galleryStars = [];
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
@@ -1332,11 +1332,15 @@ function drawGallery2D() {
 
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
-      let col = i % colCount;
-      let row = floor(i / colCount);
-      let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25);
-      
+	  let col = i % colCount;
+	  let row = floor(i / colCount);
+	  let x = rowStartX + col * (thumbSize + gutter);
+	  let ty = y + row * (thumbSize + gutter + 25);
+
+	  if (ty + thumbSize < viewportTop || ty > viewportBottom) {
+	    continue;
+	  }
+		
       // マウスオーバー判定
       let mx = (mouseX - width/2) / galleryScale;
       let my = (mouseY - height/2 - scrollY) / galleryScale;
@@ -1345,24 +1349,22 @@ function drawGallery2D() {
       
       // サムネイルの背景
       fill(isHovered ? 'rgba(80, 100, 160, 0.3)' : 'rgba(5, 5, 20, 0.8)');
-      stroke(isHovered ? 'rgba(150, 180, 255, 0.8)' : 'rgba(150, 150, 150, 0.5)');
-      strokeWeight(isHovered ? 2 : 1);
-      rect(x, ty, thumbSize, thumbSize, 8);
-      
-      // 星座を描画
-      const visibleStart = Math.max(0, Math.floor(-scrollY / (thumbSize + gutter + 25)) - 1);
-	  const visibleEnd = Math.min(list.length, visibleStart + 10);
-		
-	  for (let j = visibleStart; j < visibleEnd; j++) {
-	    if (!list[j].thumbnail) {
-	        list[j].thumbnail = generate2DThumbnail(list[j], thumbSize);
-	    }
-	    if (j < visibleStart || j >= visibleEnd) {
-	        if (j % colCount === colCount - 1) {
-	            y += thumbSize + gutter + 25;
-	        }
-	        continue;
-	    }
+	  stroke(isHovered ? 'rgba(150, 180, 255, 0.8)' : 'rgba(150, 150, 150, 0.5)');
+	  strokeWeight(isHovered ? 2 : 1);
+	  rect(x, ty, thumbSize, thumbSize, 8);
+
+	  if (!list[i].thumbnail) {
+		list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	  }
+
+	  if (list[i].thumbnail) {
+		  let scale = isHovered ? 1.05 : 1.0;
+		  let offset = (thumbSize * scale - thumbSize) / 2;
+		  image(list[i].thumbnail, 
+		       x + (thumbSize - thumbSize * scale)/2, 
+		       ty + (thumbSize - thumbSize * scale)/2, 
+		       thumbSize * scale, thumbSize * scale);
+	  }
 
       // ホバー時に少し拡大
       let scale = isHovered ? 1.05 : 1.0;
@@ -1409,7 +1411,6 @@ function drawGallery2D() {
     drawZoomedThumbnail();
     pop();
   }
-}
 }
 
 /* =========================================================
