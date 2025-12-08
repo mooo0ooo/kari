@@ -253,6 +253,12 @@ function setup() {
     `;
     document.head.appendChild(style);
 
+	canvas.elt.addEventListener('touchstart', touchStarted, { passive: false });
+    canvas.elt.addEventListener('touchmove', touchMoved, { passive: false });
+    canvas.elt.addEventListener('touchend', touchEnded, { passive: false });
+    canvas.elt.addEventListener('touchcancel', touchCanceled, { passive: false });
+
+
     // タッチイベントの伝搬を防ぐ
     document.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('touchend', function(e) {
@@ -667,7 +673,7 @@ function mousePressed() {
     }
     return;
   } 
-  else if (state === "gallery" && !('ontouchstart' in window)) {
+  else if (state === "gallery") {
     handleGalleryClick();
     return false;
   }
@@ -681,31 +687,51 @@ function mousePressed() {
     for (let i = 0; i < 7; i++) {
       let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
       let by = cy - 120;
-      if (mx > bx - padLayout.btnSize/2 && mx < bx + padLayout.btnSize/2 &&
-          my > by - padLayout.btnSize/2 && my < by + padLayout.btnSize/2) {
+      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
         selectedP = i;
+        // タッチフィードバック
+        touchFeedback = {
+          x: x,
+          y: y,
+          alpha: 100
+        };
+        return;
       }
     }
 
-    // A 行 (円判定)
+    // A 行
     for (let i = 0; i < 7; i++) {
       let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
       let by = cy;
-      if (dist(mx, my, bx, by) < padLayout.btnSize/2) {
+      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
         selectedA = i;
+        // タッチフィードバック
+        touchFeedback = {
+          x: x,
+          y: y,
+          alpha: 100
+        };
+        return;
       }
     }
 
-    // D 行 (円判定)
+    // D 行 
     for (let i = 0; i < 7; i++) {
       let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
       let by = cy + 120;
-      if (dist(mx, my, bx, by) < padLayout.btnSize/2) {
+      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
         selectedD = i;
+        // タッチフィードバック
+        touchFeedback = {
+          x: x,
+          y: y,
+          alpha: 100
+        };
+        return;
       }
     }
-  }
   return false;
+  }
 }
 
 /* =========================================================
@@ -733,6 +759,12 @@ function touchStarted() {
     }
   }
   return true; 
+}
+
+function touchStarted(e) {
+  e.preventDefault();
+  mousePressed(e);
+  return false;
 }
 	
 function touchMoved() {
@@ -768,6 +800,11 @@ function touchMoved() {
     return false;
 }
 
+function touchMoved(e) {
+  e.preventDefault();
+  return false;
+}
+
 function touchEnded(event) {
   if (state === "visual") {
     isDragging = false;
@@ -796,6 +833,11 @@ function touchEnded(event) {
     }
   }
   return false; 
+}
+
+function touchEnded(e) {
+  e.preventDefault();
+  return false;
 }
 
 // リセット
@@ -839,6 +881,11 @@ function resetView() {
   
   // 再描画
   redraw();
+}
+
+function touchCanceled(e) {
+  e.preventDefault();
+  return false;
 }
 
 // ギャラリー
