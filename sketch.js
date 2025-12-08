@@ -761,7 +761,7 @@ function touchMoved() {
     return false;
 }
 
-ffunction touchEnded() {
+function touchEnded() {
   [addButton, okButton, backButton, galleryButton, resetViewButton].forEach(btn => {
     if (btn && btn.elt) {
       btn.elt.style.transform = '';
