@@ -232,6 +232,9 @@ function windowResized() {
   layoutDOMButtons();
 }
 
+/* =========================================================
+   computeBtnSize
+   ========================================================= */
 function computeBtnSize(){
   let base = min(width, height);
   btnSize = constrain(floor(base * 0.09), 40, 78); 
@@ -239,6 +242,9 @@ function computeBtnSize(){
   padLayout.spacing = floor(btnSize * 0.22);
 }
 
+/* =========================================================
+   addPAD
+   ========================================================= */
 function addPAD() {
   let p = (selectedP !== null ? selectedP : 3) / 6; 
   let a = (selectedA !== null ? selectedA : 3) / 6;
@@ -247,6 +253,9 @@ function addPAD() {
   selectedP = null; selectedA = null; selectedD = null;
 }
 
+/* =========================================================
+   prepareVisual
+   ========================================================= */
 function prepareVisual() {
   points = [];
   for (let v of padValues) {
@@ -271,6 +280,10 @@ function prepareVisual() {
    draw
    ========================================================= */
 function draw() {
+  if (frameCount % 60 === 0) { 
+		    cleanupThumbnails();
+  }
+	
   background(5, 5, 20);
 
   if (state === "select") {
@@ -282,7 +295,7 @@ function draw() {
     drawGallery2D();
 		if (selectedThumbnail && targetZoom > 0.5) {
 	    return;
-	  }
+	    }
     return;
   }
   else if (state === "visual") {
@@ -422,6 +435,9 @@ function draw() {
 	}
 }
 
+/* =========================================================
+   drawPADButtons
+   ========================================================= */
 function drawPADButtons(){
   let cx = 0;
   let cy = 0;
@@ -464,6 +480,9 @@ function drawPADButtons(){
   pop();
 }
 
+/* =========================================================
+   drawButton
+   ========================================================= */
 function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   push();
   translate(x, y, 0);
@@ -623,6 +642,9 @@ function mousePressed() {
   }
 }
 
+/* =========================================================
+   polygon
+   ========================================================= */
 function polygon(x,y,r,n){
   beginShape();
   for(let i=0;i<n;i++){
@@ -632,6 +654,9 @@ function polygon(x,y,r,n){
   endShape(CLOSE);
 }
 
+/* =========================================================
+   findClosestEmotion
+   ========================================================= */
 function findClosestEmotion(p,a,d){
   let best=null, minDist=Infinity;
   for(let e of emotions){
@@ -840,6 +865,10 @@ function drawGallery2D() {
    generate2DThumbnail
    ========================================================= */
 function generate2DThumbnail(cons, size) {	
+  if (cons.thumbnail && cons.thumbnail.width === size) {
+    return cons.thumbnail;
+  }
+	
   let pg = createGraphics(size, size);
 
   // 枠の描画
@@ -919,7 +948,8 @@ function generate2DThumbnail(cons, size) {
     }
   }
   pg.blendMode(BLEND);
-  
+
+  cons.thumbnail = pg;
   return pg;
 }
 
@@ -936,6 +966,7 @@ function drawZoomedThumbnail() {
     return;
   }
   
+  push();
   // 背景のオーバーレイ
   fill(0, 0, 0, zoomAnim * 200);
   rectMode(CORNER);
@@ -962,7 +993,7 @@ function drawZoomedThumbnail() {
   image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
   
   // 日付を表示
-  let date = new Date(selectedThumbnail.created);
+  let date = parseDate(selectedThumbnail.created);
   let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
   let formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   
@@ -996,78 +1027,33 @@ function drawZoomedThumbnail() {
       }
     }
   }
-}
-
-function projectPoint (pos, ax, ay, size) {
-	let x = pos.x;
-  let y = pos.y;
-  let z = pos.z;
-
-  let ry = y * cos(ax) - z * sin(ax);
-  let rz = y * sin(ax) + z * cos(ax);
-
-  let rx = x * cos(ay) - rz * sin(ay);
-  rz = x * sin(ay) + rz * cos(ay);
-
-  let px = map(rx, -120, 120, 10, size - 10);
-  let py = map(ry, -120, 120, 10, size - 10);
-
-  return createVector(px, py);
-}
-
-function drawZoomedThumbnail() {
-  if (!selectedThumbnail) return;
-  
-  zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
-  if (zoomAnim < 0.01 && targetZoom === 0) {
-    return;
-  }
-  
-  push();
-  fill(0, 0, 0, zoomAnim * 200);
-  rectMode(CORNER);
-  rect(-width/2, -height/2, width, height);
-  
-  let scale = 0.5 + zoomAnim * 0.5;
-  translate(0, 0);
-  scale(scale);
-  
-  let thumbSize = min(width, height) * 0.7;
-  
-  // サムネイルの背景
-  fill(15, 20, 40);
-  stroke(100, 150, 255, 80);
-  strokeWeight(1);
-  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, 8);
-  
-  // サムネイルを描画
-  if (!selectedThumbnail.thumbnail) {
-    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
-  }
-  imageMode(CENTER);
-  image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
-  
-  // 日付を表示
-  let date = new Date(selectedThumbnail.created);
-  let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  let formattedDate = `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  
-  textAlign(CENTER, TOP);
-  textSize(18);
-  fill(200, 220, 255);
-  text(formattedDate, 0, thumbSize/2 + 20);
-  
-  // 閉じるボタン
-  if (zoomAnim > 0.9) {
-    fill(255, 100, 100, 200);
-    noStroke();
-    circle(thumbSize/2 - 20, -thumbSize/2 + 20, 30);
-    fill(255);
-    textSize(20);
-    textAlign(CENTER, CENTER);
-    text("×", thumbSize/2 - 20, -thumbSize/2 + 20);
-  }
-  
   pop();
 }
 
+/* =========================================================
+   galleryメモリ管理
+   ========================================================= */
+function cleanupThumbnails() {
+  const MAX_CACHED = 20;
+  if (allConstellations.length > MAX_CACHED) {
+    // 古い順にキャッシュを削除
+    allConstellations.slice(0, -MAX_CACHED).forEach(c => {
+      if (c.thumbnail) {
+        c.thumbnail.remove();
+        delete c.thumbnail;
+      }
+    });
+  }
+}
+
+/* =========================================================
+   // 日付パースのエラーハンドリング強化
+   ========================================================= */
+function parseDate(dateStr) {
+  try {
+    return new Date(dateStr);
+  } catch (e) {
+    console.error('日付のパースに失敗しました:', e);
+    return new Date(); 
+  }
+}
