@@ -765,174 +765,186 @@ function mousePressed() {
 /* =========================================================
    タッチイベント
    ========================================================= */
-function touchStarted() {
-  if (touches.length > 0) {
+function touchStarted(event) {
+  // イベントオブジェクトが渡されていない場合は処理をスキップ
+  if (event) {
+    event.preventDefault();
+  }
+
+  // タッチイベントの場合
+  if (event && event.touches && event.touches.length > 0) {
     isTouching = true;
     touchStartTime = millis();
-    touchStartPos = { x: touches[0].x, y: touches[0].y };
-    
-    // タッチフィードバック
-    touchFeedback.x = touches[0].x;
-    touchFeedback.y = touches[0].y;
-    touchFeedback.alpha = 100;
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
+    touchStartPos = { x: touchStartX, y: touchStartY };
     
     // マウス座標の同期
-    mouseX = touches[0].x;
-    mouseY = touches[0].y;
+    mouseX = touchStartX;
+    mouseY = touchStartY;
+  }
+  // マウスイベントの場合
+  else {
+    isTouching = true;
+    touchStartTime = millis();
+    touchStartX = mouseX;
+    touchStartY = mouseY;
+    touchStartPos = { x: mouseX, y: mouseY };
+  }
+
+  // タッチフィードバック
+  touchFeedback.x = touchStartX;
+  touchFeedback.y = touchStartY;
+  touchFeedback.alpha = 100;
+
+  // 2本指タッチ（ピンチ操作）の初期化
+  if (event && event.touches && event.touches.length === 2) {
+    const dx = event.touches[0].clientX - event.touches[1].clientX;
+    const dy = event.touches[0].clientY - event.touches[1].clientY;
+    initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+    initialZoom = zoomLevel;
+    return false;
+  }
+  
+  // ボタンのタッチ判定
+  if (state === "select" || state === "gallery" || state === "visual") {
+    const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
     
-    // ボタンのタッチ判定
-    if (state === "select" || state === "gallery" || state === "visual") {
-      let buttons = [addButton, okButton, backButton, galleryButton, resetViewButton];
-      
-      for (let btn of buttons) {
-        if (btn && btn.elt) {
-          let rect = btn.elt.getBoundingClientRect();
-          if (mouseX >= rect.left && mouseX <= rect.right && 
-              mouseY >= rect.top && mouseY <= rect.bottom) {
-            btn.elt.style.transform = 'scale(0.95)';
-            btn.elt.style.opacity = '0.9';
-            setTimeout(() => {
-              if (btn.mousePressed) btn.mousePressed();
-              btn.elt.style.transform = '';
-              btn.elt.style.opacity = '';
-            }, 50);
-            return false;
-          }
-        }
-      }
-    }
-    
-    // ギャラリーモードでサムネイルをタップした場合
-    if (state === "gallery" && selectedThumbnail) {
-      // 閉じるボタンの判定
-      let buttonSize = 30 * zoomAnim;
-      let buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
-      let buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
-      
-      if (dist(mouseX, mouseY, buttonX, buttonY) < buttonSize/2) {
-        targetZoom = 0;
+    for (const btn of buttons) {
+      const rect = btn.elt.getBoundingClientRect();
+      if (touchStartX >= rect.left && touchStartX <= rect.right && 
+          touchStartY >= rect.top && touchStartY <= rect.bottom) {
+        btn.elt.style.transform = 'scale(0.95)';
+        btn.elt.style.opacity = '0.9';
         setTimeout(() => {
-          if (targetZoom === 0) selectedThumbnail = null;
-        }, 300);
+          if (btn.mousePressed) btn.mousePressed();
+          btn.elt.style.transform = '';
+          btn.elt.style.opacity = '';
+        }, 50);
         return false;
       }
     }
-    
-    // その他のタッチ処理
-    if (state === "visual") {
-      mousePressed();
-    }
   }
+  
+  // その他のタッチ処理
+  if (state === "visual") {
+    isDragging = true;
+    return false;
+  }
+  
   return false;
 }
 
-function touchStarted(e) {
-  e.preventDefault();
-  mousePressed(e);
-  return false;
-}
-	
-function touchMoved() {
-    const currentTime = millis();
-    const timeDiff = currentTime - lastTouchTime;
+function touchMoved(event) {
+  event.preventDefault();
+  
+  if (!event.touches || event.touches.length === 0) return false;
+  
+  const currentTime = millis();
+  const currentX = event.touches[0].clientX;
+  const currentY = event.touches[0].clientY;
+  
+  // 2本指タッチ（ピンチ操作）
+  if (event.touches.length === 2) {
+    const dx = event.touches[0].clientX - event.touches[1].clientX;
+    const dy = event.touches[0].clientY - event.touches[1].clientY;
+    const currentDistance = Math.sqrt(dx * dx + dy * dy);
     
-    if (touches.length === 2) {
-        // ズーム処理
-        let currentDistance = dist(
-            touches[0].x, touches[0].y,
-            touches[1].x, touches[1].y
-        );
-        let scale = currentDistance / initialPinchDistance;
-        targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
-    } else if (touches.length === 1 && isDragging) {
-        // 回転処理
-        let dx = mouseX - touchStartX;
-        let dy = mouseY - touchStartY;
-        
-        // 速度計算
-        if (timeDiff > 0) {
-		    velocityX = (mouseX - lastTouchX) / timeDiff;
-		    velocityY = (mouseY - lastTouchY) / timeDiff;
-		}
-        
-        lastTouchX = mouseX;
-        lastTouchY = mouseY;
-        lastTouchTime = currentTime;
-        
-        targetRotationY = dx * 0.01;
-        targetRotationX = dy * 0.01;
+    if (initialPinchDistance > 0) {
+      const scale = currentDistance / initialPinchDistance;
+      targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
     }
     return false;
-}
-
-function touchMoved(e) {
-  e.preventDefault();
+  }
+  
+  // 1本指タッチ（回転操作）
+  if (state === "visual" && isDragging) {
+    const deltaX = currentX - lastTouchX;
+    const deltaY = currentY - lastTouchY;
+    
+    // 速度計算
+    if (lastTouchTime > 0) {
+      const deltaTime = currentTime - lastTouchTime;
+      if (deltaTime > 0) {
+        velocityX = deltaX / deltaTime * 0.5;
+        velocityY = deltaY / deltaTime * 0.5;
+      }
+    }
+    
+    // 回転量を更新
+    targetRotationY += deltaX * 0.01;
+    targetRotationX += deltaY * 0.01;
+    
+    // 現在の位置を保存
+    lastTouchX = currentX;
+    lastTouchY = currentY;
+    lastTouchTime = currentTime;
+    
+    return false;
+  }
+  
   return false;
 }
 
 function touchEnded(event) {
-  isTouching = false;
+  event.preventDefault();
   
-  let touchX, touchY;
-  if (event.touches && event.touches.length > 0) {
-    touchX = event.touches[0].clientX;
-    touchY = event.touches[0].clientY;
-  } else if (event.changedTouches && event.changedTouches.length > 0) {
-    touchX = event.changedTouches[0].clientX;
-    touchY = event.changedTouches[0].clientY;
-  } else {
-    touchX = mouseX;
-    touchY = mouseY;
-  }
-
+  isTouching = false;
+  isDragging = false;
+  
+  // 慣性スクロールの計算
   if (state === "visual") {
-    // 慣性スクロールの計算
-    let now = millis();
-    let deltaTime = now - lastTouchTime;
+    const now = millis();
+    const deltaTime = now - lastTouchTime;
     
     if (deltaTime > 0 && lastTouchX !== undefined && lastTouchY !== undefined) {
-      velocityX = (touchX - lastTouchX) / deltaTime * 15; // 減速係数を調整
-      velocityY = (touchY - lastTouchY) / deltaTime * 15;
-    }
-    
-    lastTouchTime = now;
-    lastTouchX = touchX;
-    lastTouchY = touchY;
-    
-  } else if (state === "gallery") {
-    // タップ判定（短いタッチ）
-    if (millis() - touchStartTime < 200) {
-      let dx = touchX - touchStartPos.x;
-      let dy = touchY - touchStartPos.y;
-      
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        if (selectedThumbnail) {
-          // 閉じるボタンの判定
-          let buttonSize = 30;
-          let buttonX = width/2 + (selectedThumbnail.thumbnail.width * targetZoom)/2 - 20;
-          let buttonY = height/2 - (selectedThumbnail.thumbnail.height * targetZoom)/2 - 20;
-          
-          if (dist(touchX, touchY, buttonX, buttonY) < buttonSize) {
-            targetZoom = 0;
-            setTimeout(() => {
-              if (targetZoom === 0) selectedThumbnail = null;
-            }, 300);
-          }
-        }
+      // タッチ終了時の速度を保持（慣性に使用）
+      if (event.changedTouches && event.changedTouches.length > 0) {
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - lastTouchX;
+        const dy = touch.clientY - lastTouchY;
+        velocityX = dx / deltaTime * 0.5;
+        velocityY = dy / deltaTime * 0.5;
       }
     }
   }
   
-  // デフォルトのタッチ動作を防ぐ
-  if (event.cancelable) {
-    event.preventDefault();
+  // タップ判定（短いタッチ）
+  if (state === "gallery" && millis() - touchStartTime < 200) {
+    if (event.changedTouches && event.changedTouches.length > 0) {
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - touchStartPos.x;
+      const dy = touch.clientY - touchStartPos.y;
+      
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        // ギャラリーのタップ処理
+        handleGalleryTap(touch.clientX, touch.clientY);
+      }
+    }
   }
+  
   return false;
 }
 
-function touchEnded(e) {
-  e.preventDefault();
-  return false;
+function touchCanceled(event) {
+  return touchEnded(event);
+}
+
+// ギャラリーのタップ処理
+function handleGalleryTap(x, y) {
+  if (!selectedThumbnail) return;
+  
+  // 閉じるボタンの判定
+  const buttonSize = 30 * zoomAnim;
+  const buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+  const buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+  
+  if (dist(x, y, buttonX, buttonY) < buttonSize/2) {
+    targetZoom = 0;
+    setTimeout(() => {
+      if (targetZoom === 0) selectedThumbnail = null;
+    }, 300);
+  }
 }
 
 // リセット
@@ -949,37 +961,37 @@ function resetView() {
   velocityX = 0;
   velocityY = 0;
   
+  // タッチ状態をリセット
+  isTouching = false;
+  isDragging = false;
+  
   // カメラをリセット
   camera();
 }
 
+// 状態変更
 function changeState(newState) {
   state = newState;
   updateButtonVisibility();
   layoutDOMButtons();
   
   if (state === "visual") {
-    // ビジュアルモードに移行するときはビューをリセット
     resetView();
     visualStartTime = millis();
   } else if (state === "select") {
-    // 選択画面に戻るときもリセット
     resetView();
     selectedLabel = null;
-  } else if (state === "gallery") {
-    // ギャラリー表示時の初期化
+  } else if (state === "gallery" && galleryStars.length === 0) {
     resetView();
     // ギャラリー用の星を生成
-    if (galleryStars.length === 0) {
-      for (let i = 0; i < 400; i++) {
-        galleryStars.push({
-          x: random(-2000, 2000),
-          y: random(-2000, 2000),
-          z: random(-2000, 2000),
-          twinkle: random(1000),
-          baseSize: random(1, 4)
-        });
-      }
+    for (let i = 0; i < 400; i++) {
+      galleryStars.push({
+        x: random(-2000, 2000),
+        y: random(-2000, 2000),
+        z: random(-2000, 2000),
+        twinkle: random(1000),
+        baseSize: random(1, 4)
+      });
     }
   }
 }
