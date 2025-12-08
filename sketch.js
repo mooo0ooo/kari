@@ -629,66 +629,7 @@ function mousePressed() {
     let designWidth = 430;
     let galleryScale = min(1, width / designWidth);
     let mx = (mouseX - (width - designWidth * galleryScale) / 2) / galleryScale;
-    let my = (mouseY - scrollY) / galleryScale;
-    
-    let thumbSize = 150;
-    let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-    let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-    
-    let y = topOffset;
-    
-    // 月ごとのリストを処理
-    for (let month = 0; month < 12; month++) {
-      // 月の日記リストを取得
-      let list = allConstellations.filter(c => {
-        let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-        return m && int(m[2]) - 1 === month;
-      });
-      
-      if (list.length === 0) continue;
-      
-      y += 35; // 月の見出し分の高さを追加
-      
-      // サムネイルのクリックを検出
-      for (let i = 0; i < list.length; i++) {
-        let col = i % colCount;
-        let row = floor(i / colCount);
-        let tx = rowStartX + col * (thumbSize + gutter);
-        let ty = y + row * (thumbSize + gutter + 25);
-        
-        // サムネイルの範囲内をクリックしたかチェック
-        if (mx >= tx && mx <= tx + thumbSize && 
-            my >= ty && my <= ty + thumbSize) {
-          selectedThumbnail = list[i];
-          targetZoom = 1;
-          return;
-        }
-      }
-      
-      // 次の月の開始位置を計算
-      y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-    }
-    
-    // 背景をクリックしたらズームをリセット
-    if (selectedThumbnail) {
-      // 閉じるボタンのクリック判定
-      let thumbSize = min(width, height) * 0.7;
-      let closeX = width/2 + (thumbSize/2 - 20);
-      let closeY = height/2 - (thumbSize/2 - 20);
-      let d = dist(mouseX, mouseY, closeX, closeY);
-      
-      if (d < 15) { // 閉じるボタンをクリック
-        targetZoom = 0;
-        setTimeout(() => {
-          if (targetZoom === 0) selectedThumbnail = null;
-        }, 300);
-      } else if (zoomAnim > 0.9) { // 拡大中の背景をクリック
-        targetZoom = 0;
-        setTimeout(() => {
-          if (targetZoom === 0) selectedThumbnail = null;
-        }, 300);
-      }
-    }
+    let my = (mouseY - scrollY) / galleryScale; 
   }
   else if (state === "select") {
     let mx = (mouseX - width/2) / padLayout.scl;
@@ -724,6 +665,11 @@ function mousePressed() {
       }
     }
   }
+
+	if (state === "gallery" && !('ontouchstart' in window)) {
+	    handleGalleryClick();
+	  }
+	  return false;
 }
 
 /* =========================================================
@@ -733,6 +679,11 @@ function touchStarted() {
 	touchFeedback.x = mouseX;
     touchFeedback.y = mouseY;
     touchFeedback.alpha = 100;
+
+	if (state === "gallery") {
+	    mousePressed();
+	    return false; 
+	  }
 	
 	if (touches.length === 2) {
 		// ズーム
@@ -811,6 +762,72 @@ function resetView() {
 	rotationX = 0;
 	rotationY = 0;
 	zoomLevel = 1;
+}
+
+// ギャラリー
+function handleGalleryClick() {
+    let designWidth = 430;
+    let galleryScale = min(1, width / designWidth);
+    let mx = (mouseX - (width - designWidth * galleryScale) / 2) / galleryScale;
+    let my = (mouseY - scrollY) / galleryScale;
+
+	let thumbSize = 150;
+  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  
+  let y = topOffset;
+  
+  // 月ごとのリストを処理
+  for (let month = 0; month < 12; month++) {
+    let list = allConstellations.filter(c => {
+      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+      return m && int(m[2]) - 1 === month;
+    });
+    
+    if (list.length === 0) continue;
+    
+    y += 35; // 月の見出し分の高さを追加
+    
+    // サムネイルのクリックを検出
+    for (let i = 0; i < list.length; i++) {
+      let col = i % colCount;
+      let row = floor(i / colCount);
+      let tx = rowStartX + col * (thumbSize + gutter);
+      let ty = y + row * (thumbSize + gutter + 25);
+      
+      // サムネイルの範囲内をクリック/タップしたかチェック
+      if (mx >= tx && mx <= tx + thumbSize && 
+          my >= ty && my <= ty + thumbSize) {
+        selectedThumbnail = list[i];
+        targetZoom = 1;
+        return;
+      }
+    }
+    
+    // 次の月の開始位置を計算
+    y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+  }
+  
+  // 背景をタップした場合の処理
+  if (selectedThumbnail) {
+    // 閉じるボタンのクリック判定
+    let thumbSize = min(width, height) * 0.7;
+    let closeX = width/2 + (thumbSize/2 - 20);
+    let closeY = height/2 - (thumbSize/2 - 20);
+    let d = dist(mouseX, mouseY, closeX, closeY);
+    
+    if (d < 30) { // 閉じるボタンをタップ（判定範囲を少し広げる）
+      targetZoom = 0;
+      setTimeout(() => {
+        if (targetZoom === 0) selectedThumbnail = null;
+      }, 300);
+    } else if (zoomAnim > 0.5) { // 拡大中の背景をタップ（閾値を下げる）
+      targetZoom = 0;
+      setTimeout(() => {
+        if (targetZoom === 0) selectedThumbnail = null;
+      }, 300);
+    }
+  }
 }
 
 /* =========================================================
@@ -1143,7 +1160,7 @@ function drawZoomedThumbnail() {
   }
   
   push();
-  // 背景のオーバーレイ
+  // 背景のオーバーレイ（タッチ操作を可能にするため）
   fill(0, 0, 0, zoomAnim * 200);
   rectMode(CORNER);
   rect(-width/2, -height/2, width, height);
@@ -1159,7 +1176,8 @@ function drawZoomedThumbnail() {
   fill(15, 20, 40);
   stroke(100, 150, 255, 80);
   strokeWeight(1);
-  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, 12);
+  let cornerRadius = 12 * (0.7 + zoomAnim * 0.3); // ズームに応じて角丸を調整
+  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, cornerRadius);
   
   // サムネイルを描画
   if (!selectedThumbnail.thumbnail) {
@@ -1174,38 +1192,46 @@ function drawZoomedThumbnail() {
   let formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   
   textAlign(CENTER, TOP);
-  textSize(18);
+  textSize(18 * (0.7 + zoomAnim * 0.3)); // ズームに応じてテキストサイズも調整
   fill(200, 220, 255);
   text(formattedDate, 0, thumbSize/2 + 20);
   
   // 閉じるボタン
-  if (zoomAnim > 0.9) {
+  if (zoomAnim > 0.5) { // 表示閾値を下げる
     // 閉じるボタンの背景（円形）
-    fill(255, 100, 100, 200);
+    let buttonSize = 40 * (0.7 + zoomAnim * 0.3); // ズームに応じてサイズ調整
+    let buttonX = thumbSize/2 - 25;
+    let buttonY = -thumbSize/2 + 25;
+    
+    // ホバー/タップ判定
+    let isOver = dist(mouseX - width/2, mouseY - height/2, buttonX * scale, buttonY * scale) < buttonSize/2;
+    
+    // ボタンの背景
+    fill(isOver ? 255 : 255, isOver ? 120 : 100, isOver ? 120 : 100, 200);
     noStroke();
-    circle(thumbSize/2 - 25, -thumbSize/2 + 25, 40);
+    circle(buttonX, buttonY, buttonSize);
     
     // 閉じるボタンの「×」マーク
     fill(255);
-    textSize(24);
+    textSize(24 * (0.7 + zoomAnim * 0.3));
     textAlign(CENTER, CENTER);
-    text("×", thumbSize/2 - 25, -thumbSize/2 + 25);
+    text("×", buttonX, buttonY);
     
-    // 閉じるボタンのホバーエフェクト
-    let closeBtnX = width/2 + (thumbSize/2 - 25) * (0.7 + 0.3 * zoomAnim);
-    let closeBtnY = height/2 - (thumbSize/2 - 25) * (0.7 + 0.3 * zoomAnim);
-    let d = dist(mouseX, mouseY, closeBtnX, closeBtnY);
+    // タップ/クリック処理
+    if (isOver && (mouseIsPressed || touches.length > 0)) {
+      targetZoom = 0;
+      setTimeout(() => {
+        if (targetZoom === 0) selectedThumbnail = null;
+      }, 300);
+    }
     
-    if (d < 20) {
+    // カーソルをポインターに変更
+    if (isOver) {
       cursor('pointer');
-      if (mouseIsPressed) {
-        targetZoom = 0;
-      }
     }
   }
   pop();
 }
-
 /* =========================================================
    galleryメモリ管理
    ========================================================= */
