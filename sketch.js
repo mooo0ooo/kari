@@ -194,7 +194,7 @@ function setup() {
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
 	    state = "select";
-		galleryStars = [];
+	    galleryStars = [];
 	    targetScrollY = 0;
 	    scrollY = 0;
 	    selectedLabel = null;
@@ -226,7 +226,6 @@ function setup() {
    ボタンの表示/非表示を更新
    ========================================================= */
 function updateButtonVisibility() {
-  // すべてのボタンを非表示に
   addButton.hide();
   okButton.hide();
   backButton.hide();
@@ -234,21 +233,20 @@ function updateButtonVisibility() {
   resetViewButton.hide();
 
   if (state === "select") {
-      // PAD選択画面
-      addButton.show();
-      okButton.show();
-      galleryButton.show();
-	  resetViewButton.hide();
+    addButton.show();
+    okButton.show();
+    galleryButton.show();
+    galleryButton.html("日記一覧");
   } 
   else if (state === "gallery") {
-      // 日記一覧画面
-	  resetViewButton.hide();
+    backButton.show();
+    galleryButton.html("戻る");
   }
   else if (state === "visual") {
-      // 日記表示画面
-	  backButton.show();
-	  galleryButton.show();
-	  resetViewButton.show();
+    backButton.show();
+    galleryButton.show();
+    galleryButton.html("日記一覧");
+    resetViewButton.show();
   }
 }
 
