@@ -142,7 +142,6 @@ function setup() {
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
 	resetViewButton.position(20, 20);
-	resetViewButton.mousePressed(resetView);
 	resetViewButton.hide();
 	  
 	resetViewButton.style('position', 'absolute');
@@ -186,7 +185,7 @@ function setup() {
   });
 
   backButton.mousePressed(() => {
-	  state = "select";
+	  changeState = "select";
 	  updateButtonVisibility();
 	  layoutDOMButtons();
 	  selectedLabel = null;
@@ -198,13 +197,13 @@ function setup() {
 
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
-	    state = "select";
+	    changeState = "select";
 	    galleryStars = [];
 	    targetScrollY = 0;
 	    scrollY = 0;
 	    selectedLabel = null;
 	  } else {
-	    state = "gallery";
+	    changeState = "gallery";
 	    galleryStars = [];
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
@@ -227,6 +226,10 @@ function setup() {
 	  updateButtonVisibility();
 	  layoutDOMButtons();
 	  redraw();
+  });
+
+  resetViewButton.mousePressed(function() {
+      resetView();
   });
 
   setupButtonInteractions();
@@ -398,6 +401,7 @@ function draw() {
     return;
   }
   else if (state === "visual") {
+	  camera();
       orbitControl();
 	  // 3D操作
 	  rotationX = lerp(rotationX, targetRotationX, 0.1);
@@ -842,45 +846,51 @@ function touchEnded(e) {
 
 // リセット
 function resetView() {
-  // 回転をリセット
-  targetRotationX = 0;
-  targetRotationY = 0;
+  // 回転とズームをリセット
   rotationX = 0;
   rotationY = 0;
+  targetRotationX = 0;
+  targetRotationY = 0;
+  zoomLevel = 1;
+  targetZoomLevel = 1;
   
-  // ズームをリセット
-  targetZoomLevel = 1.0;
-  zoomLevel = 1.0;
-  
-  // 位置をリセット
-  if (allConstellations.length > 0) {
-    // 最新の日記を取得
-    let latest = allConstellations[allConstellations.length - 1];
-    
-    // 日付から月を取得
-    let monthIndex = 0;
-    if (latest.created) {
-      let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (m) {
-        monthIndex = (parseInt(m[2]) - 1) % 12;
-      }
-    }
-    
-    let monthRotation = map(monthIndex, 0, 11, 0, TWO_PI);
-    targetRotationY = monthRotation;
-    rotationY = monthRotation;
-    
-    targetZoomLevel = 0.8;
-    zoomLevel = 0.8;
-  }
-  
+  // 慣性をリセット
   velocityX = 0;
   velocityY = 0;
   
-  selectedLabel = null;
+  // カメラをリセット
+  camera();
+}
+
+function changeState(newState) {
+  state = newState;
+  updateButtonVisibility();
+  layoutDOMButtons();
   
-  // 再描画
-  redraw();
+  if (state === "visual") {
+    // ビジュアルモードに移行するときはビューをリセット
+    resetView();
+    visualStartTime = millis();
+  } else if (state === "select") {
+    // 選択画面に戻るときもリセット
+    resetView();
+    selectedLabel = null;
+  } else if (state === "gallery") {
+    // ギャラリー表示時の初期化
+    resetView();
+    // ギャラリー用の星を生成
+    if (galleryStars.length === 0) {
+      for (let i = 0; i < 400; i++) {
+        galleryStars.push({
+          x: random(-2000, 2000),
+          y: random(-2000, 2000),
+          z: random(-2000, 2000),
+          twinkle: random(1000),
+          baseSize: random(1, 4)
+        });
+      }
+    }
+  }
 }
 
 function touchCanceled(e) {
