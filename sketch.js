@@ -673,16 +673,13 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
 function mousePressed() {
   if (state === "visual") {
     if (allConstellations.length === 0) return;
-    let last = allConstellations[allConstellations.length - 1];
+    let currentConstellation = allConstellations[allConstellations.length - 1];
     let minDist = 50;
     let nearest = null;
 	
 	let mx = mouseX;
     let my = mouseY;
-    
-    let currentConstellation = allConstellations[allConstellations.length - 1];
-    let minDist = 50;
-    let nearest = null;
+	  
     for (let p of currentConstellation.stars) {
       let px = p.pos?.x ?? 0;
       let py = p.pos?.y ?? 0;
