@@ -84,6 +84,11 @@ let selectedThumbnail = null;
 let zoomAnim = 0;
 let targetZoom = 0;
 
+let touchStartY = 0;
+let isScrolling = false;
+let touchStartTime = 0;
+const SCROLL_THRESHOLD = 10;
+
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
@@ -778,7 +783,8 @@ function touchStarted(event) {
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     touchStartPos = { x: touchStartX, y: touchStartY };
-    
+    isScrolling = false;
+	  
     // マウス座標の同期
     mouseX = touchStartX;
     mouseY = touchStartY;
@@ -790,6 +796,7 @@ function touchStarted(event) {
     touchStartX = mouseX;
     touchStartY = mouseY;
     touchStartPos = { x: mouseX, y: mouseY };
+    isScrolling = false;
   }
 
   // タッチフィードバック
@@ -832,20 +839,33 @@ function touchStarted(event) {
     return false;
   }
   
-  return false;
+  return true;
 }
 
 function touchMoved(event) {
-  event.preventDefault();
-  
   if (!event.touches || event.touches.length === 0) return false;
   
-  const currentTime = millis();
   const currentX = event.touches[0].clientX;
   const currentY = event.touches[0].clientY;
+  const deltaX = Math.abs(currentX - touchStartX);
+  const deltaY = Math.abs(currentY - touchStartY);
+
+  // ギャラリーモードでのスクロール処理
+  if (state === "gallery") {
+    if (deltaY > deltaX && deltaY > 5) {
+      event.preventDefault();
+      isScrolling = true;
+      const delta = currentY - touchStartY;
+      targetScrollY -= delta * 2;
+      touchStartY = currentY;
+      return false;
+    }
+    return true;
+  }
   
   // 2本指タッチ（ピンチ操作）
   if (event.touches.length === 2) {
+    event.preventDefault();
     const dx = event.touches[0].clientX - event.touches[1].clientX;
     const dy = event.touches[0].clientY - event.touches[1].clientY;
     const currentDistance = Math.sqrt(dx * dx + dy * dy);
@@ -859,6 +879,8 @@ function touchMoved(event) {
   
   // 1本指タッチ（回転操作）
   if (state === "visual" && isDragging) {
+    event.preventDefault();
+    const currentTime = millis();
     const deltaX = currentX - lastTouchX;
     const deltaY = currentY - lastTouchY;
     
@@ -871,11 +893,9 @@ function touchMoved(event) {
       }
     }
     
-    // 回転量を更新
     targetRotationY += deltaX * 0.01;
     targetRotationX += deltaY * 0.01;
     
-    // 現在の位置を保存
     lastTouchX = currentX;
     lastTouchY = currentY;
     lastTouchTime = currentTime;
@@ -883,14 +903,11 @@ function touchMoved(event) {
     return false;
   }
   
-  return false;
+  return true;
 }
 
 function touchEnded(event) {
-  event.preventDefault();
-  
-  isTouching = false;
-  isDragging = false;
+  if (!event) return true;
   
   // 慣性スクロールの計算
   if (state === "visual") {
@@ -898,7 +915,6 @@ function touchEnded(event) {
     const deltaTime = now - lastTouchTime;
     
     if (deltaTime > 0 && lastTouchX !== undefined && lastTouchY !== undefined) {
-      // タッチ終了時の速度を保持（慣性に使用）
       if (event.changedTouches && event.changedTouches.length > 0) {
         const touch = event.changedTouches[0];
         const dx = touch.clientX - lastTouchX;
@@ -910,20 +926,24 @@ function touchEnded(event) {
   }
   
   // タップ判定（短いタッチ）
-  if (state === "gallery" && millis() - touchStartTime < 200) {
+  if (state === "gallery" && !isScrolling && millis() - touchStartTime < 200) {
     if (event.changedTouches && event.changedTouches.length > 0) {
       const touch = event.changedTouches[0];
       const dx = touch.clientX - touchStartPos.x;
       const dy = touch.clientY - touchStartPos.y;
       
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        // ギャラリーのタップ処理
         handleGalleryTap(touch.clientX, touch.clientY);
+        return false;
       }
     }
   }
+	
+  isTouching = false;
+  isDragging = false;
+  isScrolling = false;
   
-  return false;
+  return true;
 }
 
 function touchCanceled(event) {
@@ -932,18 +952,50 @@ function touchCanceled(event) {
 
 // ギャラリーのタップ処理
 function handleGalleryTap(x, y) {
-  if (!selectedThumbnail) return;
+  if (selectedThumbnail) {
+    // 閉じるボタンの判定
+    const buttonSize = 30 * zoomAnim;
+    const buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+    const buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+    
+    if (dist(x, y, buttonX, buttonY) < buttonSize/2) {
+      targetZoom = 0;
+      setTimeout(() => {
+        if (targetZoom === 0) selectedThumbnail = null;
+      }, 300);
+    }
+    return;
+  }
+
+  // サムネイルのタップ判定
+  const galleryScale = min(1, width / 430);
+  const offsetX = (width - (430 * galleryScale)) / 2;
+  const offsetY = -scrollY;
+  const colCount = max(1, floor((430 - outerPad * 2) / (150 + gutter)));
+  const thumbSize = 150 * galleryScale;
+  const rowHeight = thumbSize + 25;
   
-  // 閉じるボタンの判定
-  const buttonSize = 30 * zoomAnim;
-  const buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
-  const buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
+  // 表示範囲内のサムネイルのみチェック
+  const startRow = max(0, floor((-scrollY - 100) / rowHeight));
+  const endRow = min(
+    Math.ceil(allConstellations.length / colCount),
+    startRow + Math.ceil((height + 200) / rowHeight)
+  );
   
-  if (dist(x, y, buttonX, buttonY) < buttonSize/2) {
-    targetZoom = 0;
-    setTimeout(() => {
-      if (targetZoom === 0) selectedThumbnail = null;
-    }, 300);
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = 0; col < colCount; col++) {
+      const idx = row * colCount + col;
+      if (idx >= allConstellations.length) continue;
+      
+      const tx = offsetX + outerPad * galleryScale + col * (thumbSize + gutter * galleryScale);
+      const ty = offsetY + topOffset * galleryScale + row * rowHeight;
+      
+      if (x >= tx && x <= tx + thumbSize && y >= ty && y <= ty + thumbSize) {
+        selectedThumbnail = allConstellations[idx];
+        targetZoom = 1;
+        return;
+      }
+    }
   }
 }
 
