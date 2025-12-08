@@ -102,6 +102,8 @@ function setup() {
 
   lastTouchTime = millis();
 
+　touches = [];
+
   let saved = localStorage.getItem("myConstellations");
   if (saved) {
     try {
@@ -132,6 +134,9 @@ function setup() {
 	  btn.style('font-family', 'sans-serif');
 	  btn.style('font-size', '14px');
 	  btn.style('transition', 'all 0.2s');
+
+	  btn.elt.style.touchAction = 'manipulation';
+      btn.elt.style.webkitTapHighlightColor = 'transparent';
 	});
 
 	// リセットボタン
@@ -211,15 +216,44 @@ function setup() {
 	      });
 	    }
 	  }
+	  
 	  updateButtonVisibility();
 	  layoutDOMButtons();
 	  redraw();
 	});
 
+  setupButtonInteractions();
+
   // 初期状態のボタン表示を更新
   updateButtonVisibility();
   layoutDOMButtons();
   computeBtnSize();
+
+  // タッチデバイス用の設定
+  if ('ontouchstart' in window) {
+    let style = document.createElement('style');
+    style.textContent = `
+      button {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      button:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // タッチイベントの伝搬を防ぐ
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        this.click();
+      }, { passive: false });
+    });
+  }
 }
 
 /* =========================================================
@@ -670,31 +704,29 @@ function mousePressed() {
    タッチイベント
    ========================================================= */
 function touchStarted() {
-	touchFeedback.x = mouseX;
-    touchFeedback.y = mouseY;
-    touchFeedback.alpha = 100;
-
-	if (state === "gallery") {
-        handleGalleryClick();
-        return false;
+  touchFeedback.x = touches[0]?.x || mouseX;
+  touchFeedback.y = touches[0]?.y || mouseY;
+  touchFeedback.alpha = 100;
+  
+  // ボタンのタッチ判定
+  if (state === "select" || state === "gallery") {
+    let touch = touches[0] || {x: mouseX, y: mouseY};
+    let buttons = [addButton, okButton, backButton, galleryButton, resetViewButton];
+    
+    for (let btn of buttons) {
+      if (btn && btn.elt) {
+        let rect = btn.elt.getBoundingClientRect();
+        if (touch.x >= rect.left && touch.x <= rect.right && 
+            touch.y >= rect.top && touch.y <= rect.bottom) {
+          btn.elt.style.transform = 'scale(0.98)';
+          btn.elt.style.opacity = '0.9';
+        }
+      }
     }
-	
-	if (touches.length === 2) {
-		// ズーム
-		initialPinchDistance = dist(
-			touches[0].x, touches[0].y,
-			touches[1].x, touches[1].y
-		);
-		initialZoom = targetZoomLevel;;
-	} else {
-		// 回転
-		touchStartX = mouseX;
-		touchStartY = mouseY;
-		isDragging = true;
-	}
-	return false;
+  }
+  return true; 
 }
-
+	
 function touchMoved() {
     const currentTime = millis();
     const timeDiff = currentTime - lastTouchTime;
@@ -729,97 +761,223 @@ function touchMoved() {
     return false;
 }
 
-function touchEnded() {
-  const currentTime = millis();
-  const tapLength = currentTime - lastTap;
-
-  if (tapLength < 300 && tapLength > 0) {
-    // ダブルタップの処理
-    resetView();
-    lastTap = 0; 
-  } else {
-    lastTap = currentTime;
-  }
+ffunction touchEnded() {
+  [addButton, okButton, backButton, galleryButton, resetViewButton].forEach(btn => {
+    if (btn && btn.elt) {
+      btn.elt.style.transform = '';
+      btn.elt.style.opacity = '';
+    }
+  });
   
-  isDragging = false;
+  // タッチ終了時の処理
+  if (state === "visual") {
+    isDragging = false;
+    initialpinchDistance = 0;
+  }
   return false;
 }
 
 // リセット
 function resetView() {
-	targetRotationX = 0;
-	targetRotationY = 0;
-	targetZoomLevel = 1;
-	rotationX = 0;
-	rotationY = 0;
-	zoomLevel = 1;
+  // 回転をリセット
+  rotationX = 0;
+  rotationY = 0;
+  targetRotationX = 0;
+  targetRotationY = 0;
+  velocityX = 0;
+  velocityY = 0;
+  
+  // ズームをリセット
+  zoomLevel = 1;
+  targetZoomLevel = 1;
+  
+  // 選択をクリア
+  selectedLabel = null;
+  
+  // 再描画
+  redraw();
 }
 
 // ギャラリー
 function handleGalleryClick() {
-    let designWidth = 430;
-    let galleryScale = min(1, width / designWidth);
-    let mx = (mouseX - (width - designWidth * galleryScale) / 2) / galleryScale;
-    let my = (mouseY - scrollY) / galleryScale;
+    const DESIGN_WIDTH = 430;
+    const THUMBNAIL_SIZE = 150;
+    const CLOSE_BUTTON_RADIUS = 30;
+    const ZOOM_ANIMATION_THRESHOLD = 0.5;
+    
+    // 座標変換
+    const galleryScale = min(1, width / DESIGN_WIDTH);
+    const offsetX = (width - DESIGN_WIDTH * galleryScale) / 2;
+    const mx = (mouseX - offsetX) / galleryScale;
+    const my = (mouseY - scrollY) / galleryScale;
 
-	let thumbSize = 150;
-    let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-    let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-  
-    let y = topOffset;
-  
-    // 月ごとのリストを処理
-    for (let month = 0; month < 12; month++) {
-      let list = allConstellations.filter(c => {
-        let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-        return m && int(m[2]) - 1 === month;
-      });
+    // サムネイルグリッドの計算
+    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
+    const rowStartX = (width / galleryScale - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
     
-      if (list.length === 0) continue;
-    
-      y += 35; // 月の見出し分の高さを追加
-    
-      // サムネイルのクリックを検出
-      for (let i = 0; i < list.length; i++) {
-        let col = i % colCount;
-        let row = floor(i / colCount);
-        let tx = rowStartX + col * (thumbSize + gutter);
-        let ty = y + row * (thumbSize + gutter + 25);
-      
-        // サムネイルの範囲内をクリック/タップしたかチェック
-        if (mx >= tx && mx <= tx + thumbSize && 
-            my >= ty && my <= ty + thumbSize) {
-          selectedThumbnail = list[i];
-          targetZoom = 1;
-          return;
-        }
-      }
-    
-    // 次の月の開始位置を計算
-    y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-  }
-  
-  // 背景をタップした場合の処理
-  if (selectedThumbnail) {
-    // 閉じるボタンのクリック判定
-    let thumbSize = min(width, height) * 0.7;
-    let closeX = width/2 + (thumbSize/2 - 20);
-    let closeY = height/2 - (thumbSize/2 - 20);
-    let d = dist(mouseX, mouseY, closeX, closeY);
-    
-    if (d < 30) { // 閉じるボタンをタップ
-      targetZoom = 0;
-      setTimeout(() => {
-        if (targetZoom === 0) selectedThumbnail = null;
-      }, 300);
-    } else if (zoomAnim > 0.5) { // 拡大中の背景をタップ
-      targetZoom = 0;
-      setTimeout(() => {
-        if (targetZoom === 0) selectedThumbnail = null;
-      }, 300);
+    // サムネイルのクリック検出
+    if (checkThumbnailClicks(mx, my, rowStartX, colCount, THUMBNAIL_SIZE)) {
+        return;
     }
+    
+    // 拡大表示中の処理
+    if (selectedThumbnail) {
+        handleZoomedViewInteraction();
+    }
+    
+    return false;
+}
+
+// サムネイルのクリックを検出
+function checkThumbnailClicks(mx, my, rowStartX, colCount, thumbSize) {
+    let y = topOffset;
+
+    for (let month = 0; month < 12; month++) {
+        const monthlyConstellations = allConstellations.filter(c => {
+            const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+            return m && int(m[2]) - 1 === month;
+        });
+
+        if (monthlyConstellations.length === 0) continue;
+
+        y += 35;
+
+        // サムネイルのクリックを検出
+        for (let i = 0; i < monthlyConstellations.length; i++) {
+            const col = i % colCount;
+            const row = floor(i / colCount);
+            const tx = rowStartX + col * (thumbSize + gutter);
+            const ty = y + row * (thumbSize + gutter + 25);
+
+            if (mx >= tx && mx <= tx + thumbSize && 
+                my >= ty && my <= ty + thumbSize) {
+                selectedThumbnail = monthlyConstellations[i];
+                targetZoom = 1;
+                return true;
+            }
+        }
+
+        y += ceil(monthlyConstellations.length / colCount) * (thumbSize + gutter + 25) + 20;
+    }
+    
+    return false;
+}
+
+function handleZoomedViewInteraction() {
+    const zoomedThumbSize = min(width, height) * 0.7;
+    const closeButtonX = width/2 + (zoomedThumbSize/2 - 20);
+    const closeButtonY = height/2 - (zoomedThumbSize/2 - 20);
+    const distanceToClose = dist(mouseX, mouseY, closeButtonX, closeButtonY);
+    
+    // 閉じるボタンまたは背景がクリックされたか
+    const isCloseButtonClicked = distanceToClose < 30;
+    const isBackgroundClicked = zoomAnim > ZOOM_ANIMATION_THRESHOLD;
+    
+    if (isCloseButtonClicked || isBackgroundClicked) {
+        targetZoom = 0;
+        setTimeout(() => {
+            if (targetZoom === 0) {
+                selectedThumbnail = null;
+            }
+        }, 300);
+    }
+}
+
+function setupButtonInteractions() {
+  function addButtonInteraction(btn, callback) {
+    if (!btn) return;
+    
+    // マウスクリックイベント
+    btn.mousePressed(callback);
+    
+    // タッチイベント
+    btn.elt.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      callback();
+    }, { passive: false });
   }
-	return false;
+
+  // 追加ボタン
+  addButtonInteraction(addButton, function() {
+    console.log("追加ボタンが押されました");
+    addPAD();
+  });
+
+  // OKボタン
+  addButtonInteraction(okButton, function() {
+    console.log("OKボタンが押されました");
+    if (padValues.length > 0) {
+      prepareVisual();
+      let now = new Date();
+      let timestamp = now.toLocaleString();
+      let serialStars = points.map(s => ({
+        pos: { 
+          x: (s.pos && s.pos.x) || 0, 
+          y: (s.pos && s.pos.y) || 0, 
+          z: (s.pos && s.pos.z) || 0 
+        }, 
+        emo: s.emo 
+      }));
+
+      let newConstellation = {
+        stars: serialStars, 
+        created: timestamp
+      };
+      allConstellations.push(newConstellation);
+      localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+
+      state = "visual";
+      updateButtonVisibility();
+      visualStartTime = millis();
+    }
+  });
+
+  // 戻るボタン
+  addButtonInteraction(backButton, function() {
+    console.log("戻るボタンが押されました");
+    state = "select";
+    updateButtonVisibility();
+    layoutDOMButtons();
+    selectedLabel = null;
+    redraw();
+    galleryStars = [];
+    targetScrollY = 0;
+    scrollY = 0;
+  });
+
+  // ギャラリーボタン
+  addButtonInteraction(galleryButton, function() {
+    console.log("ギャラリーボタンが押されました");
+    if (state === "gallery") {
+      state = "select";
+      galleryStars = [];
+      targetScrollY = 0;
+      scrollY = 0;
+      selectedLabel = null;
+    } else {
+      state = "gallery";
+      galleryStars = [];
+      for (let i = 0; i < 400; i++) {
+        galleryStars.push({
+          x: random(-2000, 2000),
+          y: random(-2000, 2000),
+          z: random(-2000, 2000),
+          twinkle: random(1000),
+          baseSize: random(1, 4)
+        });
+      }
+    }
+    updateButtonVisibility();
+    layoutDOMButtons();
+    redraw();
+  });
+
+  // リセットビューボタン
+  addButtonInteraction(resetViewButton, function() {
+    console.log("リセットボタンが押されました");
+    resetView();
+  });
 }
 
 /* =========================================================
@@ -1064,14 +1222,15 @@ function drawGallery2D() {
    ========================================================= */
 function generate2DThumbnail(cons, size) {	
   if (cons.thumbnail) {
-        if (cons.thumbnail.width === size) {
-            cons.lastAccessed = Date.now();
-            return cons.thumbnail;
-        }
-        // 古いサムネイルを削除
-        cons.thumbnail.remove();
-        cons.thumbnail = null;
+    try {
+      if (cons.thumbnail.canvas) {
+        cons.thumbnail.canvas = null;
+      }
+      cons.thumbnail = null;
+    } catch (e) {
+      console.warn("Failed to clean up thumbnail:", e);
     }
+  }
     
     // 新しいサムネイルを生成
     let pg = createGraphics(size, size);
@@ -1281,12 +1440,89 @@ function cleanupThumbnails() {
    // 日付パースのエラーハンドリング強化
    ========================================================= */
 function parseDate(dateStr) {
+  if (!dateStr) return new Date();
+
+  let date;
+  
+  // YYYY/MM/DD HH:MM:SS 形式
+  let match = dateStr.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (match) {
+    date = new Date(
+      parseInt(match[1]),  // year
+      parseInt(match[2]) - 1,  // month (0-based)
+      parseInt(match[3]),  // day
+      parseInt(match[4] || 0),  // hours
+      parseInt(match[5] || 0)   // minutes
+    );
+  } 
+  // MM/DD/YYYY HH:MM:SS 形式
+  else if ((match = dateStr.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{4})\D+(\d{1,2})\D+(\d{1,2})/))) {
+    date = new Date(
+      parseInt(match[3]),  // year
+      parseInt(match[1]) - 1,  // month (0-based)
+      parseInt(match[2]),  // day
+      parseInt(match[4] || 0),  // hours
+      parseInt(match[5] || 0)   // minutes
+    );
+  }
+  // その他の形式
+  else {
+    date = new Date(dateStr);
+  }
+  
+  // 有効な日付かチェック
+  if (isNaN(date.getTime())) {
+    console.warn("Invalid date format:", dateStr);
+    return new Date(); 
+  }
+  
+  return date;
+}
+
+/* =========================================================
+   // エラーハンドリング
+   ========================================================= */
+// セーブ処理
+function saveConstellation(constellation) {
   try {
-    if (!dateStr) return new Date();
-    const date = new Date(dateStr);
-    return isNaN(date.getTime()) ? new Date() : date;
+    allConstellations.push(constellation);
+    localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
   } catch (e) {
-    console.error('日付のパースに失敗しました:', e);
-    return new Date();
+    console.error("Failed to save constellation:", e);
+    // ストレージがいっぱいの場合の処理
+    if (e.name === 'QuotaExceededError' || 
+        e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+        (e.code === 22 && e.name === 'QuotaExceededError')) {
+      // 古いデータを削除して再試行
+      if (allConstellations.length > 1) {
+        allConstellations.shift(); // 最も古いデータを削除
+        saveConstellation(constellation); // 再帰的に再試行
+      } else {
+        alert("保存できるデータの上限に達しました。古いデータを削除してください。");
+      }
+    }
+  }
+}
+
+// ロード処理
+function loadConstellations() {
+  try {
+    let saved = localStorage.getItem("myConstellations");
+    if (saved) {
+      allConstellations = JSON.parse(saved);
+      // データの整合性チェック
+      allConstellations = allConstellations.filter(c => 
+        c && c.stars && Array.isArray(c.stars) && c.created
+      );
+    }
+  } catch (e) {
+    console.error("Failed to load constellations:", e);
+    allConstellations = [];
+    // 壊れたデータを削除
+    try {
+      localStorage.removeItem("myConstellations");
+    } catch (e) {
+      console.error("Failed to clear corrupted data:", e);
+    }
   }
 }
