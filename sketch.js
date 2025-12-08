@@ -530,7 +530,7 @@ function draw() {
 	  }
 	
 	  if (allConstellations.length > 0) {
-	   let latest = allConstellations[allConstellations.length - 1];
+	   let latestConstellation = allConstellations[allConstellations.length - 1];
 	   let m = latest?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
 	   let monthIndex = m ? int(m[2]) - 1 : 0;
 	   let monthNames = [
