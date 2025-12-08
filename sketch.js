@@ -281,6 +281,7 @@ function updateButtonVisibility() {
   } 
   else if (state === "gallery") {
     backButton.show();
+	backButton.html("← 記録ページ");
     galleryButton.html("戻る");
   }
   else if (state === "visual") {
