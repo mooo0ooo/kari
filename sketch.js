@@ -511,7 +511,7 @@ function draw() {
 	
 	// タッチフィードバックの描画
   if (touchFeedback.alpha > 0) {
-	  touchFeedback.alpha -= 5;
+	  touchFeedback.alpha -= 3;
 	  if (touchFeedback.alpha > 0) {
 	    push();
 	    noStroke();
@@ -723,9 +723,9 @@ function touchMoved() {
         
         // 速度計算
         if (timeDiff > 0) {
-            velocityX = (mouseX - lastTouchX) / timeDiff;
-            velocityY = (mouseY - lastTouchY) / timeDiff;
-        }
+		    velocityX = (mouseX - lastTouchX) / timeDiff;
+		    velocityY = (mouseY - lastTouchY) / timeDiff;
+		}
         
         lastTouchX = mouseX;
         lastTouchY = mouseY;
@@ -1010,10 +1010,9 @@ function drawGallery2D() {
 	  const visibleEnd = Math.min(list.length, visibleStart + 10);
 		
 	  for (let j = visibleStart; j < visibleEnd; j++) {
-	    for (let j = visibleStart; j < visibleEnd; j++) {
-        if (!list[j].thumbnail) {
-            list[j].thumbnail = generate2DThumbnail(list[j], thumbSize);
-        }
+	    if (!list[j].thumbnail) {
+	        list[j].thumbnail = generate2DThumbnail(list[j], thumbSize);
+	    }
 	    if (j < visibleStart || j >= visibleEnd) {
 	        if (j % colCount === colCount - 1) {
 	            y += thumbSize + gutter + 25;
@@ -1073,7 +1072,6 @@ function drawGallery2D() {
    ========================================================= */
 function generate2DThumbnail(cons, size) {	
   if (cons.thumbnail) {
-        if (cons.thumbnail) {
         if (cons.thumbnail.width === size) {
             cons.lastAccessed = Date.now();
             return cons.thumbnail;
@@ -1204,17 +1202,18 @@ function drawZoomedThumbnail() {
   fill(15, 20, 40);
   stroke(100, 150, 255, 80);
   strokeWeight(1);
-  let cornerRadius = 12 * (0.7 + zoomAnim * 0.3); // ズームに応じて角丸を調整
+  let cornerRadius = 12 * (0.7 + zoomAnim * 0.3);
   rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, cornerRadius);
   
   // サムネイルを描画
   if (!selectedThumbnail.thumbnail || 
     selectedThumbnail.thumbnail.width !== thumbSize) {
     if (selectedThumbnail.thumbnail) {
-      selectedThumbnail.thumbnail.remove(); // 古いグラフィックスをクリーンアップ
+        selectedThumbnail.thumbnail.remove();
     }
-  selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
+    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
   }
+  
   imageMode(CENTER);
   image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
   
@@ -1282,7 +1281,6 @@ function cleanupThumbnails() {
         if (c !== selectedThumbnail && c.thumbnail) {
             c.thumbnail.remove();
             c.thumbnail = null;
-            delete c.thumbnail;
         }
     }
 }
