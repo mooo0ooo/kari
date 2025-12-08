@@ -202,7 +202,7 @@ function setup() {
 	  targetScrollY = 0;
 	  scrollY = 0;
 	  resetView();
-	});
+  });
 
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
@@ -771,38 +771,28 @@ function mousePressed() {
    タッチイベント
    ========================================================= */
 function touchStarted(event) {
-  // イベントオブジェクトが渡されていない場合は処理をスキップ
   if (event) {
     event.preventDefault();
   }
 
-  // タッチイベントの場合
+  // タッチ開始時の位置を記録
   if (event && event.touches && event.touches.length > 0) {
     isTouching = true;
     touchStartTime = millis();
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     touchStartPos = { x: touchStartX, y: touchStartY };
-    isScrolling = false;
-	  
+    
     // マウス座標の同期
     mouseX = touchStartX;
     mouseY = touchStartY;
-  }
-  // マウスイベントの場合
-  else {
+  } else {
     isTouching = true;
     touchStartTime = millis();
     touchStartX = mouseX;
     touchStartY = mouseY;
     touchStartPos = { x: mouseX, y: mouseY };
-    isScrolling = false;
   }
-
-  // タッチフィードバック
-  touchFeedback.x = touchStartX;
-  touchFeedback.y = touchStartY;
-  touchFeedback.alpha = 100;
 
   // 2本指タッチ（ピンチ操作）の初期化
   if (event && event.touches && event.touches.length === 2) {
@@ -813,7 +803,7 @@ function touchStarted(event) {
     return false;
   }
   
-  // ボタンのタッチ判定
+  // ボタンのタッチ判定（元のまま）
   if (state === "select" || state === "gallery" || state === "visual") {
     const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
     
@@ -839,7 +829,7 @@ function touchStarted(event) {
     return false;
   }
   
-  return true;
+  return false;
 }
 
 function touchMoved(event) {
@@ -849,12 +839,12 @@ function touchMoved(event) {
   const currentY = event.touches[0].clientY;
   const deltaX = Math.abs(currentX - touchStartX);
   const deltaY = Math.abs(currentY - touchStartY);
-
+  
   // ギャラリーモードでのスクロール処理
   if (state === "gallery") {
-    if (deltaY > deltaX && deltaY > 5) {
+    // 縦方向のスクロールのみ処理
+    if (deltaY > 5 && deltaY > deltaX) {
       event.preventDefault();
-      isScrolling = true;
       const delta = currentY - touchStartY;
       targetScrollY -= delta * 2;
       touchStartY = currentY;
@@ -877,7 +867,7 @@ function touchMoved(event) {
     return false;
   }
   
-  // 1本指タッチ（回転操作）
+  // ビジュアルモードでの回転操作
   if (state === "visual" && isDragging) {
     event.preventDefault();
     const currentTime = millis();
@@ -909,7 +899,21 @@ function touchMoved(event) {
 function touchEnded(event) {
   if (!event) return true;
   
-  // 慣性スクロールの計算
+  // タップ判定（短いタッチ）
+  if (state === "gallery" && millis() - touchStartTime < 200) {
+    if (event.changedTouches && event.changedTouches.length > 0) {
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - touchStartPos.x;
+      const dy = touch.clientY - touchStartPos.y;
+      
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        // ギャラリーのタップ処理
+        handleGalleryTap(touch.clientX, touch.clientY);
+      }
+    }
+  }
+  
+  // ビジュアルモードの慣性処理
   if (state === "visual") {
     const now = millis();
     const deltaTime = now - lastTouchTime;
@@ -925,25 +929,10 @@ function touchEnded(event) {
     }
   }
   
-  // タップ判定（短いタッチ）
-  if (state === "gallery" && !isScrolling && millis() - touchStartTime < 200) {
-    if (event.changedTouches && event.changedTouches.length > 0) {
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - touchStartPos.x;
-      const dy = touch.clientY - touchStartPos.y;
-      
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        handleGalleryTap(touch.clientX, touch.clientY);
-        return false;
-      }
-    }
-  }
-	
   isTouching = false;
   isDragging = false;
-  isScrolling = false;
   
-  return true;
+  return false;
 }
 
 function touchCanceled(event) {
