@@ -21,6 +21,8 @@ let emotions = [
   {en: "Dominant", ja: "支配的", P: 0.1, A: 0.2, D: 0.8}
 ];
 
+let myFont;
+
 let padValues = [];
 let points = [];
 let stars = [];
@@ -33,7 +35,6 @@ let backButton;
 let selectedP = null, selectedA = null, selectedD = null; 
 let btnSize = 50;
 
-let myFont;
 let visualStartTime = 0; 
 let allConstellations = [];
 
@@ -45,6 +46,32 @@ let padLayout = {
   scl: 1
 };
 
+// 3D操作
+// タッチイベント
+let touchStartX, touchStartY;
+let rotationX = 0, rotationY = 0;
+let targetRotationX = 0, targetRotationY = 0;
+let isDragging = false;
+// ズーム
+let zoomLevel = 1;
+let targetZoomLevel = 1;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
+let initialpinchDistance = 0;
+let initialZoom = 1;
+// リセット
+let lastTap = 0;
+let resetViewButton;
+
+let velocityX = 0;
+let velocityY = 0;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let lastTouchTime = 0;
+
+let touchFeedback = { x: 0, y: 0, alpha: 0 };
+
+// gallery
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -72,6 +99,8 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   textFont(myFont);
   textSize(16);
+
+  lastTouchTime = millis();
 
   let saved = localStorage.getItem("myConstellations");
   if (saved) {
@@ -104,6 +133,24 @@ function setup() {
 	  btn.style('font-size', '14px');
 	  btn.style('transition', 'all 0.2s');
 	});
+
+	// リセットボタン
+	resetViewButton = createButton('↻ リセット');
+	resetViewButton.position(20, 20);
+	resetViewButton.mousePressed(resetView);
+	resetViewButton.hide();
+	  
+	resetViewButton.style('position', 'absolute');
+	resetViewButton.style('z-index', '10');
+	resetViewButton.style('padding', '8px 16px');
+	resetViewButton.style('border-radius', '4px');
+	resetViewButton.style('border', '1px solid #666');
+	resetViewButton.style('background', 'rgba(50, 60, 90, 0.8)');
+	resetViewButton.style('color', '#fff');
+	resetViewButton.style('cursor', 'pointer');
+	resetViewButton.style('font-family', 'sans-serif');
+	resetViewButton.style('font-size', '14px');
+	resetViewButton.style('transition', 'all 0.2s');
 
   // ボタンクリックイベント
   addButton.mousePressed(addPAD);
@@ -184,18 +231,24 @@ function updateButtonVisibility() {
   okButton.hide();
   backButton.hide();
   galleryButton.hide();
+  resetViewButton.hide();
 
   if (state === "select") {
-    // PAD選択画面
-    addButton.show();
-    okButton.show();
-    galleryButton.show();
+      // PAD選択画面
+      addButton.show();
+      okButton.show();
+      galleryButton.show();
+	  resetViewButton.hide();
   } 
   else if (state === "gallery") {
-    // 日記一覧画面
+      // 日記一覧画面
+	  resetViewButton.hide();
   }
   else if (state === "visual") {
-    // 日記表示画面
+      // 日記表示画面
+	  backButton.show();
+	  galleryButton.show();
+	  resetViewButton.show();
   }
 }
 
@@ -299,8 +352,15 @@ function draw() {
     return;
   }
   else if (state === "visual") {
-    orbitControl();
-	  
+      orbitControl();
+	  // ３D操作
+	  rotationX = lerp(rotationX, targetRotationX, 0.1);
+	  rotationY = lerp(rotationY, targetRotationY, 0.1);
+	  rotateX(rotationX);
+ 	  rotateY(rotationY);
+	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
+	  scale(zoomLevel);
+		  
 	  // ★ 星空の描画
 	  push(); 
 	  noStroke();
@@ -432,7 +492,31 @@ function draw() {
 	    text(selectedLabel, width/2, height-40);
 	    pop();
 	  }
-	}
+
+	  if (state === "visual" && !isDragging) {
+	    // 慣性を適用
+	    if (abs(velocityX) > 0.001 || abs(velocityY) > 0.001) {
+	      targetRotationY += velocityX * 2;
+	      targetRotationX += velocityY * 2;
+	      
+	      // 減衰
+	      velocityX *= 0.95;
+	      velocityY *= 0.95;
+	    } else {
+	      velocityX = 0;
+	      velocityY = 0;
+	    }
+	  }
+	} 
+	
+	if (touchFeedback.alpha > 0) {
+    push();
+    noStroke();
+    fill(255, 255, 255, touchFeedback.alpha);
+    ellipse(touchFeedback.x, touchFeedback.y, 50, 50);
+    touchFeedback.alpha -= 5;
+    pop();
+  }
 }
 
 /* =========================================================
@@ -643,6 +727,118 @@ function mousePressed() {
 }
 
 /* =========================================================
+   タッチイベント
+   ========================================================= */
+function touchStarted() {
+	touchFeedback.x = mouseX;
+    touchFeedback.y = mouseY;
+    touchFeedback.alpha = 100;
+	
+	if (touches.length === 2) {
+		// ズーム
+		initialPinchDistance = dist(
+			touches[0].x, touches[0].y,
+			touches[1].x, touches[1].y
+		);
+		initialPinchDistance = targetZoomLevel;
+	} else {
+		// 回転
+		touchStartX = mouseX;
+		touchStartY = mouseY;
+		isDragging = true;
+	}
+	return false;
+}
+
+function touchMoved() {
+	const currentTime = millis();
+    const timeDiff = currentTime - lastTouchTime;
+	
+	if (touches.length === 2) {
+	    // ズーム
+	    let currentDistance = dist(
+	      touches[0].x, touches[0].y,
+	      touches[1].x, touches[1].y
+	    );
+	    let scale = currentDistance / initialPinchDistance;
+	    targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
+	  } else if (touches.length === 1 && isDragging) {
+	    // 回転
+	    let dx = mouseX - touchStartX;
+	    let dy = mouseY - touchStartY;
+	    targetRotationY = dx * 0.01;
+	    targetRotationX = dy * 0.01;
+
+		// 速度を計算
+	    const currentX = mouseX;
+	    const currentY = mouseY;
+	    
+	    if (timeDiff > 0) {
+	      velocityX = (currentX - lastTouchX) / timeDiff;
+	      velocityY = (currentY - lastTouchY) / timeDiff;
+	    }
+	    
+	    lastTouchX = currentX;
+	    lastTouchY = currentY;
+	    lastTouchTime = currentTime;
+	    
+	    // 回転を更新
+	    targetRotationY += velocityX * 0.1;
+	    targetRotationX += velocityY * 0.1;
+	  }
+	  return false;
+}
+
+function touchend() {
+	const currentTime = new Date().getTime();
+	const tapLength = currentTime - lastTap;
+
+	if (tapLength < 300 && tapLength > 0) {
+		// ダブルタップでリセット
+		resetView();
+	}
+	
+	lastTap = currentTime;
+	isDragging = false;
+	return false;
+}
+
+// リセット
+function resetView() {
+	targetRotationX = 0;
+	targetRotationY = 0;
+	targetZoomLevel = 1;
+	rotationX = 0;
+	rotationY = 0;
+	zoomLevel = 1;
+}
+
+/* =========================================================
+   mouseWheel
+   ========================================================= */
+// gallery
+function mouseWheel(event) {
+  if (state === "gallery") {
+	  // スクロール
+	  if (selectedThumbnail && targetZoom > 0.5) {
+        return false;
+      }
+      targetScrollY -= event.delta * 0.5;
+      let maxScroll = 0;
+      let minScroll = -3000;
+      targetScrollY = constrain(targetScrollY, minScroll, maxScroll);
+      return false;
+  } else if (state === "visual") {
+	  // ズーム
+	  targetZoomLevel -= event.delta * 0.001;
+	  targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
+	  return false;
+  }
+  return true;
+}
+
+
+/* =========================================================
    polygon
    ========================================================= */
 function polygon(x,y,r,n){
@@ -699,26 +895,6 @@ function screenPos(x, y, z) {
   let sy = map(-ndcY, -1, 1, 0, height);
 
   return createVector(sx, sy);
-}
-
-/* =========================================================
-   mouseWheel
-   ========================================================= */
-// gallery
-function mouseWheel(event) {
-  if (state === "gallery") {
-
-	if (selectedThumbnail && targetZoom > 0.5) {
-      return false;
-    }
-	  
-    targetScrollY -= event.delta * 0.5;
-    let maxScroll = 0;
-    let minScroll = -3000;
-    targetScrollY = constrain(targetScrollY, minScroll, maxScroll);
-    return false;
-  }
-  return true;
 }
 
 /* =========================================================
