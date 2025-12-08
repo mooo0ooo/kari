@@ -188,7 +188,7 @@ function setup() {
   });
 
   backButton.mousePressed(() => {
-	  changeState = "select";
+	  state = "select";
 	  updateButtonVisibility();
 	  layoutDOMButtons();
 	  selectedLabel = null;
@@ -196,6 +196,7 @@ function setup() {
 	  galleryStars = [];
 	  targetScrollY = 0;
 	  scrollY = 0;
+	  resetView();
 	});
 
   galleryButton.mousePressed(() => {
@@ -206,7 +207,7 @@ function setup() {
 	    scrollY = 0;
 	    selectedLabel = null;
 	  } else {
-	    State = "gallery";
+	    state = "gallery";
 	    galleryStars = [];
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
@@ -1138,6 +1139,7 @@ function setupButtonInteractions() {
     galleryStars = [];
     targetScrollY = 0;
     scrollY = 0;
+	resetView();
   });
 
   // ギャラリーボタン
