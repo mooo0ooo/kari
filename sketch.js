@@ -801,18 +801,40 @@ function touchEnded(event) {
 // リセット
 function resetView() {
   // 回転をリセット
-  rotationX = 0;
-  rotationY = 0;
   targetRotationX = 0;
   targetRotationY = 0;
+  rotationX = 0;
+  rotationY = 0;
+  
+  // ズームをリセット
+  targetZoomLevel = 1.0;
+  zoomLevel = 1.0;
+  
+  // 位置をリセット
+  if (allConstellations.length > 0) {
+    // 最新の日記を取得
+    let latest = allConstellations[allConstellations.length - 1];
+    
+    // 日付から月を取得
+    let monthIndex = 0;
+    if (latest.created) {
+      let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+      if (m) {
+        monthIndex = (parseInt(m[2]) - 1) % 12;
+      }
+    }
+    
+    let monthRotation = map(monthIndex, 0, 11, 0, TWO_PI);
+    targetRotationY = monthRotation;
+    rotationY = monthRotation;
+    
+    targetZoomLevel = 0.8;
+    zoomLevel = 0.8;
+  }
+  
   velocityX = 0;
   velocityY = 0;
   
-  // ズームをリセット
-  zoomLevel = 1;
-  targetZoomLevel = 1;
-  
-  // 選択をクリア
   selectedLabel = null;
   
   // 再描画
