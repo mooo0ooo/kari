@@ -1059,6 +1059,7 @@ function drawGallery2D() {
     pop();
   }
 }
+}
 
 /* =========================================================
    generate2DThumbnail
