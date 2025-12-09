@@ -92,10 +92,8 @@ let selectedThumbnail = null;
 let zoomAnim = 0;
 let targetZoom = 0;
 
-let isScrolling = false;
-const SCROLL_THRESHOLD = 10;
-const INERTIA_DECELERATION = 0.95;
-const SCROLL_SENSITIVITY = 0.8;
+let upButton, downButton;
+const SCROLL_AMOUNT = 150;
 
 let outerPad = 20;
 let gutter = 12;
@@ -114,6 +112,39 @@ function preload() {
 function handleButtonTouchEnd(e) {
   e.preventDefault();
   this.click();
+}
+
+/* =========================================================
+   ギャラリーページのスクロールボタン
+   ========================================================= */
+function createScrollButtons() {
+  // 上スクロールボタン
+  upButton = createButton('↑');
+  upButton.position(width - 50, height - 100);
+  upButton.mousePressed(() => {
+    targetScrollY += 100;
+    targetScrollY = constrain(targetScrollY, -calculateMaxScroll(), 0);
+  });
+  
+  // 下スクロールボタン
+  downButton = createButton('↓');
+  downButton.position(width - 50, height - 50);
+  downButton.mousePressed(() => {
+    targetScrollY -= 100;  // 100px下にスクロール
+    targetScrollY = constrain(targetScrollY, -calculateMaxScroll(), 0);
+  });
+  
+  // ボタンのスタイル設定
+  [upButton, downButton].forEach(btn => {
+    btn.size(40, 40);
+    btn.style('background', 'rgba(50, 60, 90, 0.8)');
+    btn.style('color', 'white');
+    btn.style('border', 'none');
+    btn.style('border-radius', '50%');
+    btn.style('cursor', 'pointer');
+    btn.style('font-size', '20px');
+    btn.style('z-index', '1000');
+  });
 }
 
 /* =========================================================
@@ -144,6 +175,7 @@ function setup() {
   okButton = createButton("OK");
   backButton = createButton("← 記録ページ");
   galleryButton = createButton("日記一覧");
+  createScrollButtons();
 
   // ボタンスタイルの設定
   [addButton, okButton, backButton, galleryButton].forEach(btn => {
@@ -318,23 +350,31 @@ function updateButtonVisibility() {
   backButton.hide();
   galleryButton.hide();
   resetViewButton.hide();
+  upButton.hide();
+  downButton.hide();
 
   if (state === "select") {
     addButton.show();
     okButton.show();
     galleryButton.show();
     galleryButton.html("日記一覧");
+	upButton.hide();
+    downButton.hide();
   } 
   else if (state === "gallery") {
     backButton.show();
 	backButton.html("← 記録ページ");
     galleryButton.html("戻る");
+	upButton.show();
+    downButton.show();
   }
   else if (state === "visual") {
     backButton.show();
     galleryButton.show();
     galleryButton.html("日記一覧");
     resetViewButton.show();
+	upButton.hide();
+    downButton.hide();
   }
 }
 
@@ -371,6 +411,11 @@ function windowResized() {
   centerY = height / 2;
   computeBtnSize();
   layoutDOMButtons();
+
+  if (upButton && downButton) {
+    upButton.position(width - 50, height - 100);
+    downButton.position(width - 50, height - 50);
+  }
 }
 
 /* =========================================================
@@ -457,12 +502,8 @@ function draw() {
 	if (selectedThumbnail && targetZoom > 0.5) {
 	    return;
 	}
-    return;
-	scrollY += (targetScrollY - scrollY) * 0.2;
-  
-	const maxScroll = max(0, (constellations.length / 3) * 150 - height + 200);
-	targetScrollY = constrain(targetScrollY, 0, maxScroll);
-	scrollY = constrain(scrollY, 0, maxScroll);
+    scrollY = lerp(scrollY, targetScrollY, 0.2);
+  	return;
   }
   else if (state === "visual") {
 	  camera();
@@ -840,21 +881,6 @@ function touchMoved(event) {
   const deltaX = currentX - touchStartPos.x;
   const deltaY = currentY - touchStartPos.y;
   
-  // ギャラリーモードでのスクロール処理
-  if (state === 'gallery') {
-    if (!isScrolling && (Math.abs(deltaX) > SCROLL_THRESHOLD || Math.abs(deltaY) > SCROLL_THRESHOLD)) {
-      isScrolling = true;
-    }
-    
-    if (isScrolling) {
-      targetScrollY -= deltaY * SCROLL_SENSITIVITY;
-      touchStartPos = { x: currentX, y: currentY };
-      velocityY = deltaY * 0.5;
-      return false;
-    }
-    return true;
-  }
-  
   // 2本指タッチ（ピンチ操作）
   if (event.touches.length === 2) {
     const dx = event.touches[0].clientX - event.touches[1].clientX;
@@ -922,38 +948,6 @@ function touchEnded(event) {
         handleGalleryTap(x, y);
       }
     }
-  }
-  
-  // 慣性スクロール
-  if (state === "gallery" && Math.abs(velocityY) > 0.1 && !isTap) {
-    const minVelocity = 0.1;
-    let lastFrameTime = performance.now();
-    
-    const applyInertia = (currentTime) => {
-      if (Math.abs(velocityY) < minVelocity) {
-        velocityY = 0;
-        isScrolling = false;
-        return;
-      }
-      
-      const deltaTime = (currentTime - lastFrameTime) / 16;
-      targetScrollY -= velocityY * deltaTime;
-      velocityY *= INERTIA_DECELERATION;
-      
-      // スクロール範囲の制限
-      const maxScroll = calculateMaxScroll();
-      targetScrollY = constrain(targetScrollY, -maxScroll, 0);
-      
-      lastFrameTime = currentTime;
-      
-      if (Math.abs(velocityY) >= minVelocity) {
-        requestAnimationFrame(applyInertia);
-      } else {
-        isScrolling = false;
-      }
-    };
-    
-    requestAnimationFrame(applyInertia);
   }
   
   // ビジュアルモードの慣性処理
@@ -1454,8 +1448,6 @@ function mouseWheel(event) {
         if (selectedThumbnail && targetZoom > 0.5) {
             return false;
         }
-        targetScrollY -= event.delta * 0.5;
-        targetScrollY = constrain(targetScrollY, -3000, 0);
         return false;
     } else if (state === "visual") {
         targetZoomLevel -= event.delta * 0.001;
@@ -1576,9 +1568,6 @@ function drawGallery2D() {
     grouped[monthIndex].push(c);
   }
 
-  const viewportTop = -scrollY / galleryScale;
-  const viewportBottom = viewportTop + height / galleryScale;
-
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
@@ -1603,10 +1592,6 @@ function drawGallery2D() {
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
       let ty = y + row * (thumbSize + gutter + 25);
-
-	  if (ty + thumbSize < viewportTop || ty > viewportBottom) {
-	    continue;
-	  }
 		
       // タップ/ホバー判定
       let mx = (mouseX - width/2) / galleryScale;
