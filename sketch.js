@@ -725,21 +725,41 @@ function drawPADButtons(){
   push();
   scale(padLayout.scl); 
   // P 行
-  for(let i=0;i<7;i++){
-    let col = lerpColor(color(255,150,0), color(0,100,255), i/6);
-    drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy-120, padLayout.btnSize, col, i, selectedP===i, "rect");
+  for(let i = 0; i < 7; i++) {
+    let col = lerpColor(color(255, 150, 0), color(0, 100, 255), i/6);
+    drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
+               cy - 120, 
+               padLayout.btnSize, 
+               col, 
+               i, 
+               selectedP === i,
+               "rect");
   }
   // A 行
-  for(let i=0;i<7;i++){
-    let col = lerpColor(color(255,220,0), color(0,0,100), i/6);
-    let sides = int(map(i,0,6,3,30));
-    drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy, padLayout.btnSize, col, i, selectedA===i, "polygon", sides);
+  for(let i = 0; i < 7; i++) {
+    let col = lerpColor(color(255, 220, 0), color(0, 0, 100), i/6);
+    let sides = int(map(i, 0, 6, 3, 30));
+    drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
+               cy, 
+               padLayout.btnSize, 
+               col, 
+               i, 
+               selectedA === i,
+               "polygon", 
+               sides);
   }
   // D 行
-  for(let i=0;i<7;i++){
+  for(let i = 0; i < 7; i++) {
     let col = color(200);
-    let sides = int(map(i,0,6,4,30));
-    drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy+120, padLayout.btnSize, col, i, selectedD===i, "polygon", sides);
+    let sides = int(map(i, 0, 6, 4, 30));
+    drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
+               cy + 120, 
+               padLayout.btnSize, 
+               col, 
+               i, 
+               selectedD === i,
+               "polygon", 
+               sides);
   }
   pop();
 }
@@ -751,7 +771,7 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   push();
   translate(x, y, 0);
 
-　// 選択中のボタンに光るエフェクト
+  // 選択中のボタンに光るエフェクト
   if (isSelected) {
     push();
     blendMode(ADD);
@@ -762,7 +782,7 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
     ellipse(0, 0, glowSize, glowSize);
     pop();
   }
-
+	
   push();
   blendMode(ADD);
   noStroke();
