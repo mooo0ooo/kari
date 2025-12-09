@@ -1237,6 +1237,7 @@ function setupButtonInteractions() {
     scrollY = 0;
 	resetView();
   });
+}
 
   // ギャラリーボタン
   addButtonInteraction(galleryButton, function() {
@@ -1270,6 +1271,16 @@ function setupButtonInteractions() {
     console.log("リセットボタンが押されました");
     resetView();
   });
+}
+
+function addButtonInteraction(button, callback) {
+  button.mousePressed(callback);
+  if ('ontouchstart' in window) {
+    button.elt.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      callback();
+    }, { passive: false });
+  }
 }
 
 // PADボタン
