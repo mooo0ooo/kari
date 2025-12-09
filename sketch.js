@@ -126,7 +126,7 @@ function createScrollButtons() {
   downButton = createButton('↓');
   downButton.position(width - 50, height - 50);
   downButton.mousePressed(() => {
-    targetScrollY -= 100;  // 100px下にスクロール
+    targetScrollY -= 100;
     targetScrollY = constrain(targetScrollY, -calculateMaxScroll(), 0);
   });
   
@@ -813,7 +813,7 @@ function touchStarted(event) {
   const touch = event.touches[0];
   const rect = canvas.elt.getBoundingClientRect();
   const pixelDensity = window.devicePixelRatio || 1;
-	
+  
   touchStartX = (touch.clientX - rect.left) * (canvas.width / rect.width);
   touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
   touchStartPos = { x: touch.clientX, y: touch.clientY };
@@ -825,8 +825,8 @@ function touchStarted(event) {
   if (checkButtonTouches(touch)) {
     return false;
   }
-	
-// PADボタンのタップ処理
+  
+  // PADボタンのタップ処理
   if (state === "select") {
     const canvasX = touchStartX - width/2;
     const canvasY = touchStartY - height/2;
@@ -839,23 +839,22 @@ function touchStarted(event) {
     }
   }
 
-  // ギャラリーのタッチ処理
-  if (state === "gallery") {
-    touchStartPos = { x: touch.clientX, y: touch.clientY };
-    touchStartTime = millis();
-    isScrolling = false;
-    return true;
-  }
-// 2本指タッチ（ピンチ操作）の初期化
+  // ギャラリーのタッチ処理を無効化
+  if (state === "gallery") return false;
+
+  // 2本指タッチ（ピンチ操作）の初期化
   if (event.touches.length === 2) {
-    const dx = event.touches[0].clientX - event.touches[1].clientX;
-    const dy = event.touches[0].clientY - event.touches[1].clientY;
-    initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
-    initialZoom = zoomLevel;
+    if (state === "gallery") return false;
+    
+    if (state === "visual") {
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
+      initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+      initialZoom = zoomLevel;
+    }
     return false;
   }
 
-  // ビジュアルモードでのドラッグ開始
   if (state === "visual") {
     isDragging = true;
   }
@@ -902,6 +901,10 @@ function touchMoved(event) {
   if (!event.touches || event.touches.length === 0) return false;
   if (event) event.preventDefault();
   
+  if (state === "gallery") {
+    return false;
+  }
+
   const touch = event.touches[0];
   const currentX = touch.clientX;
   const currentY = touch.clientY;
@@ -910,13 +913,15 @@ function touchMoved(event) {
   
   // 2本指タッチ（ピンチ操作）
   if (event.touches.length === 2) {
-    const dx = event.touches[0].clientX - event.touches[1].clientX;
-    const dy = event.touches[0].clientY - event.touches[1].clientY;
-    const currentDistance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (initialPinchDistance > 0) {
-      const scale = currentDistance / initialPinchDistance;
-      targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
+    if (state === "visual") {
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
+      const currentDistance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (initialPinchDistance > 0) {
+        const scale = currentDistance / initialPinchDistance;
+        targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
+      }
     }
     return false;
   }
@@ -942,9 +947,9 @@ function touchMoved(event) {
     lastTouchX = currentX;
     lastTouchY = currentY;
     lastTouchTime = currentTime;
-    
-    return false;
   }
+  
+  return false;
 }
 
 function touchEnded(event) {
@@ -1256,61 +1261,6 @@ function handleGalleryClick() {
     return false;
 }
 
-// サムネイルのクリックを検出
-function checkThumbnailClicks(mx, my, rowStartX, colCount, thumbSize) {
-    let y = topOffset;
-
-    for (let month = 0; month < 12; month++) {
-        const monthlyConstellations = allConstellations.filter(c => {
-            const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-            return m && int(m[2]) - 1 === month;
-        });
-
-        if (monthlyConstellations.length === 0) continue;
-
-        y += 35;
-
-        // サムネイルのクリックを検出
-        for (let i = 0; i < monthlyConstellations.length; i++) {
-            const col = i % colCount;
-            const row = floor(i / colCount);
-            const tx = rowStartX + col * (thumbSize + gutter);
-            const ty = y + row * (thumbSize + gutter + 25);
-
-            if (mx >= tx && mx <= tx + thumbSize && 
-                my >= ty && my <= ty + thumbSize) {
-                selectedThumbnail = monthlyConstellations[i];
-                targetZoom = 1;
-                return true;
-            }
-        }
-
-        y += ceil(monthlyConstellations.length / colCount) * (thumbSize + gutter + 25) + 20;
-    }
-    
-    return false;
-}
-
-function handleZoomedViewInteraction() {
-    const zoomedThumbSize = min(width, height) * 0.7;
-    const closeButtonX = width/2 + (zoomedThumbSize/2 - 20);
-    const closeButtonY = height/2 - (zoomedThumbSize/2 - 20);
-    const distanceToClose = dist(mouseX, mouseY, closeButtonX, closeButtonY);
-    
-    // 閉じるボタンまたは背景がクリックされたか
-    const isCloseButtonClicked = distanceToClose < 30;
-    const isBackgroundClicked = zoomAnim > ZOOM_ANIMATION_THRESHOLD;
-    
-    if (isCloseButtonClicked || isBackgroundClicked) {
-        targetZoom = 0;
-        setTimeout(() => {
-            if (targetZoom === 0) {
-                selectedThumbnail = null;
-            }
-        }, 300);
-    }
-}
-
 function setupButtonInteractions() {
   function addButtonInteraction(btn, callback) {
     if (!btn) return;
@@ -1471,12 +1421,12 @@ function checkPadButtonTouch(x, y) {
    mouseWheel
    ========================================================= */
 function mouseWheel(event) {
-    if (state === "visual") {
-        targetZoomLevel -= event.delta * 0.001;
-        targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
-        return false;
-    }
-    return true;
+	  if (state === "visual") {
+	    targetZoomLevel -= event.delta * 0.001;
+	    targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
+	    return false;
+	  }
+	  return false;
 }
 
 /* =========================================================
@@ -1620,18 +1570,18 @@ function drawGallery2D() {
       let my = (mouseY - height/2 - scrollY) / galleryScale;
       
       // サムネイルの背景
-      fill('rgba(5, 5, 20, 0.8)');
+	  fill('rgba(5, 5, 20, 0.8)');
 	  stroke('rgba(150, 150, 150, 0.5)');
 	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
-
+		
 	  if (!list[i].thumbnail) {
-        list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
-      }
-
-      if (list[i].thumbnail) {
-        image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
-      }
+		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	  }
+		
+	  if (list[i].thumbnail) {
+		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
+	  }
       
       // 日付を表示
       let date = new Date(list[i].created);
