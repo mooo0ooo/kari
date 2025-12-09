@@ -221,10 +221,10 @@ function setup() {
   
   okButton.mousePressed(() => {
 	  if (padValues.length > 0) {
+		prepareVisual();
+		  
 	    let now = new Date();
 	    let timestamp = now.toLocaleString();
-
-		prepareVisual()
 		  
 	    let serialStars = points.map(s => {
 	      let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
