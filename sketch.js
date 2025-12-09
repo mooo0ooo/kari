@@ -23,6 +23,8 @@ let emotions = [
 
 let myFont;
 
+let centerX, centerY;
+
 let padValues = [];
 let points = [];
 let stars = [];
@@ -55,9 +57,6 @@ let isDragging = false;
 let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
-
-const centerX = width / 2;
-const centerY = height / 2;
 
 const ZOOM_ANIMATION_THRESHOLD = 0.5;
 const TAP_THRESHOLD = 5;
@@ -112,6 +111,8 @@ function preload() {
    ========================================================= */
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
+  const centerX = width / 2; 
+  const centerY = height / 2;
   textFont(myFont);
   textSize(16);
 
@@ -357,6 +358,8 @@ function layoutDOMButtons() {
    ========================================================= */
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  centerX = width / 2;
+  centerY = height / 2;
   computeBtnSize();
   layoutDOMButtons();
 }
@@ -1393,6 +1396,9 @@ function checkPadButtonTouch(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
   const hitMargin = 10;
+
+  const centerX = width / 2;
+  const centerY = height / 2;
 
   console.log(`Tap at: ${x}, ${y}`);
   
