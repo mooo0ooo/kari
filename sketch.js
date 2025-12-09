@@ -56,6 +56,9 @@ let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
 
+const centerX = width / 2;
+const centerY = height / 2;
+
 const ZOOM_ANIMATION_THRESHOLD = 0.5;
 const TAP_THRESHOLD = 5;
 const TAP_MAX_DURATION = 200;
@@ -417,6 +420,15 @@ function draw() {
   if (state === "select") {
 	  camera();
 	  drawPADButtons();
+
+	  if (touchFeedback.alpha > 0) {
+	    push();
+	    noStroke();
+	    fill(255, 0, 0, touchFeedback.alpha);
+	    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
+	    touchFeedback.alpha -= 5;
+	    pop();
+	  }
 	  
 	  push();
 	  resetMatrix();
@@ -711,14 +723,17 @@ function touchStarted(event) {
 
   isTouching = true;
   isScrolling = false;
+  isDragging = false;
   touchStartTime = millis();
   
   // タッチ位置の更新
   if (event.touches && event.touches[0]) {
     const touch = event.touches[0];
     const rect = canvas.elt.getBoundingClientRect();
-    touchStartX = touch.clientX - rect.left;
-    touchStartY = touch.clientY - rect.top;
+	const pixelDensity = window.devicePixelRatio || 1;
+	
+    touchStartX = (touch.clientX - rect.left) * pixelDensity;
+    touchStartY = (touch.clientY - rect.top) * pixelDensity;
     touchStartPos = { x: touch.clientX, y: touch.clientY };
     
     mouseX = touchStartX;
@@ -726,11 +741,15 @@ function touchStarted(event) {
 
 	 // PADボタンのタップ処理
     if (state === "select") {
-      const canvasX = touchStartX - width/2;
-      const canvasY = touchStartY - height/2;
-      if (handlePadButtonTap(canvasX, canvasY)) {
-        return false;
-      }
+		const canvasX = touchStartX - width/2;
+        const canvasY = touchStartY - height/2;
+      
+        console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
+        console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
+      
+        if (handlePadButtonTap(touchStartX, touchStartY)) {
+            return false;
+        }
     }
 
 	if (state === "gallery") {
@@ -778,7 +797,7 @@ function touchStarted(event) {
     isDragging = true;
   }
 
-  return true;
+  return false;
 }
 
 function touchMoved(event) {
@@ -1108,22 +1127,19 @@ function touchCanceled(e) {
 function handlePadButtonTap(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
-  const centerX = 0;
-  const centerY = 0;
+  const centerX = width / 2;
+  const centerY = height / 2;
   const hitMargin = 5;
-
-  // 画面中央を基準にした座標に変換
-  const canvasX = x - centerX;
-  const canvasY = y - centerY;
 
   // P行のボタン
   for (let i = 0; i < 7; i++) {
-    const btnX = (i - 3) * (btnSize + spacing);
-    const btnY = -120 * padLayout.scl;
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY - 120 * padLayout.scl;
     
-    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
-      touchFeedback = { x: x, y: y, alpha: 150 };
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+      console.log(`P${i} tapped at ${btnX}, ${btnY}`);
       redraw();
       return true;
     }
@@ -1131,12 +1147,13 @@ function handlePadButtonTap(x, y) {
   
   // A行のボタン
   for (let i = 0; i < 7; i++) {
-    const btnX = (i - 3) * (btnSize + spacing);
-    const btnY = 0;
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY;
     
-    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
-      touchFeedback = { x: x, y: y, alpha: 150 };
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+      console.log(`A${i} tapped at ${btnX}, ${btnY}`);
       redraw();
       return true;
     }
@@ -1144,12 +1161,13 @@ function handlePadButtonTap(x, y) {
   
   // D行のボタン
   for (let i = 0; i < 7; i++) {
-    const btnX = (i - 3) * (btnSize + spacing);
-    const btnY = 120 * padLayout.scl;
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY + 120 * padLayout.scl;
     
-    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
-      touchFeedback = { x: x, y: y, alpha: 150 };
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+      console.log(`D${i} tapped at ${btnX}, ${btnY}`);
       redraw();
       return true;
     }
@@ -1344,14 +1362,16 @@ function setupButtonInteractions() {
 function checkPadButtonTouch(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const hitMargin = 5;
+  const hitMargin = 10;
+
+  console.log(`Tap at: ${x}, ${y}`);
   
   // P行のボタン
   for (let i = 0; i < 7; i++) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY - 120 * padLayout.scl;
+
+	console.log(`P${i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
     
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
@@ -1365,6 +1385,8 @@ function checkPadButtonTouch(x, y) {
   for (let i = 0; i < 7; i++) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY;
+
+	console.log(`A${i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
     
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
@@ -1378,6 +1400,8 @@ function checkPadButtonTouch(x, y) {
   for (let i = 0; i < 7; i++) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY + 120 * padLayout.scl;
+
+	console.log(`D{i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
     
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
@@ -1618,6 +1642,12 @@ function drawGallery2D() {
 
   pop();
 
+  const scrollEasing = 0.15;
+  if (abs(scrollY - targetScrollY) > 0.1) {
+    scrollY = lerp(scrollY, targetScrollY, scrollEasing);
+  } else {
+    scrollY = targetScrollY;
+  }
   // スクロール範囲を制限
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
@@ -1829,6 +1859,32 @@ function drawZoomedThumbnail() {
   }
   pop();
 }
+
+/* =========================================================
+   最大スクロール量を計算
+   ========================================================= */
+function calculateMaxScroll() {
+  const thumbSize = 150;
+  const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  
+  let totalHeight = topOffset;
+  const grouped = groupByMonth(allConstellations);
+  
+  for (let month = 0; month < 12; month++) {
+    const monthItems = grouped[month];
+    if (monthItems.length === 0) continue;
+    
+    // 月の見出しの高さ
+    totalHeight += 35;
+    
+    // サムネイル行の高さ
+    const rows = ceil(monthItems.length / itemsPerRow);
+    totalHeight += rows * (thumbSize + gutter + 25) + 20;
+  }
+  
+  return max(0, totalHeight - height + 100);
+}
+
 /* =========================================================
    galleryメモリ管理
    ========================================================= */
