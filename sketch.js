@@ -56,7 +56,8 @@ let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
 
-const TAP_THRESHOLD = 15;
+const TAP_THRESHOLD = 5;
+const TAP_MAX_DURATION = 200;
 // ズーム
 let zoomLevel = 1;
 let targetZoomLevel = 1;
@@ -430,6 +431,11 @@ function draw() {
 	    return;
 	}
     return;
+	scrollY += (targetScrollY - scrollY) * 0.2;
+  
+	const maxScroll = max(0, (constellations.length / 3) * 150 - height + 200);
+	targetScrollY = constrain(targetScrollY, 0, maxScroll);
+	scrollY = constrain(scrollY, 0, maxScroll);
   }
   else if (state === "visual") {
 	  camera();
@@ -698,18 +704,19 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
    ========================================================= */
 function touchStarted(event) {
   if (event) event.preventDefault();
+
+  isTouching = true;
+  isScrolling = false;
+  touchStartTime = millis();
   
   // タッチ位置の更新
-  if (event && event.touches && event.touches[0]) {
+  if (event.touches && event.touches[0]) {
     const touch = event.touches[0];
     const rect = canvas.elt.getBoundingClientRect();
     touchStartX = touch.clientX - rect.left;
     touchStartY = touch.clientY - rect.top;
-    isTouching = true;
-    touchStartTime = millis();
     touchStartPos = { x: touch.clientX, y: touch.clientY };
     
-    // マウス座標の同期
     mouseX = touchStartX;
     mouseY = touchStartY;
 
@@ -720,13 +727,12 @@ function touchStarted(event) {
       }
     }
 
-	if (state === "gallery") {
-      const x = (touch.clientX - rect.left) / (width / 430) + scrollY * 0.5;
-      const y = (touch.clientY - rect.top) / (width / 430);
-      handleGalleryTap(x, y);
+	if (state === 'gallery') {
+	    touchStartX = touchX;
+	    touchStartY = touchY;
+	    touchStartTime = millis();
+	    return false;
     }
-    
-    return false;
   }
 
   // 2本指タッチ（ピンチ操作）の初期化
@@ -760,31 +766,30 @@ function touchStarted(event) {
     }
   }
 
-  // その他のタッチ処理
   if (state === "visual") {
     isDragging = true;
   }
 
-  return true;
+  return false;
 }
 
 function touchMoved(event) {
   if (!event.touches || event.touches.length === 0) return false;
   if (event) event.preventDefault();
   
-  const currentX = event.touches[0].clientX;
-  const currentY = event.touches[0].clientY;
-  const deltaX = Math.abs(currentX - touchStartX);
-  const deltaY = Math.abs(currentY - touchStartY);
+  const touch = event.touches[0];
+  const currentX = touch.clientX;
+  const currentY = touch.clientY;
+  const deltaX = currentX - touchStartPos.x;
+  const deltaY = currentY - touchStartPos.y;
   
   // ギャラリーモードでのスクロール処理
-  if (state === "gallery") {
-    // 縦方向のスクロールのみ処理
-    if (deltaY > 5 && deltaY > deltaX) {
-      event.preventDefault();
-      const delta = currentY - touchStartY;
-      targetScrollY -= delta * 2;
-      touchStartY = currentY;
+  if (state === 'gallery') {
+    if (Math.abs(deltaX) > TAP_THRESHOLD || Math.abs(deltaY) > TAP_THRESHOLD) {
+      isScrolling = true;
+      targetScrollY -= deltaY * 0.5;
+      touchStartPos = { x: currentX, y: currentY };
+      velocityY = deltaY;
       return false;
     }
     return true;
@@ -792,7 +797,6 @@ function touchMoved(event) {
   
   // 2本指タッチ（ピンチ操作）
   if (event.touches.length === 2) {
-    event.preventDefault();
     const dx = event.touches[0].clientX - event.touches[1].clientX;
     const dy = event.touches[0].clientY - event.touches[1].clientY;
     const currentDistance = Math.sqrt(dx * dx + dy * dy);
@@ -806,7 +810,6 @@ function touchMoved(event) {
   
   // ビジュアルモードでの回転操作
   if (state === "visual" && isDragging) {
-    event.preventDefault();
     const currentTime = millis();
     const deltaX = currentX - lastTouchX;
     const deltaY = currentY - lastTouchY;
@@ -838,16 +841,21 @@ function touchEnded(event) {
 
   const currentTime = millis();
   const tapDuration = currentTime - touchStartTime;
+  let isTap = false;
   
   // タップ判定（短いタッチ）
-  if (state === "gallery" && tapDuration < 200) {
+  if (state === "gallery") {
     if (event.changedTouches && event.changedTouches.length > 0) {
       const touch = event.changedTouches[0];
       const dx = touch.clientX - touchStartPos.x;
       const dy = touch.clientY - touchStartPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
+      const isShortTap = tapDuration < 200;
+      const isSmallMovement = distance < 10;
       
-      if (distance < 10) {
+      isTap = isShortTap && isSmallMovement;
+      
+      if (isTap) {
         const rect = canvas.elt.getBoundingClientRect();
         const x = (touch.clientX - rect.left) / (width / 430) + scrollY * 0.5;
         const y = (touch.clientY - rect.top) / (width / 430);
@@ -857,7 +865,7 @@ function touchEnded(event) {
   }
   
   // 慣性スクロール
-  if (state === "gallery" && Math.abs(velocityY) > 0.1) {
+  if (state === "gallery" && Math.abs(velocityY) > 0.1 && !isTap) {
     const deceleration = 0.95;
     const minVelocity = 0.1;
     
