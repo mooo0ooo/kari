@@ -790,12 +790,6 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
     polygon(0, 0, displaySize/2, sides);
   }
 
-　fill(isSelected ? 255 : 200);
-  textAlign(CENTER, CENTER);
-  textSize(btnSize_ * 0.3);
-  text(index, 0, 0);
-
-
   pop();
 }
 
