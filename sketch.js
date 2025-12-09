@@ -1550,9 +1550,6 @@ function drawGallery2D() {
   // デザイン幅とスケールを計算
   let designWidth = 430;
   let galleryScale = min(1, width / designWidth);
-
-  // スクロール処理
-  scrollY = lerp(scrollY, targetScrollY, 0.2);
   
   push();
   scale(galleryScale);
