@@ -620,18 +620,27 @@ function drawPADButtons(){
   for(let i=0;i<7;i++){
     let col = lerpColor(color(255,150,0), color(0,100,255), i/6);
     drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy-120, padLayout.btnSize, col, i, selectedP===i, "rect");
+	const isHighlighted = (selectedP === i) || 
+                     (isTouching && 
+                      dist(mouseX, mouseY, btnX, btnY) < btnSize/2);
   }
   // A 行
   for(let i=0;i<7;i++){
     let col = lerpColor(color(255,220,0), color(0,0,100), i/6);
     let sides = int(map(i,0,6,3,30));
     drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy, padLayout.btnSize, col, i, selectedA===i, "polygon", sides);
+	const isHighlighted = (selectedA === i) || 
+                     (isTouching && 
+                      dist(mouseX, mouseY, btnX, btnY) < btnSize/2);
   }
   // D 行
   for(let i=0;i<7;i++){
     let col = color(200);
     let sides = int(map(i,0,6,4,30));
     drawButton(cx + (i-3)*(padLayout.btnSize+padLayout.spacing), cy+120, padLayout.btnSize, col, i, selectedD===i, "polygon", sides);
+    const isHighlighted = (selectedD === i) || 
+                     (isTouching && 
+                      dist(mouseX, mouseY, btnX, btnY) < btnSize/2);
   }
   pop();
 }
@@ -769,18 +778,16 @@ function mousePressed() {
    タッチイベント
    ========================================================= */
 function touchStarted(event) {
-  if (event) {
-    event.preventDefault();
-  }
+  if (event) event.preventDefault();
 
-  // タッチ開始時の位置を記録
+  // タッチ位置の更新
   if (event && event.touches && event.touches.length > 0) {
     isTouching = true;
     touchStartTime = millis();
     touchStartX = event.touches[0].clientX;
     touchStartY = event.touches[0].clientY;
     touchStartPos = { x: touchStartX, y: touchStartY };
-    
+	  
     // マウス座標の同期
     mouseX = touchStartX;
     mouseY = touchStartY;
@@ -825,6 +832,14 @@ function touchStarted(event) {
   if (state === "visual") {
     isDragging = true;
     return false;
+  }
+
+  // PADボタンのタッチ判定
+  if (state === "select") {
+    const rect = canvas.elt.getBoundingClientRect();
+    const x = touchStartX - rect.left;
+    const y = touchStartY - rect.top;
+    checkPadButtonTouch(x, y);
   }
   
   return false;
@@ -1227,6 +1242,51 @@ function setupButtonInteractions() {
   });
 }
 
+// PADボタン
+function checkPadButtonTouch(x, y) {
+  const btnSize = padLayout.btnSize * padLayout.scl;
+  const spacing = padLayout.spacing * padLayout.scl;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  
+  // P行のボタン（上段）
+  for (let i = 0; i < 7; i++) {
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY - 120 * padLayout.scl;
+    
+    if (dist(x, y, btnX, btnY) < btnSize/2) {
+      selectedP = i;
+      redraw();
+      return true;
+    }
+  }
+  
+  // A行のボタン（中段）
+  for (let i = 0; i < 7; i++) {
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY;
+    
+    if (dist(x, y, btnX, btnY) < btnSize/2) {
+      selectedA = i;
+      redraw();
+      return true;
+    }
+  }
+  
+  // D行のボタン（下段）
+  for (let i = 0; i < 7; i++) {
+    const btnX = centerX + (i - 3) * (btnSize + spacing);
+    const btnY = centerY + 120 * padLayout.scl;
+    
+    if (dist(x, y, btnX, btnY) < btnSize/2) {
+      selectedD = i;
+      redraw();
+      return true;
+    }
+  }
+  
+  return false;
+}
 /* =========================================================
    mouseWheel
    ========================================================= */
