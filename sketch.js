@@ -1884,3 +1884,11 @@ function loadConstellations() {
     }
   }
 }
+
+window.setup = setup;
+window.draw = draw;
+window.windowResized = windowResized;
+window.mouseWheel = mouseWheel;
+window.touchStarted = touchStarted;
+window.touchMoved = touchMoved;
+window.touchEnded = touchEnded;
