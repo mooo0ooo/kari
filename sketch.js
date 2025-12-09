@@ -1618,13 +1618,11 @@ function drawGallery2D() {
       // タップ/ホバー判定
       let mx = (mouseX - width/2) / galleryScale;
       let my = (mouseY - height/2 - scrollY) / galleryScale;
-      let isHovered = (mx > x && mx < x + thumbSize && 
-                      my > ty && my < ty + thumbSize);
       
       // サムネイルの背景
-      fill(isHovered ? 'rgba(80, 100, 160, 0.3)' : 'rgba(5, 5, 20, 0.8)');
-	  stroke(isHovered ? 'rgba(150, 180, 255, 0.8)' : 'rgba(150, 150, 150, 0.5)');
-	  strokeWeight(isHovered ? 2 : 1);
+      fill('rgba(5, 5, 20, 0.8)');
+	  stroke('rgba(150, 150, 150, 0.5)');
+	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
 
 	  if (!list[i].thumbnail) {
@@ -1632,11 +1630,7 @@ function drawGallery2D() {
       }
 
       if (list[i].thumbnail) {
-        let scale = isHovered ? 1.05 : 1.0;
-        image(list[i].thumbnail, 
-             x + (thumbSize - thumbSize * scale)/2, 
-             ty + (thumbSize - thumbSize * scale)/2, 
-             thumbSize * scale, thumbSize * scale);
+        image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
       }
       
       // 日付を表示
