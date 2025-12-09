@@ -55,6 +55,8 @@ let isDragging = false;
 let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
+
+const TAP_THRESHOLD = 15;
 // ズーム
 let zoomLevel = 1;
 let targetZoomLevel = 1;
@@ -267,7 +269,6 @@ function setup() {
 	canvas.elt.addEventListener('touchmove', touchMoved, { passive: false });
     canvas.elt.addEventListener('touchend', touchEnded, { passive: false });
 	canvas.elt.addEventListener('touchcancel', touchEnded, { passive: false });
-
 
     // タッチイベントの伝搬を防ぐ
     document.querySelectorAll('button').forEach(btn => {
@@ -579,15 +580,13 @@ function draw() {
 	} 
 	
 	// タッチフィードバックの描画
-  if (touchFeedback.alpha > 0) {
-	  touchFeedback.alpha -= 3;
-	  if (touchFeedback.alpha > 0) {
-	    push();
-	    noStroke();
-	    fill(255, 255, 255, touchFeedback.alpha);
-	    ellipse(touchFeedback.x, touchFeedback.y, 50, 50);
-	    pop();
-	  }
+  if (touchFeedback && touchFeedback.alpha > 0) {
+    push();
+    noStroke();
+    fill(255, 255, 255, touchFeedback.alpha);
+    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
+    touchFeedback.alpha -= 5;
+    pop();
   }
 }
 
@@ -675,6 +674,10 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
    mousePressed
    ========================================================= */
 function mousePressed() {
+  if (touches.length > 0) {
+    return false;
+  }
+	
   if (state === "visual") {
     if (allConstellations.length === 0) return;
     let currentConstellation = allConstellations[allConstellations.length - 1];
@@ -772,30 +775,35 @@ function touchStarted(event) {
   if (event) event.preventDefault();
 
   // タッチ位置の更新
-  if (event && event.touches && event.touches.length > 0) {
+  if (event && event.touches && event.touches[0]) {
+    const touch = event.touches[0];
+    const rect = canvas.elt.getBoundingClientRect();
+    touchStartX = touch.clientX - rect.left;
+    touchStartY = touch.clientY - rect.top;
     isTouching = true;
     touchStartTime = millis();
-    touchStartX = event.touches[0].clientX;
-    touchStartY = event.touches[0].clientY;
-    touchStartPos = { x: touchStartX, y: touchStartY };
-	  
+    touchStartPos = { x: touch.clientX, y: touch.clientY };
+    
     // マウス座標の同期
     mouseX = touchStartX;
     mouseY = touchStartY;
 
-	if (state === "select") {
-      handlePadButtonTap(touchStartX, touchStartY);
-    }
-  } else {
+	// PADボタンのタップ処理
+    if (state === "select") {
+      if (handlePadButtonTap(touchStartX, touchStartY)) {
+        return false;
+      }
+    } else {
     isTouching = true;
     touchStartTime = millis();
     touchStartX = mouseX;
     touchStartY = mouseY;
     touchStartPos = { x: mouseX, y: mouseY };
+	}
   }
 
   // 2本指タッチ（ピンチ操作）の初期化
-  if (event && event.touches && event.touches.length === 2) {
+  if (event.touches && event.touches.length === 2) {
     const dx = event.touches[0].clientX - event.touches[1].clientX;
     const dy = event.touches[0].clientY - event.touches[1].clientY;
     initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
@@ -803,14 +811,16 @@ function touchStarted(event) {
     return false;
   }
   
-  // ボタンのタッチ判定（元のまま）
+  // ボタンのタッチ判定
   if (state === "select" || state === "gallery" || state === "visual") {
     const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
     
     for (const btn of buttons) {
       const rect = btn.elt.getBoundingClientRect();
-      if (touchStartX >= rect.left && touchStartX <= rect.right && 
-          touchStartY >= rect.top && touchStartY <= rect.bottom) {
+      if (touchStartX + rect.left >= rect.left && 
+          touchStartX + rect.left <= rect.right && 
+          touchStartY + rect.top >= rect.top && 
+          touchStartY + rect.top <= rect.bottom) {
         btn.elt.style.transform = 'scale(0.95)';
         btn.elt.style.opacity = '0.9';
         setTimeout(() => {
@@ -822,13 +832,12 @@ function touchStarted(event) {
       }
     }
   }
-  
+
   // その他のタッチ処理
   if (state === "visual") {
     isDragging = true;
-    return false;
   }
-
+	  
   return false;
 }
 
@@ -1238,16 +1247,19 @@ function checkPadButtonTouch(x, y) {
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
   const centerY = height / 2;
+
+  const padHitMargin = 5;
   
-  // P行のボタン（上段）
+  // P行のボタン
   for (let i = 0; i < 7; i++) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY - 120 * padLayout.scl;
     
-    if (dist(x, y, btnX, btnY) < btnSize/2) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
       redraw();
-      return;
+      return true;
     }
   }
   
@@ -1256,10 +1268,11 @@ function checkPadButtonTouch(x, y) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY;
     
-    if (dist(x, y, btnX, btnY) < btnSize/2) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
       redraw();
-      return;
+      return true;
     }
   }
   
@@ -1268,13 +1281,13 @@ function checkPadButtonTouch(x, y) {
     const btnX = centerX + (i - 3) * (btnSize + spacing);
     const btnY = centerY + 120 * padLayout.scl;
     
-    if (dist(x, y, btnX, btnY) < btnSize/2) {
+    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
+      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
       redraw();
-      return;
+      return true;
     }
   }
-  
   return false;
 }
 /* =========================================================
