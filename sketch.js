@@ -56,6 +56,7 @@ let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
 
+const ZOOM_ANIMATION_THRESHOLD = 0.5;
 const TAP_THRESHOLD = 5;
 const TAP_MAX_DURATION = 200;
 // ズーム
@@ -1026,10 +1027,6 @@ function changeState(newState) {
   }
 }
 
-function touchCanceled(event) {
-  return touchEnded(event);
-}
-
 function touchCanceled(e) {
   e.preventDefault();
   return false;
@@ -1094,7 +1091,6 @@ function handleGalleryClick() {
     const DESIGN_WIDTH = 430;
     const THUMBNAIL_SIZE = 150;
     const CLOSE_BUTTON_RADIUS = 30;
-    const ZOOM_ANIMATION_THRESHOLD = 0.5;
     
     // 座標変換
     const galleryScale = min(1, width / DESIGN_WIDTH);
@@ -1272,24 +1268,13 @@ function setupButtonInteractions() {
   });
 }
 
-function addButtonInteraction(button, callback) {
-  button.mousePressed(callback);
-  if ('ontouchstart' in window) {
-    button.elt.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      callback();
-    }, { passive: false });
-  }
-}
-
 // PADボタン
 function checkPadButtonTouch(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
   const centerY = height / 2;
-
-  const padHitMargin = 5;
+  const hitMargin = 5;
   
   // P行のボタン
   for (let i = 0; i < 7; i++) {
