@@ -414,15 +414,10 @@ function updateButtonVisibility() {
   if (state === "select") {
     console.log("selectモードのボタンを表示");
     addButton.show();
+	okButton.show();
     galleryButton.show();
     addButton.html("追加");
     galleryButton.html("日記一覧");
-    
-    // PADの3つのボタンがすべて選択されている場合のみOKボタンを表示
-    if (selectedP !== null && selectedA !== null && selectedD !== null) {
-      okButton.show();
-      okButton.html("OK");
-      console.log("OKボタンを表示します");
     }
   } 
   else if (state === "gallery") {
