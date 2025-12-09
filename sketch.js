@@ -1552,13 +1552,8 @@ function drawGallery2D() {
   let galleryScale = min(1, width / designWidth);
 
   // スクロール処理
-  let scrollEasing = 0.1;
-  if (abs(scrollY - targetScrollY) < 0.5) {
-    scrollY = targetScrollY;
-  } else {
-    scrollY = lerp(scrollY, targetScrollY, scrollEasing);
-  }
-
+  scrollY = lerp(scrollY, targetScrollY, 0.2);
+  
   push();
   scale(galleryScale);
   translate(0, scrollY);
@@ -1568,12 +1563,12 @@ function drawGallery2D() {
   let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
   let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
-  let contentHeight = 0;
 
   // 月ごとに分類
   let grouped = {};
   for (let m = 0; m < 12; m++) grouped[m] = [];
   for (let c of allConstellations) {
+    if (!c.created) continue;
     let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
     if (!m) continue;
     let monthIndex = int(m[2]) - 1;
@@ -1583,22 +1578,10 @@ function drawGallery2D() {
   const viewportTop = -scrollY / galleryScale;
   const viewportBottom = viewportTop + height / galleryScale;
 
-  for (let month = 0; month < 12; month++) {
-    let list = grouped[month];
-    if (list.length === 0) continue;
-    contentHeight += 35;
-    contentHeight += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-  }
-
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
     if (list.length === 0) continue;
-
-	if (y + 35 < viewportTop - 100 || y > viewportBottom) {
-        y += 35 + ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-        continue;
-    }
 
     // 月の見出し
     fill(255);
@@ -1613,10 +1596,10 @@ function drawGallery2D() {
 
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
-	  let col = i % colCount;
-	  let row = floor(i / colCount);
-	  let x = rowStartX + col * (thumbSize + gutter);
-	  let ty = y + row * (thumbSize + gutter + 25);
+      let col = i % colCount;
+      let row = floor(i / colCount);
+      let x = rowStartX + col * (thumbSize + gutter);
+      let ty = y + row * (thumbSize + gutter + 25);
 
 	  if (ty + thumbSize < viewportTop || ty > viewportBottom) {
 	    continue;
@@ -1635,12 +1618,11 @@ function drawGallery2D() {
 	  rect(x, ty, thumbSize, thumbSize, 8);
 
 	  if (!list[i].thumbnail) {
-		list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
-	  }
+        list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+      }
 
-	  if (list[i].thumbnail) {
+      if (list[i].thumbnail) {
         let scale = isHovered ? 1.05 : 1.0;
-        let offset = (thumbSize * scale - thumbSize) / 2;
         image(list[i].thumbnail, 
              x + (thumbSize - thumbSize * scale)/2, 
              ty + (thumbSize - thumbSize * scale)/2, 
@@ -1649,7 +1631,7 @@ function drawGallery2D() {
       
       // 日付を表示
       let date = new Date(list[i].created);
-      let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
       fill(200, 220, 255);
       textSize(12);
@@ -1667,17 +1649,13 @@ function drawGallery2D() {
     }
     
     // 次の月の開始位置を計算
-    y += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+    y += monthContentHeight;;
   }
+
+  let contentHeight = y + 20;
 
   pop();
 
-  const scrollEasing = 0.15;
-  if (abs(scrollY - targetScrollY) > 0.1) {
-    scrollY = lerp(scrollY, targetScrollY, scrollEasing);
-  } else {
-    scrollY = targetScrollY;
-  }
   // スクロール範囲を制限
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
