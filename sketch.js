@@ -418,7 +418,7 @@ function updateButtonVisibility() {
     galleryButton.show();
     addButton.html("追加");
     galleryButton.html("日記一覧");
-    }
+	okButton.html("OK");
   } 
   else if (state === "gallery") {
     console.log("galleryモードのボタンを表示");
