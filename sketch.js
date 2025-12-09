@@ -671,109 +671,11 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
 }
 
 /* =========================================================
-   mousePressed
-   ========================================================= */
-function mousePressed() {
-  if (touches.length > 0) {
-    return false;
-  }
-	
-  if (state === "visual") {
-    if (allConstellations.length === 0) return;
-    let currentConstellation = allConstellations[allConstellations.length - 1];
-    let minDist = 50;
-    let nearest = null;
-	
-	let mx = mouseX;
-    let my = mouseY;
-	  
-    for (let p of currentConstellation.stars) {
-      let px = p.pos?.x ?? 0;
-      let py = p.pos?.y ?? 0;
-      let pz = p.pos?.z ?? 0;
-      let sp = screenPos(px, py, pz);
-      let sx = sp.x;
-      let sy = sp.y;
-      let d = dist(mx, my, sx, sy);
-      if (d < minDist) {
-        minDist = d; 
-        nearest = p; 
-      }
-    }
-    if (nearest) {
-      let emo = nearest.emo || {en:"", ja:""};
-      selectedLabel = emo.en + "(" + (emo.ja || "") + ")";
-      setTimeout(() => { selectedLabel = null; }, 3000);
-    }
-    return;
-  } 
-  else if (state === "gallery") {
-    handleGalleryClick();
-    return false;
-  }
-  else if (state === "select") {
-    let mx = (mouseX - width/2) / padLayout.scl;
-    let my = (mouseY - height/2) / padLayout.scl;
-    let cx = padLayout.cx;
-    let cy = padLayout.cy;
-
-    // P 行
-    for (let i = 0; i < 7; i++) {
-      let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
-      let by = cy - 120;
-      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
-        selectedP = i;
-        // タッチフィードバック
-        touchFeedback = {
-          x: x,
-          y: y,
-          alpha: 100
-        };
-        return;
-      }
-    }
-
-    // A 行
-    for (let i = 0; i < 7; i++) {
-      let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
-      let by = cy;
-      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
-        selectedA = i;
-        // タッチフィードバック
-        touchFeedback = {
-          x: x,
-          y: y,
-          alpha: 100
-        };
-        return;
-      }
-    }
-
-    // D 行 
-    for (let i = 0; i < 7; i++) {
-      let bx = cx + (i-3)*(padLayout.btnSize+padLayout.spacing);
-      let by = cy + 120;
-      if (dist(mx, my, bx, by) < padLayout.btnSize/2 * 1.2) {
-        selectedD = i;
-        // タッチフィードバック
-        touchFeedback = {
-          x: x,
-          y: y,
-          alpha: 100
-        };
-        return;
-      }
-    }
-  return false;
-  }
-}
-
-/* =========================================================
    タッチイベント
    ========================================================= */
 function touchStarted(event) {
   if (event) event.preventDefault();
-
+  
   // タッチ位置の更新
   if (event && event.touches && event.touches[0]) {
     const touch = event.touches[0];
@@ -788,18 +690,12 @@ function touchStarted(event) {
     mouseX = touchStartX;
     mouseY = touchStartY;
 
-	// PADボタンのタップ処理
+	 // PADボタンのタップ処理
     if (state === "select") {
       if (handlePadButtonTap(touchStartX, touchStartY)) {
         return false;
       }
-    } else {
-    isTouching = true;
-    touchStartTime = millis();
-    touchStartX = mouseX;
-    touchStartY = mouseY;
-    touchStartPos = { x: mouseX, y: mouseY };
-	}
+    }
   }
 
   // 2本指タッチ（ピンチ操作）の初期化
@@ -837,15 +733,13 @@ function touchStarted(event) {
   if (state === "visual") {
     isDragging = true;
   }
-	  
+
   return false;
 }
 
 function touchMoved(event) {
   if (!event.touches || event.touches.length === 0) return false;
   if (event) event.preventDefault();
-  isTouching = false;
-  return false;
   
   const currentX = event.touches[0].clientX;
   const currentY = event.touches[0].clientY;
@@ -890,8 +784,8 @@ function touchMoved(event) {
     if (lastTouchTime > 0) {
       const deltaTime = currentTime - lastTouchTime;
       if (deltaTime > 0) {
-        velocityX = deltaX / deltaTime * 0.5;
-        velocityY = deltaY / deltaTime * 0.5;
+        velocityX = deltaX / deltaTime * 0.1;
+        velocityY = deltaY / deltaTime * 0.1;
       }
     }
     
@@ -919,10 +813,31 @@ function touchEnded(event) {
       const dy = touch.clientY - touchStartPos.y;
       
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        // ギャラリーのタップ処理
         handleGalleryTap(touch.clientX, touch.clientY);
       }
     }
+  }
+  
+  // ギャラリーモードの慣性スクロール
+  if (state === "gallery" && Math.abs(velocityY) > 0.1) {
+    const deceleration = 0.95;
+    const minVelocity = 0.1;
+    
+    const applyInertia = () => {
+      if (Math.abs(velocityY) < minVelocity) {
+        velocityY = 0;
+        return;
+      }
+      
+      targetScrollY -= velocityY * 2;
+      velocityY *= deceleration;
+      
+      if (Math.abs(velocityY) >= minVelocity) {
+        requestAnimationFrame(applyInertia);
+      }
+    };
+    
+    requestAnimationFrame(applyInertia);
   }
   
   // ビジュアルモードの慣性処理
