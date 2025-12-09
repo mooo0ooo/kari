@@ -740,6 +740,18 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   push();
   translate(x, y, 0);
 
+　// 選択中のボタンに光るエフェクト
+  if (isSelected) {
+    push();
+    blendMode(ADD);
+    noStroke();
+    let glowSize = btnSize_ * 2.0;
+    let glowColor = color(255, 255, 255, 80);
+    fill(glowColor);
+    ellipse(0, 0, glowSize, glowSize);
+    pop();
+  }
+
   push();
   blendMode(ADD);
   noStroke();
@@ -749,21 +761,40 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   ellipse(0, 0, btnSize_ * 2.2, btnSize_ * 2.2);
   pop();
 
-  let body = color(
-    constrain(red(col) + 20, 0, 255),
-    constrain(green(col) + 20, 0, 255),
-    constrain(blue(col) + 20, 0, 255)
-  );
+  let body;
+  if (isSelected) {
+	// 選択時
+    body = color(
+      constrain(red(col) + 40, 0, 255),
+      constrain(green(col) + 40, 0, 255),
+      constrain(blue(col) + 40, 0, 255)
+    );
+  } else {
+	// 非選択時
+    body = color(
+      constrain(red(col) - 20, 0, 255),
+      constrain(green(col) - 20, 0, 255),
+      constrain(blue(col) - 20, 0, 255)
+    );
+  }
 
   noStroke();
   fill(body);
 
+  let displaySize = isSelected ? btnSize_ * 1.1 : btnSize_;
+
   if (shapeType === "rect") {
     rectMode(CENTER);
-    rect(0, 0, btnSize_, btnSize_, 8);
+    rect(0, 0, displaySize, displaySize, 8);
   } else if (shapeType === "polygon") {
-    polygon(0, 0, btnSize_/2, sides);
+    polygon(0, 0, displaySize/2, sides);
   }
+
+　fill(isSelected ? 255 : 200);
+  textAlign(CENTER, CENTER);
+  textSize(btnSize_ * 0.3);
+  text(index, 0, 0);
+
 
   pop();
 }
