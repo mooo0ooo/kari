@@ -697,6 +697,7 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   }
 
   pop();
+  pop();
 }
 
 /* =========================================================
@@ -832,9 +833,6 @@ function touchMoved(event) {
     
     return false;
   }
-}
-  
-  return true;
 }
 
 function touchEnded(event) {
