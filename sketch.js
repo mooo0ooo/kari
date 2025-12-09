@@ -253,7 +253,7 @@ function setup() {
     	console.log("状態をvisualに変更しました。現在のstate:", state);
 	    
 	    // ビジュアルを準備
-	    prepareVisual();
+	    prepareVisual(false); 
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
@@ -291,9 +291,7 @@ function setup() {
 	    // 強制的に再描画
 	    redraw();
 	  } else {
-	    state = "visual";
-	    updateButtonVisibility();
-	    redraw();
+	    console.log("PAD値がありません");
 	  }
   });
 
@@ -513,7 +511,7 @@ function addPAD() {
 /* =========================================================
    prepareVisual
    ========================================================= */
-function prepareVisual() {
+function prepareVisual(changeState = true) {
   points = [];
   for (let v of padValues) {
     let emo = findClosestEmotion(v.P, v.A, v.D);
@@ -532,11 +530,13 @@ function prepareVisual() {
     });
   }
 
-  console.log("ビジュアルの準備が完了しました");
-
-　state = "visual";
-  updateButtonVisibility();
+　if (changeState) {
+    state = "visual";
+    updateButtonVisibility();
+  }
+  
   visualStartTime = millis();
+  console.log("ビジュアルの準備が完了しました。現在のstate:", state);
 }
 
 /* =========================================================
