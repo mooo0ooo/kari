@@ -224,9 +224,11 @@ function setup() {
   
   okButton.mousePressed(() => {
 	  if (padValues.length > 0) {
-	    prepareVisual();
 	    let now = new Date();
 	    let timestamp = now.toLocaleString();
+
+		prepareVisual()
+		  
 	    let serialStars = points.map(s => {
 	      let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
 	      let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
@@ -238,16 +240,20 @@ function setup() {
 	      stars: serialStars, 
 	      created: timestamp
 	    };
+		  
 	    allConstellations.push(newConstellation);
-	    localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-	
-	    state = "visual";
+	    try {
+	      localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	    } catch (e) {
+	      console.error("Failed to save data:", e);
+	    }
+		
+	    padValues = [];
+	    selectedP = selectedA = selectedD = null;
+		  
 	    updateButtonVisibility();
 	    visualStartTime = millis();
 	    
-	    padValues = [];
-	    points = [];
-	    selectedP = selectedA = selectedD = null;
 	  }
 	});
 
@@ -461,6 +467,10 @@ function prepareVisual() {
       twinkle: random(1000)
     });
   }
+
+　state = "visual";
+  updateButtonVisibility();
+  visualStartTime = millis();
 }
 
 /* =========================================================
