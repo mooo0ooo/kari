@@ -88,10 +88,6 @@ let scrollY = 0;
 let targetScrollY = 0;
 let galleryStars = [];
 
-let selectedThumbnail = null;
-let zoomAnim = 0;
-let targetZoom = 0;
-
 let upButton, downButton;
 const SCROLL_AMOUNT = 150;
 
@@ -478,7 +474,7 @@ function prepareVisual() {
    ========================================================= */
 function draw() {
   if (frameCount % 60 === 0) { 
-		    cleanupThumbnails();
+	cleanupThumbnails();
   }
 	
   background(5, 5, 20);
@@ -508,9 +504,6 @@ function draw() {
   }
   else if (state === "gallery") {
     drawGallery2D();
-	if (selectedThumbnail && targetZoom > 0.5) {
-	    return;
-	}
     scrollY = lerp(scrollY, targetScrollY, 0.2);
   	return;
   }
@@ -1478,12 +1471,7 @@ function checkPadButtonTouch(x, y) {
    mouseWheel
    ========================================================= */
 function mouseWheel(event) {
-    if (state === "gallery") {
-        if (selectedThumbnail && targetZoom > 0.5) {
-            return false;
-        }
-        return false;
-    } else if (state === "visual") {
+    if (state === "visual") {
         targetZoomLevel -= event.delta * 0.001;
         targetZoomLevel = constrain(targetZoomLevel, MIN_ZOOM, MAX_ZOOM);
         return false;
@@ -1659,15 +1647,6 @@ function drawGallery2D() {
       textSize(12);
       textAlign(CENTER, TOP);
       text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
-      
-      // クリック判定
-      if (isHovered && mouseIsPressed) {
-        selectedThumbnail = list[i];
-        targetZoom = 1;
-        // 画面中央にスクロール
-        let targetY = -(ty + thumbSize/2 - height/galleryScale/2);
-        targetScrollY = constrain(targetY, -y, 0);
-      }
     }
     
     // 次の月の開始位置を計算
@@ -1682,14 +1661,6 @@ function drawGallery2D() {
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
-
-  // 拡大表示を描画
-  if (selectedThumbnail) {
-    push();
-    translate(width/2, height/2);
-    drawZoomedThumbnail();
-    pop();
-  }
 }
 
 /* =========================================================
@@ -1794,103 +1765,6 @@ function generate2DThumbnail(cons, size) {
 }
 
 /* =========================================================
-   drawZoomedThumbnail
-   ========================================================= */
-function drawZoomedThumbnail() {
-  if (!selectedThumbnail) return;
-    
-    // スムーズなズームアニメーション
-    zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
-	  if (zoomAnim < 0.01 && targetZoom === 0) {
-	    // クリーンアップ
-	    if (selectedThumbnail.thumbnail) {
-	      selectedThumbnail.thumbnail.remove();
-	      selectedThumbnail.thumbnail = null;
-	    }
-	    selectedThumbnail = null;
-	    return;
-　　 }
-  
-  push();
-  // 背景のオーバーレイ
-  fill(0, 0, 0, zoomAnim * 200);
-  rectMode(CORNER);
-  rect(-width/2, -height/2, width, height);
-  
-  // スケール計算
-  let scaleValue = 0.7 + zoomAnim * 0.3;
-  scale(scaleValue);
-  
-  // サムネイルサイズ
-  let thumbSize = min(width, height) * 0.7;
-  
-  // サムネイルの背景
-  fill(15, 20, 40);
-  stroke(100, 150, 255, 80);
-  strokeWeight(1);
-  let cornerRadius = 12 * (0.7 + zoomAnim * 0.3);
-  rect(-thumbSize/2, -thumbSize/2, thumbSize, thumbSize, cornerRadius);
-  
-  // サムネイルを描画
-  if (!selectedThumbnail.thumbnail || 
-    selectedThumbnail.thumbnail.width !== thumbSize) {
-    if (selectedThumbnail.thumbnail) {
-        selectedThumbnail.thumbnail.remove();
-    }
-    selectedThumbnail.thumbnail = generate2DThumbnail(selectedThumbnail, thumbSize);
-  }
-  
-  imageMode(CENTER);
-  image(selectedThumbnail.thumbnail, 0, 0, thumbSize, thumbSize);
-  
-  // 日付を表示
-  let date = parseDate(selectedThumbnail.created);
-  let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  let formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  
-  textAlign(CENTER, TOP);
-  textSize(18 * (0.7 + zoomAnim * 0.3));
-  fill(200, 220, 255);
-  text(formattedDate, 0, thumbSize/2 + 20);
-  
-  // 閉じるボタン
-  if (zoomAnim > 0.5) { // 表示閾値を下げる
-    // 閉じるボタンの背景（円形）
-    let buttonSize = 40 * (0.7 + zoomAnim * 0.3);
-    let buttonX = thumbSize/2 - 25;
-    let buttonY = -thumbSize/2 + 25;
-    
-    // ホバー/タップ判定
-    let isOver = dist(mouseX - width/2, mouseY - height/2, buttonX * scale, buttonY * scale) < buttonSize/2;
-    
-    // ボタンの背景
-    fill(isOver ? 255 : 255, isOver ? 120 : 100, isOver ? 120 : 100, 200);
-    noStroke();
-    circle(buttonX, buttonY, buttonSize);
-    
-    // 閉じるボタンの「×」マーク
-    fill(255);
-    textSize(24 * (0.7 + zoomAnim * 0.3));
-    textAlign(CENTER, CENTER);
-    text("×", buttonX, buttonY);
-    
-    // タップ/クリック処理
-    if (isOver && (mouseIsPressed || touches.length > 0)) {
-      targetZoom = 0;
-      setTimeout(() => {
-        if (targetZoom === 0) selectedThumbnail = null;
-      }, 300);
-    }
-    
-    // カーソルをポインターに変更
-    if (isOver) {
-      cursor('pointer');
-    }
-  }
-  pop();
-}
-
-/* =========================================================
    最大スクロール量を計算
    ========================================================= */
 function calculateMaxScroll() {
@@ -1930,7 +1804,7 @@ function cleanupThumbnails() {
     // 古いものから削除
     for (let i = MAX_CACHED; i < sorted.length; i++) {
         const c = sorted[i];
-        if (c !== selectedThumbnail && c.thumbnail) {
+        if (c.thumbnail) {
             c.thumbnail.remove();
             c.thumbnail = null;
         }
