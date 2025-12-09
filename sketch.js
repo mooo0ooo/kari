@@ -278,6 +278,10 @@ function setup() {
 	    galleryStars = [];
 		targetScrollY = 0;
     	scrollY = 0;
+		// スクロールボタンを再作成
+	    if (upButton) upButton.remove();
+	    if (downButton) downButton.remove();
+	    createScrollButtons();
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
@@ -343,6 +347,9 @@ function setup() {
 	    btn.addEventListener('touchend', handleButtonTouchEnd, { passive: false });
 	});
   }
+	if (state === "gallery") {
+	  createScrollButtons();
+	}
 }
 
 /* =========================================================
