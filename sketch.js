@@ -1235,9 +1235,8 @@ function setupButtonInteractions() {
     galleryStars = [];
     targetScrollY = 0;
     scrollY = 0;
-	resetView();
+    resetView();
   });
-}
 
   // ギャラリーボタン
   addButtonInteraction(galleryButton, function() {
