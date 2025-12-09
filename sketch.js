@@ -248,13 +248,12 @@ function setup() {
 	  
 	  if (padValues.length > 0) {
 	    console.log("PAD値あり、ビジュアルを準備します");
+
+		state = "visual";
+    	console.log("状態をvisualに変更しました。現在のstate:", state);
 	    
 	    // ビジュアルを準備
 	    prepareVisual();
-	    
-	    // 状態をvisualに変更
-	    state = "visual";
-	    console.log("状態をvisualに変更しました");
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
@@ -399,6 +398,9 @@ function setup() {
    ボタンの表示/非表示を更新
    ========================================================= */
 function updateButtonVisibility() {
+  console.log("updateButtonVisibility: state =", state);
+  
+  // すべてのボタンを非表示に
   addButton.hide();
   okButton.hide();
   backButton.hide();
@@ -407,28 +409,36 @@ function updateButtonVisibility() {
   if (upButton) upButton.hide();
   if (downButton) downButton.hide();
 
+  console.log("現在の状態:", state);
+
   if (state === "select") {
+    console.log("selectモードのボタンを表示");
     addButton.show();
-    okButton.show();
     galleryButton.show();
+    addButton.html("追加");
     galleryButton.html("日記一覧");
-	if (upButton) upButton.hide();
-    if (downButton) downButton.hide();
   } 
   else if (state === "gallery") {
+    console.log("galleryモードのボタンを表示");
     backButton.show();
-	backButton.html("← 記録ページ");
-    galleryButton.html("戻る");
-	if (upButton) upButton.show();
+    if (upButton) upButton.show();
     if (downButton) downButton.show();
+    backButton.html("← 戻る");
   }
   else if (state === "visual") {
+    console.log("visualモードのボタンを表示します");
+    resetViewButton.show();
     backButton.show();
     galleryButton.show();
+    resetViewButton.position(20, 20);
+    backButton.position(20, 60);
+    galleryButton.position(20, 100);
+    resetViewButton.html("↻ リセット");
+    backButton.html("← 戻る");
     galleryButton.html("日記一覧");
-    resetViewButton.show();
-	if (upButton) upButton.hide();
-    if (downButton) downButton.hide();
+    console.log("visualモードのボタンを表示しました");
+  } else {
+    console.log("未知の状態です:", state);
   }
 }
 
@@ -541,6 +551,7 @@ function draw() {
   background(5, 5, 20);
 
   if (state === "select") {
+	  console.log("selectモードの描画");
 	  camera();
 	  drawPADButtons();
 
@@ -564,6 +575,7 @@ function draw() {
 	  return;
   }
   else if (state === "gallery") {
+	console.log("galleryモードの描画");
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
     return;
@@ -739,6 +751,10 @@ function draw() {
 	    }
 	  }
 	} 
+	else {
+	    console.log("未知の状態での描画:", state);
+	    drawPADInterface();
+	}
 	
 	// タッチフィードバックの描画
   if (touchFeedback && touchFeedback.alpha > 0) {
