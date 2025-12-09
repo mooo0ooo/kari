@@ -739,6 +739,36 @@ function touchStarted(event) {
     mouseX = touchStartX;
     mouseY = touchStartY;
 
+	// ボタンのタッチ判定
+	if (state === "select" || state === "gallery" || state === "visual") {
+      const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
+      
+      for (const btn of buttons) {
+        if (!btn || !btn.elt) continue;
+        
+        const btnRect = btn.elt.getBoundingClientRect();
+        if (touch.clientX >= btnRect.left && 
+            touch.clientX <= btnRect.right && 
+            touch.clientY >= btnRect.top && 
+            touch.clientY <= btnRect.bottom) {
+          
+          // ボタンの視覚的フィードバック
+          btn.elt.style.transform = 'scale(0.95)';
+          btn.elt.style.opacity = '0.9';
+          
+          setTimeout(() => {
+            if (btn.mousePressed) {
+              btn.mousePressed();
+            }
+            btn.elt.style.transform = '';
+            btn.elt.style.opacity = '';
+          }, 50);
+          
+          return false;
+        }
+      }
+    }
+
 	 // PADボタンのタップ処理
     if (state === "select") {
 		const canvasX = touchStartX - width/2;
@@ -1129,7 +1159,7 @@ function handlePadButtonTap(x, y) {
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
   const centerY = height / 2;
-  const hitMargin = 5;
+  const hitMargin = 10;
 
   // P行のボタン
   for (let i = 0; i < 7; i++) {
@@ -1139,7 +1169,7 @@ function handlePadButtonTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      console.log(`P${i} tapped at ${btnX}, ${btnY}`);
+      console.log(`P${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
     }
@@ -1153,7 +1183,7 @@ function handlePadButtonTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      console.log(`A${i} tapped at ${btnX}, ${btnY}`);
+      console.log(`A${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
     }
@@ -1167,7 +1197,7 @@ function handlePadButtonTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      console.log(`D${i} tapped at ${btnX}, ${btnY}`);
+      console.log(`D${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
     }
