@@ -117,19 +117,10 @@ function createScrollButtons() {
   // 上スクロールボタン
   upButton = createButton('↑');
   upButton.position(width - 50, height - 100);
-  upButton.mousePressed(() => {
-    targetScrollY = min(0, targetScrollY + 100);
-    redraw();
-  });
   
   // 下スクロールボタン
   downButton = createButton('↓');
   downButton.position(width - 50, height - 50);
-  downButton.mousePressed(() => {
-    const maxScroll = -calculateMaxScroll();
-    targetScrollY = max(maxScroll, targetScrollY - 100);
-    redraw();
-  });
   
   // ボタンのスタイル設定
   [upButton, downButton].forEach(btn => {
@@ -141,6 +132,38 @@ function createScrollButtons() {
     btn.style('cursor', 'pointer');
     btn.style('font-size', '20px');
     btn.style('z-index', '1000');
+    // タッチデバイス用のスタイル
+    btn.elt.style.touchAction = 'manipulation';
+    btn.elt.style.webkitTapHighlightColor = 'transparent';
+  });
+
+  // スクロール処理の関数
+  const scrollUp = (e) => {
+    if (e) e.preventDefault();
+    targetScrollY = min(0, targetScrollY + 300);
+    redraw();
+  };
+
+  const scrollDown = (e) => {
+    if (e) e.preventDefault();
+    const maxScroll = -calculateMaxScroll();
+    targetScrollY = max(maxScroll, targetScrollY - 300);
+    redraw();
+  };
+
+  // マウスイベント
+  upButton.mousePressed(scrollUp);
+  downButton.mousePressed(scrollDown);
+  
+  // タッチイベント
+  upButton.elt.addEventListener('touchend', scrollUp, { passive: false });
+  downButton.elt.addEventListener('touchend', scrollDown, { passive: false });
+  
+  // タッチハイライトを防ぐ
+  [upButton, downButton].forEach(btn => {
+    btn.elt.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+    }, { passive: false });
   });
 }
 
@@ -838,6 +861,13 @@ function touchStarted(event) {
   if (!event) return false;
   event.preventDefault();
 
+  if (event.touches && event.touches[0]) {
+    const touch = event.touches[0];
+    if (checkButtonTouches(touch)) {
+      return false;
+    }
+  }
+
   isTouching = true;
   isScrolling = false;
   isDragging = false;
@@ -899,39 +929,49 @@ function touchStarted(event) {
 }
 
 function checkButtonTouches(touch) {
-  const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton]
+  const buttons = [upButton, downButton, addButton, okButton, backButton, galleryButton, resetViewButton]
     .filter(btn => btn && btn.elt);
-  
+
   for (const btn of buttons) {
-    const rect = btn.elt.getBoundingClientRect();
-    const isTouching = touch.clientX >= rect.left && 
-                      touch.clientX <= rect.right && 
-                      touch.clientY >= rect.top && 
-                      touch.clientY <= rect.bottom;
-    
-    if (isTouching) {
-      // ボタンの視覚的フィードバック
-      btn.elt.style.transform = 'scale(0.95)';
-      btn.elt.style.opacity = '0.9';
+    try {
+      const rect = btn.elt.getBoundingClientRect();
+      const isTouching = touch.clientX >= rect.left && 
+                        touch.clientX <= rect.right && 
+                        touch.clientY >= rect.top && 
+                        touch.clientY <= rect.bottom;
       
-      setTimeout(() => {
-        if (btn.mousePressed) {
-          btn.mousePressed();
-        }
-        // アニメーションを元に戻す
-        setTimeout(() => {
-          if (btn.elt) {
-            btn.elt.style.transform = '';
-            btn.elt.style.opacity = '';
+      if (isTouching) {
+        // タッチフィードバック
+        const originalTransform = btn.elt.style.transform;
+        const originalOpacity = btn.elt.style.opacity;
+        
+        btn.elt.style.transform = 'scale(0.95)';
+        btn.elt.style.opacity = '0.9';
+        btn.elt.style.transition = 'all 0.1s ease';
+        
+        // タッチ終了時のハンドラを設定
+        const handleTouchEnd = () => {
+          if (btn.mousePressed) {
+            btn.mousePressed();
           }
-        }, 100);
-      }, 10);
-      
-      return true;
+          // スタイルを元に戻す
+          btn.elt.style.transform = originalTransform;
+          btn.elt.style.opacity = originalOpacity;
+          // イベントリスナーを削除
+          document.removeEventListener('touchend', handleTouchEnd);
+        };
+        
+        // タッチ終了イベントを追加
+        document.addEventListener('touchend', handleTouchEnd, { once: true });
+        
+        return true;
+      }
+    } catch (e) {
+      console.warn('Error checking button touch:', e);
     }
   }
   return false;
-}
+}  
 
 function touchMoved(event) {
   if (!event.touches || event.touches.length === 0) return false;
@@ -990,13 +1030,30 @@ function touchMoved(event) {
 
 function touchEnded(event) {
   if (!event) return true;
+  if (event.cancelable) event.preventDefault();
 
   const currentTime = millis();
   const tapDuration = currentTime - touchStartTime;
   let isTap = false;
+  let touchHandled = false;
   
+  // ボタンタップの処理を最優先
+  if (event.changedTouches && event.changedTouches.length > 0) {
+    const touch = event.changedTouches[0];
+    
+    // ボタンタップのチェック
+    touchHandled = checkButtonTouches(touch);
+    
+    // ボタンタップが処理された場合はここで終了
+    if (touchHandled) {
+      isTouching = false;
+      isDragging = false;
+      return false;
+    }
+  }
+
   // タップ判定（短いタッチ）
-  if (state === "gallery") {
+  if (state === "gallery" && !touchHandled) {
     if (event.changedTouches && event.changedTouches.length > 0) {
       const touch = event.changedTouches[0];
       const dx = touch.clientX - touchStartPos.x;
@@ -1019,7 +1076,7 @@ function touchEnded(event) {
   }
   
   // ビジュアルモードの慣性処理
-  if (state === "visual") {
+  if (state === "visual" && !touchHandled) {
     const now = millis();
     const deltaTime = now - lastTouchTime;
     
