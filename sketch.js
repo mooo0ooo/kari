@@ -697,7 +697,6 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
   }
 
   pop();
-  pop();
 }
 
 /* =========================================================
@@ -1088,6 +1087,7 @@ function handlePadButtonTap(x, y) {
   }
   
   return false;
+}
 
 // ギャラリー
 function handleGalleryClick() {
