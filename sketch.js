@@ -832,6 +832,7 @@ function touchMoved(event) {
     
     return false;
   }
+}
   
   return true;
 }
