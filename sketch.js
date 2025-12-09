@@ -25,6 +25,8 @@ let myFont;
 
 let centerX, centerY;
 
+let canvas;
+
 let padValues = [];
 let points = [];
 let stars = [];
@@ -107,18 +109,24 @@ function preload() {
 }
 
 /* =========================================================
+   handleButtonTouchEnd
+   ========================================================= */
+function handleButtonTouchEnd(e) {
+  e.preventDefault();
+  this.click();
+}
+
+/* =========================================================
    setup
    ========================================================= */
 function setup() {
-  createCanvas(windowWidth, windowHeight, WEBGL);
-  const centerX = width / 2; 
-  const centerY = height / 2;
+  canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   textFont(myFont);
   textSize(16);
 
   lastTouchTime = millis();
 
-　touches = [];
+　let touches = [];
 
   let saved = localStorage.getItem("myConstellations");
   if (saved) {
@@ -285,18 +293,19 @@ function setup() {
     `;
     document.head.appendChild(style);
 
-	canvas.elt.addEventListener('touchstart', touchStarted, { passive: false });
-	canvas.elt.addEventListener('touchmove', touchMoved, { passive: false });
-    canvas.elt.addEventListener('touchend', touchEnded, { passive: false });
-	canvas.elt.addEventListener('touchcancel', touchEnded, { passive: false });
+	if (canvas && canvas.elt) {
+	    canvas.elt.addEventListener('touchstart', touchStarted, { passive: false });
+	    canvas.elt.addEventListener('touchmove', touchMoved, { passive: false });
+	    canvas.elt.addEventListener('touchend', touchEnded, { passive: false });
+	    canvas.elt.addEventListener('touchcancel', touchEnded, { passive: false });
+	} else {
+	    console.warn('Canvas not ready for touch events');
+	}
 
     // タッチイベントの伝搬を防ぐ
     document.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        this.click();
-      }, { passive: false });
-    });
+	    btn.addEventListener('touchend', handleButtonTouchEnd, { passive: false });
+	});
   }
 }
 
@@ -722,7 +731,8 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
    タッチイベント
    ========================================================= */
 function touchStarted(event) {
-  if (event) event.preventDefault();
+  if (!event) return false;
+  event.preventDefault();
 
   isTouching = true;
   isScrolling = false;
@@ -730,106 +740,93 @@ function touchStarted(event) {
   touchStartTime = millis();
   
   // タッチ位置の更新
-  if (event.touches && event.touches[0]) {
-    const touch = event.touches[0];
-    const rect = canvas.elt.getBoundingClientRect();
-	const pixelDensity = window.devicePixelRatio || 1;
+  if (!event.touches || !event.touches[0]) return false;
+  
+  const touch = event.touches[0];
+  const rect = canvas.elt.getBoundingClientRect();
+  const pixelDensity = window.devicePixelRatio || 1;
 	
-    touchStartX = (touch.clientX - rect.left) * pixelDensity;
-    touchStartY = (touch.clientY - rect.top) * pixelDensity;
-    touchStartPos = { x: touch.clientX, y: touch.clientY };
+  touchStartX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+  touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+  touchStartPos = { x: touch.clientX, y: touch.clientY };
+  
+  mouseX = touchStartX;
+  mouseY = touchStartY;
+
+  // ボタンのタッチ判定
+  if (checkButtonTouches(touch)) {
+    return false;
+  }
+	
+// PADボタンのタップ処理
+  if (state === "select") {
+    const canvasX = touchStartX - width/2;
+    const canvasY = touchStartY - height/2;
     
-    mouseX = touchStartX;
-    mouseY = touchStartY;
-
-	// ボタンのタッチ判定
-	if (state === "select" || state === "gallery" || state === "visual") {
-      const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
-      
-      for (const btn of buttons) {
-        if (!btn || !btn.elt) continue;
-        
-        const btnRect = btn.elt.getBoundingClientRect();
-        if (touch.clientX >= btnRect.left && 
-            touch.clientX <= btnRect.right && 
-            touch.clientY >= btnRect.top && 
-            touch.clientY <= btnRect.bottom) {
-          
-          // ボタンの視覚的フィードバック
-          btn.elt.style.transform = 'scale(0.95)';
-          btn.elt.style.opacity = '0.9';
-          
-          setTimeout(() => {
-            if (btn.mousePressed) {
-              btn.mousePressed();
-            }
-            btn.elt.style.transform = '';
-            btn.elt.style.opacity = '';
-          }, 50);
-          
-          return false;
-        }
-      }
+    console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
+    console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
+    
+    if (handlePadButtonTap(canvasX, canvasY)) {
+      return false;
     }
-
-	 // PADボタンのタップ処理
-    if (state === "select") {
-		const canvasX = touchStartX - width/2;
-        const canvasY = touchStartY - height/2;
-      
-        console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
-        console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
-      
-        if (handlePadButtonTap(touchStartX, touchStartY)) {
-            return false;
-        }
-    }
-
-	if (state === "gallery") {
-	    if (touches.length > 0) {
-	      touchStartPos = { x: touches[0].x, y: touches[0].y };
-	      touchStartTime = millis();
-	      isScrolling = false;
-	      return true;
-	    }
-	 }
   }
 
-  // 2本指タッチ（ピンチ操作）の初期化
-  if (event.touches && event.touches.length === 2) {
+  // ギャラリーのタッチ処理
+  if (state === "gallery") {
+    touchStartPos = { x: touch.clientX, y: touch.clientY };
+    touchStartTime = millis();
+    isScrolling = false;
+    return true;
+  }
+// 2本指タッチ（ピンチ操作）の初期化
+  if (event.touches.length === 2) {
     const dx = event.touches[0].clientX - event.touches[1].clientX;
     const dy = event.touches[0].clientY - event.touches[1].clientY;
     initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
     initialZoom = zoomLevel;
     return false;
   }
-  
-  // ボタンのタッチ判定
-  if (state === "select" || state === "gallery" || state === "visual") {
-    const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton].filter(btn => btn && btn.elt);
-    
-    for (const btn of buttons) {
-      const rect = btn.elt.getBoundingClientRect();
-      if (touchStartX + rect.left >= rect.left && 
-          touchStartX + rect.left <= rect.right && 
-          touchStartY + rect.top >= rect.top && 
-          touchStartY + rect.top <= rect.bottom) {
-        btn.elt.style.transform = 'scale(0.95)';
-        btn.elt.style.opacity = '0.9';
-        setTimeout(() => {
-          if (btn.mousePressed) btn.mousePressed();
-          btn.elt.style.transform = '';
-          btn.elt.style.opacity = '';
-        }, 50);
-        return false;
-      }
-    }
-  }
 
+  // ビジュアルモードでのドラッグ開始
   if (state === "visual") {
     isDragging = true;
   }
 
+  return true;
+}
+
+function checkButtonTouches(touch) {
+  const buttons = [addButton, okButton, backButton, galleryButton, resetViewButton]
+    .filter(btn => btn && btn.elt);
+  
+  for (const btn of buttons) {
+    const rect = btn.elt.getBoundingClientRect();
+    const isTouching = touch.clientX >= rect.left && 
+                      touch.clientX <= rect.right && 
+                      touch.clientY >= rect.top && 
+                      touch.clientY <= rect.bottom;
+    
+    if (isTouching) {
+      // ボタンの視覚的フィードバック
+      btn.elt.style.transform = 'scale(0.95)';
+      btn.elt.style.opacity = '0.9';
+      
+      setTimeout(() => {
+        if (btn.mousePressed) {
+          btn.mousePressed();
+        }
+        // アニメーションを元に戻す
+        setTimeout(() => {
+          if (btn.elt) {
+            btn.elt.style.transform = '';
+            btn.elt.style.opacity = '';
+          }
+        }, 100);
+      }, 10);
+      
+      return true;
+    }
+  }
   return false;
 }
 
@@ -1448,6 +1445,7 @@ function checkPadButtonTouch(x, y) {
   }
   return false;
 }
+
 /* =========================================================
    mouseWheel
    ========================================================= */
