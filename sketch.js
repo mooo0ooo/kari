@@ -1337,17 +1337,23 @@ function drawGallery2D() {
   let galleryScale = min(1, width / designWidth);
 
   // スクロール処理
-  scrollY = lerp(scrollY, targetScrollY, 0.4);
+  let scrollEasing = 0.1;
+  if (abs(scrollY - targetScrollY) < 0.5) {
+    scrollY = targetScrollY;
+  } else {
+    scrollY = lerp(scrollY, targetScrollY, scrollEasing);
+  }
 
   push();
   scale(galleryScale);
-  translate(0, scrollY / galleryScale);
+  translate(0, scrollY);
 
   // サムネイルサイズとレイアウトを計算
   let thumbSize = 150; 
   let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
   let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
+  let contentHeight = 0;
 
   // 月ごとに分類
   let grouped = {};
@@ -1361,6 +1367,13 @@ function drawGallery2D() {
 
   const viewportTop = -scrollY / galleryScale;
   const viewportBottom = viewportTop + height / galleryScale;
+
+  for (let month = 0; month < 12; month++) {
+    let list = grouped[month];
+    if (list.length === 0) continue;
+    contentHeight += 35;
+    contentHeight += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+  }
 
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
@@ -1453,9 +1466,9 @@ function drawGallery2D() {
   pop();
 
   // スクロール範囲を制限
-  let minScroll = -max(0, y * galleryScale - height + 40);
-  targetScrollY = constrain(targetScrollY, minScroll, 0);
-  scrollY = constrain(scrollY, minScroll, 0);
+  let maxScroll = max(0, contentHeight - height/galleryScale + 100);
+  targetScrollY = constrain(targetScrollY, -maxScroll, 0);
+  scrollY = constrain(scrollY, -maxScroll, 0);
 
   // 拡大表示を描画
   if (selectedThumbnail) {
