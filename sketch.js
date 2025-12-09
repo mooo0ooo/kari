@@ -604,12 +604,12 @@ function draw() {
 	
 	// タッチフィードバックの描画
   if (touchFeedback && touchFeedback.alpha > 0) {
-    push();
-    noStroke();
-    fill(255, 255, 255, touchFeedback.alpha);
-    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
-    touchFeedback.alpha -= 5;
-    pop();
+	  push();
+	  noStroke();
+	  fill(255, 255, 255, touchFeedback.alpha);
+	  ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
+	  touchFeedback.alpha -= 5;
+	  pop();
   }
 }
 
@@ -1028,6 +1028,59 @@ function touchCanceled(e) {
   e.preventDefault();
   return false;
 }
+
+// handlePadButtonTap
+function handlePadButtonTap(x, y) {
+  const btnSize = padLayout.btnSize * padLayout.scl;
+  const spacing = padLayout.spacing * padLayout.scl;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const hitMargin = 5; // タップ判定の余白
+
+  // 画面中央を基準にした座標に変換
+  const canvasX = x - centerX;
+  const canvasY = y - centerY;
+
+  // P行のボタン
+  for (let i = 0; i < 7; i++) {
+    const btnX = (i - 3) * (btnSize + spacing);
+    const btnY = -120 * padLayout.scl;
+    
+    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+      selectedP = i;
+      touchFeedback = { x: x, y: y, alpha: 150 };
+      redraw();
+      return true;
+    }
+  }
+  
+  // A行のボタン
+  for (let i = 0; i < 7; i++) {
+    const btnX = (i - 3) * (btnSize + spacing);
+    const btnY = 0;
+    
+    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+      selectedA = i;
+      touchFeedback = { x: x, y: y, alpha: 150 };
+      redraw();
+      return true;
+    }
+  }
+  
+  // D行のボタン
+  for (let i = 0; i < 7; i++) {
+    const btnX = (i - 3) * (btnSize + spacing);
+    const btnY = 120 * padLayout.scl;
+    
+    if (dist(canvasX, canvasY, btnX, btnY) < (btnSize/2 + hitMargin)) {
+      selectedD = i;
+      touchFeedback = { x: x, y: y, alpha: 150 };
+      redraw();
+      return true;
+    }
+  }
+  
+  return false;
 
 // ギャラリー
 function handleGalleryClick() {
