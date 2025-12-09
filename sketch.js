@@ -281,7 +281,6 @@ function setup() {
 	    
 	    // 状態をリセット
 	    padValues = [];
-	    points = [];
 	    selectedP = selectedA = selectedD = null;
 	    
 	    // UIを更新
@@ -292,7 +291,9 @@ function setup() {
 	    // 強制的に再描画
 	    redraw();
 	  } else {
-	    console.log("PAD値がありません");
+	    state = "visual";
+	    updateButtonVisibility();
+	    redraw();
 	  }
   });
 
@@ -355,6 +356,7 @@ function setup() {
 
   // 初期状態のボタン表示を更新
   updateButtonVisibility();
+  updateButtonPositions();
   layoutDOMButtons();
   computeBtnSize();
 
@@ -409,16 +411,14 @@ function updateButtonVisibility() {
   if (upButton) upButton.hide();
   if (downButton) downButton.hide();
 
-  console.log("現在の状態:", state);
-
   if (state === "select") {
     console.log("selectモードのボタンを表示");
     addButton.show();
-	okButton.show();
     galleryButton.show();
+    okButton.show();
     addButton.html("追加");
     galleryButton.html("日記一覧");
-	okButton.html("OK");
+    okButton.html("OK");
   } 
   else if (state === "gallery") {
     console.log("galleryモードのボタンを表示");
@@ -438,10 +438,7 @@ function updateButtonVisibility() {
     resetViewButton.html("↻ リセット");
     backButton.html("← 戻る");
     galleryButton.html("日記一覧");
-    console.log("visualモードのボタンを表示しました");
-  } else {
-    console.log("未知の状態です:", state);
-  }
+  } 
 }
 
 /* =========================================================
