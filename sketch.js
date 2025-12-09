@@ -118,16 +118,17 @@ function createScrollButtons() {
   upButton = createButton('↑');
   upButton.position(width - 50, height - 100);
   upButton.mousePressed(() => {
-    targetScrollY += 100;
-    targetScrollY = constrain(targetScrollY, -calculateMaxScroll(), 0);
+    targetScrollY = min(0, targetScrollY + 100);
+    redraw();
   });
   
   // 下スクロールボタン
   downButton = createButton('↓');
   downButton.position(width - 50, height - 50);
   downButton.mousePressed(() => {
-    targetScrollY -= 100;
-    targetScrollY = constrain(targetScrollY, -calculateMaxScroll(), 0);
+    const maxScroll = -calculateMaxScroll();
+    targetScrollY = max(maxScroll, targetScrollY - 100);
+    redraw();
   });
   
   // ボタンのスタイル設定
@@ -275,6 +276,8 @@ function setup() {
 	  } else {
 	    state = "gallery";
 	    galleryStars = [];
+		targetScrollY = 0;
+    	scrollY = 0;
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
@@ -417,6 +420,12 @@ function windowResized() {
     upButton.position(width - 50, height - 100);
     downButton.position(width - 50, height - 50);
   }
+
+  if (state === "gallery") {
+    const maxScroll = -calculateMaxScroll();
+    targetScrollY = constrain(targetScrollY, maxScroll, 0);
+    scrollY = targetScrollY;
+  }
 }
 
 /* =========================================================
@@ -503,9 +512,9 @@ function draw() {
 	  return;
   }
   else if (state === "gallery") {
-    drawGallery2D();
     scrollY = lerp(scrollY, targetScrollY, 0.2);
-  	return;
+    drawGallery2D();
+    return;
   }
   else if (state === "visual") {
 	  camera();
