@@ -90,6 +90,8 @@ let targetZoom = 0;
 
 let isScrolling = false;
 const SCROLL_THRESHOLD = 10;
+const INERTIA_DECELERATION = 0.95;
+const SCROLL_SENSITIVITY = 0.8;
 
 let outerPad = 20;
 let gutter = 12;
@@ -731,12 +733,14 @@ function touchStarted(event) {
       }
     }
 
-	if (state === 'gallery') {
-	    touchStartX = touchX;
-	    touchStartY = touchY;
-	    touchStartTime = millis();
-	    return false;
-    }
+	if (state === "gallery") {
+	    if (touches.length > 0) {
+	      touchStartPos = { x: touches[0].x, y: touches[0].y };
+	      touchStartTime = millis();
+	      isScrolling = false;
+	      return true;
+	    }
+	 }
   }
 
   // 2本指タッチ（ピンチ操作）の初期化
@@ -789,11 +793,14 @@ function touchMoved(event) {
   
   // ギャラリーモードでのスクロール処理
   if (state === 'gallery') {
-    if (Math.abs(deltaX) > TAP_THRESHOLD || Math.abs(deltaY) > TAP_THRESHOLD) {
+    if (!isScrolling && (Math.abs(deltaX) > SCROLL_THRESHOLD || Math.abs(deltaY) > SCROLL_THRESHOLD)) {
       isScrolling = true;
-      targetScrollY -= deltaY * 0.5;
+    }
+    
+    if (isScrolling) {
+      targetScrollY -= deltaY * SCROLL_SENSITIVITY;
       touchStartPos = { x: currentX, y: currentY };
-      velocityY = deltaY;
+      velocityY = deltaY * 0.5;
       return false;
     }
     return true;
@@ -852,15 +859,17 @@ function touchEnded(event) {
       const dx = touch.clientX - touchStartPos.x;
       const dy = touch.clientY - touchStartPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      const isShortTap = tapDuration < 200;
-      const isSmallMovement = distance < 10;
       
-      isTap = isShortTap && isSmallMovement;
+      const isShortTap = tapDuration < 300;
+      const isSmallMovement = distance < 15;
+      
+      isTap = isShortTap && isSmallMovement && !isScrolling;
       
       if (isTap) {
         const rect = canvas.elt.getBoundingClientRect();
-        const x = (touch.clientX - rect.left) / (width / 430) + scrollY * 0.5;
-        const y = (touch.clientY - rect.top) / (width / 430);
+        const scale = width / rect.width;
+        const x = (touch.clientX - rect.left) * scale;
+        const y = (touch.clientY - rect.top) * scale;
         handleGalleryTap(x, y);
       }
     }
@@ -868,20 +877,30 @@ function touchEnded(event) {
   
   // 慣性スクロール
   if (state === "gallery" && Math.abs(velocityY) > 0.1 && !isTap) {
-    const deceleration = 0.95;
     const minVelocity = 0.1;
+    let lastFrameTime = performance.now();
     
-    const applyInertia = () => {
+    const applyInertia = (currentTime) => {
       if (Math.abs(velocityY) < minVelocity) {
         velocityY = 0;
+        isScrolling = false;
         return;
       }
       
-      targetScrollY -= velocityY * 2;
-      velocityY *= deceleration;
+      const deltaTime = (currentTime - lastFrameTime) / 16;
+      targetScrollY -= velocityY * deltaTime;
+      velocityY *= INERTIA_DECELERATION;
+      
+      // スクロール範囲の制限
+      const maxScroll = calculateMaxScroll();
+      targetScrollY = constrain(targetScrollY, -maxScroll, 0);
+      
+      lastFrameTime = currentTime;
       
       if (Math.abs(velocityY) >= minVelocity) {
         requestAnimationFrame(applyInertia);
+      } else {
+        isScrolling = false;
       }
     };
     
@@ -910,6 +929,56 @@ function touchEnded(event) {
   return false;
 }
 
+function calculateMaxScroll() {
+  const thumbSize = 150;
+  const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  
+  let totalRows = 0;
+  const grouped = {};
+  
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  for (const c of allConstellations) {
+    if (!c.created) continue;
+    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    const monthIndex = parseInt(m[2]) - 1;
+    grouped[monthIndex].push(c);
+  }
+  
+  for (let month = 0; month < 12; month++) {
+    const monthItems = grouped[month];
+    if (monthItems.length === 0) continue;
+    
+    totalRows += 1;
+    
+    const itemRows = Math.ceil(monthItems.length / itemsPerRow);
+    totalRows += itemRows;
+ 
+    totalRows += 0.5;
+  }
+  
+  const rowHeight = thumbSize + gutter + 25;
+  
+  const contentHeight = totalRows * rowHeight + topOffset + outerPad;
+  
+  return Math.max(0, contentHeight - height + 100);
+}
+
+// 月ごとにグループ化
+function groupByMonth(constellations) {
+  const grouped = {};
+  for (let i = 0; i < 12; i++) grouped[i] = [];
+  
+  for (const c of constellations) {
+    if (!c.created) continue;
+    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    const monthIndex = parseInt(m[2]) - 1; // 0-11
+    grouped[monthIndex].push(c);
+  }
+  
+  return grouped;
+}
 function touchCanceled(event) {
   return touchEnded(event);
 }
