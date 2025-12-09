@@ -242,13 +242,23 @@ function setup() {
 	  }
   });
   
-  okButton.mousePressed(() => {
+  okButton.mousePressed((event) => {
+	  if (event) event.preventDefault();
+	  console.log("OKボタンが押されました");
+	  
 	  if (padValues.length > 0) {
-		prepareVisual();
-		  
+	    console.log("PAD値あり、ビジュアルを準備します");
+	    
+	    // ビジュアルを準備
+	    prepareVisual();
+	    
+	    // 状態をvisualに変更
+	    state = "visual";
+	    console.log("状態をvisualに変更しました");
+	    
+	    // 日付と星データの処理
 	    let now = new Date();
 	    let timestamp = now.toLocaleString();
-		  
 	    let serialStars = points.map(s => {
 	      let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
 	      let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
@@ -260,22 +270,32 @@ function setup() {
 	      stars: serialStars, 
 	      created: timestamp
 	    };
-		  
+	    
+	    // データを保存
 	    allConstellations.push(newConstellation);
 	    try {
 	      localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	      console.log("データを保存しました");
 	    } catch (e) {
-	      console.error("Failed to save data:", e);
+	      console.error("データの保存に失敗しました:", e);
 	    }
-		
+	    
+	    // 状態をリセット
 	    padValues = [];
+	    points = [];
 	    selectedP = selectedA = selectedD = null;
-		  
+	    
+	    // UIを更新
 	    updateButtonVisibility();
 	    visualStartTime = millis();
+	    console.log("UIを更新しました");
 	    
+	    // 強制的に再描画
+	    redraw();
+	  } else {
+	    console.log("PAD値がありません");
 	  }
-	});
+  });
 
   backButton.mousePressed(() => {
 	  state = "select";
@@ -384,31 +404,31 @@ function updateButtonVisibility() {
   backButton.hide();
   galleryButton.hide();
   resetViewButton.hide();
-  upButton.hide();
-  downButton.hide();
+  if (upButton) upButton.hide();
+  if (downButton) downButton.hide();
 
   if (state === "select") {
     addButton.show();
     okButton.show();
     galleryButton.show();
     galleryButton.html("日記一覧");
-	upButton.hide();
-    downButton.hide();
+	if (upButton) upButton.hide();
+    if (downButton) downButton.hide();
   } 
   else if (state === "gallery") {
     backButton.show();
 	backButton.html("← 記録ページ");
     galleryButton.html("戻る");
-	upButton.show();
-    downButton.show();
+	if (upButton) upButton.show();
+    if (downButton) downButton.show();
   }
   else if (state === "visual") {
     backButton.show();
     galleryButton.show();
     galleryButton.html("日記一覧");
     resetViewButton.show();
-	upButton.hide();
-    downButton.hide();
+	if (upButton) upButton.hide();
+    if (downButton) downButton.hide();
   }
 }
 
@@ -503,6 +523,8 @@ function prepareVisual() {
     });
   }
 
+  console.log("ビジュアルの準備が完了しました");
+
 　state = "visual";
   updateButtonVisibility();
   visualStartTime = millis();
@@ -547,6 +569,7 @@ function draw() {
     return;
   }
   else if (state === "visual") {
+	  console.log("visualモードの描画を開始します");
 	  camera();
       orbitControl();
 
