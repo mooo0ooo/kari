@@ -245,7 +245,6 @@ function setup() {
 	    updateButtonVisibility();
 	    visualStartTime = millis();
 	    
-	    // Reset for next time
 	    padValues = [];
 	    points = [];
 	    selectedP = selectedA = selectedD = null;
