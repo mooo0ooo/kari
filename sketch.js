@@ -165,32 +165,44 @@ function setup() {
 	resetViewButton.style('transition', 'all 0.2s');
 
   // ボタンクリックイベント
-  addButton.mousePressed(addPAD);
+  addButton.mousePressed(() => {
+	  if (selectedP !== null && selectedA !== null && selectedD !== null) {
+	    addPAD();
+	    // Reset selections after adding
+	    selectedP = selectedA = selectedD = null;
+	    redraw();
+	  }
+  });
   
   okButton.mousePressed(() => {
-    if (padValues.length > 0) {
-      prepareVisual();
-      let now = new Date();
-      let timestamp = now.toLocaleString();
-      let serialStars = points.map(s => {
-        let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
-        let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
-        let pz = (s.pos && typeof s.pos.z !== "undefined") ? s.pos.z : 0;
-        return { pos: { x: px, y: py, z: pz }, emo: s.emo };
-      });
-
-      let newConstellation = {
-        stars: serialStars, 
-        created: timestamp
-      };
-      allConstellations.push(newConstellation);
-      localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-
-      state = "visual";
-      updateButtonVisibility();
-      visualStartTime = millis();
-    }
-  });
+	  if (padValues.length > 0) {
+	    prepareVisual();
+	    let now = new Date();
+	    let timestamp = now.toLocaleString();
+	    let serialStars = points.map(s => {
+	      let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
+	      let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
+	      let pz = (s.pos && typeof s.pos.z !== "undefined") ? s.pos.z : 0;
+	      return { pos: { x: px, y: py, z: pz }, emo: s.emo };
+	    });
+	
+	    let newConstellation = {
+	      stars: serialStars, 
+	      created: timestamp
+	    };
+	    allConstellations.push(newConstellation);
+	    localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	
+	    state = "visual";
+	    updateButtonVisibility();
+	    visualStartTime = millis();
+	    
+	    // Reset for next time
+	    padValues = [];
+	    points = [];
+	    selectedP = selectedA = selectedD = null;
+	  }
+	});
 
   backButton.mousePressed(() => {
 	  state = "select";
@@ -356,13 +368,15 @@ function computeBtnSize(){
    addPAD
    ========================================================= */
 function addPAD() {
-  let p = (selectedP !== null ? selectedP : 3) / 6; 
-  let a = (selectedA !== null ? selectedA : 3) / 6;
-  let d = (selectedD !== null ? selectedD : 3) / 6;
-  
-  padValues.push({P: p, A: a, D: d});
+  if (selectedP !== null && selectedA !== null && selectedD !== null) {
+    let p = selectedP / 6;
+    let a = selectedA / 6;
+    let d = selectedD / 6;
+    
+    padValues.push({P: p, A: a, D: d});
+    console.log("Added PAD values:", p, a, d);
+  }
 }
-
 /* =========================================================
    prepareVisual
    ========================================================= */
@@ -397,10 +411,19 @@ function draw() {
   background(5, 5, 20);
 
   if (state === "select") {
-    camera();
-    drawPADButtons();
-    return;
-  } 
+	  camera();
+	  drawPADButtons();
+	  
+	  push();
+	  resetMatrix();
+	  fill(255);
+	  textAlign(LEFT, TOP);
+	  textSize(16);
+	  text(`Selected: P${selectedP !== null ? selectedP : '_'} A${selectedA !== null ? selectedA : '_'} D${selectedD !== null ? selectedD : '_'}`, 20, 20);
+	  text(`Points added: ${padValues.length}`, 20, 50);
+	  pop();
+	  return;
+  }
   else if (state === "gallery") {
     drawGallery2D();
 	if (selectedThumbnail && targetZoom > 0.5) {
