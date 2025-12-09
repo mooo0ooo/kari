@@ -1792,25 +1792,25 @@ function drawZoomedThumbnail() {
     
     // スムーズなズームアニメーション
     zoomAnim = lerp(zoomAnim, targetZoom, 0.15);
-    if (zoomAnim < 0.01 && targetZoom === 0) {
-        // クリーンアップ
-        if (selectedThumbnail.thumbnail) {
-            selectedThumbnail.thumbnail.remove();
-            selectedThumbnail.thumbnail = null;
-        }
-        selectedThumbnail = null;
-        return;
-    }
+	  if (zoomAnim < 0.01 && targetZoom === 0) {
+	    // クリーンアップ
+	    if (selectedThumbnail.thumbnail) {
+	      selectedThumbnail.thumbnail.remove();
+	      selectedThumbnail.thumbnail = null;
+	    }
+	    selectedThumbnail = null;
+	    return;
+　　 }
   
   push();
-  // 背景のオーバーレイ（タッチ操作を可能にするため）
+  // 背景のオーバーレイ
   fill(0, 0, 0, zoomAnim * 200);
   rectMode(CORNER);
   rect(-width/2, -height/2, width, height);
   
   // スケール計算
-  let scale = 0.7 + zoomAnim * 0.3;
-  scale(scale);
+  let scaleValue = 0.7 + zoomAnim * 0.3;
+  scale(scaleValue);
   
   // サムネイルサイズ
   let thumbSize = min(width, height) * 0.7;
@@ -1840,14 +1840,14 @@ function drawZoomedThumbnail() {
   let formattedDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   
   textAlign(CENTER, TOP);
-  textSize(18 * (0.7 + zoomAnim * 0.3)); // ズームに応じてテキストサイズも調整
+  textSize(18 * (0.7 + zoomAnim * 0.3));
   fill(200, 220, 255);
   text(formattedDate, 0, thumbSize/2 + 20);
   
   // 閉じるボタン
   if (zoomAnim > 0.5) { // 表示閾値を下げる
     // 閉じるボタンの背景（円形）
-    let buttonSize = 40 * (0.7 + zoomAnim * 0.3); // ズームに応じてサイズ調整
+    let buttonSize = 40 * (0.7 + zoomAnim * 0.3);
     let buttonX = thumbSize/2 - 25;
     let buttonY = -thumbSize/2 + 25;
     
