@@ -696,6 +696,14 @@ function touchStarted(event) {
         return false;
       }
     }
+
+	if (state === "gallery") {
+      const x = (touch.clientX - rect.left) / (width / 430) + scrollY * 0.5;
+      const y = (touch.clientY - rect.top) / (width / 430);
+      handleGalleryTap(x, y);
+    }
+    
+    return false;
   }
 
   // 2本指タッチ（ピンチ操作）の初期化
@@ -734,7 +742,7 @@ function touchStarted(event) {
     isDragging = true;
   }
 
-  return false;
+  return true;
 }
 
 function touchMoved(event) {
@@ -804,21 +812,28 @@ function touchMoved(event) {
 
 function touchEnded(event) {
   if (!event) return true;
+
+  const currentTime = millis();
+  const tapDuration = currentTime - touchStartTime;
   
   // タップ判定（短いタッチ）
-  if (state === "gallery" && millis() - touchStartTime < 200) {
+  if (state === "gallery" && tapDuration < 200) {
     if (event.changedTouches && event.changedTouches.length > 0) {
       const touch = event.changedTouches[0];
       const dx = touch.clientX - touchStartPos.x;
       const dy = touch.clientY - touchStartPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-        handleGalleryTap(touch.clientX, touch.clientY);
+      if (distance < 10) {
+        const rect = canvas.elt.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) / (width / 430) + scrollY * 0.5;
+        const y = (touch.clientY - rect.top) / (width / 430);
+        handleGalleryTap(x, y);
       }
     }
   }
   
-  // ギャラリーモードの慣性スクロール
+  // 慣性スクロール
   if (state === "gallery" && Math.abs(velocityY) > 0.1) {
     const deceleration = 0.95;
     const minVelocity = 0.1;
@@ -868,50 +883,68 @@ function touchCanceled(event) {
 
 // ギャラリーのタップ処理
 function handleGalleryTap(x, y) {
-  if (selectedThumbnail) {
-    // 閉じるボタンの判定
-    const buttonSize = 30 * zoomAnim;
-    const buttonX = width/2 + (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
-    const buttonY = height/2 - (thumbSize * zoomAnim)/2 - buttonSize/2 - 10;
-    
-    if (dist(x, y, buttonX, buttonY) < buttonSize/2) {
-      targetZoom = 0;
-      setTimeout(() => {
-        if (targetZoom === 0) selectedThumbnail = null;
-      }, 300);
-    }
-    return;
-  }
-
-  // サムネイルのタップ判定
-  const galleryScale = min(1, width / 430);
-  const offsetX = (width - (430 * galleryScale)) / 2;
-  const offsetY = -scrollY;
-  const colCount = max(1, floor((430 - outerPad * 2) / (150 + gutter)));
+  if (!allConstellations || allConstellations.length === 0) return;
+  
+  // ギャラリーのレイアウトパラメータ
+  const designWidth = 430;
+  const galleryScale = min(1, width / designWidth);
   const thumbSize = 150 * galleryScale;
-  const rowHeight = thumbSize + 25;
+  const colCount = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  const rowStartX = (width - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   
-  // 表示範囲内のサムネイルのみチェック
-  const startRow = max(0, floor((-scrollY - 100) / rowHeight));
-  const endRow = min(
-    Math.ceil(allConstellations.length / colCount),
-    startRow + Math.ceil((height + 200) / rowHeight)
-  );
+  // タップ位置をスケールに合わせて調整
+  x = x * (width / 430);
+  y = (y - scrollY) * (width / 430);
   
-  for (let row = startRow; row <= endRow; row++) {
-    for (let col = 0; col < colCount; col++) {
-      const idx = row * colCount + col;
-      if (idx >= allConstellations.length) continue;
+  // 各サムネイルに対してヒットテスト
+  let currentY = topOffset;
+  
+  // 月ごとに分類
+  let grouped = {};
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    let monthIndex = int(m[2]) - 1;
+    grouped[monthIndex].push(c);
+  }
+  
+  // 各月のサムネイルをチェック
+  for (let month = 0; month < 12; month++) {
+    let list = grouped[month];
+    if (list.length === 0) continue;
+    
+    // 月の見出しの高さをスキップ
+    currentY += 35;
+    
+    // サムネイルをチェック
+    for (let i = 0; i < list.length; i++) {
+      let col = i % colCount;
+      let row = floor(i / colCount);
+      let thumbX = rowStartX + col * (thumbSize + gutter);
+      let thumbY = currentY + row * (thumbSize + gutter + 25);
       
-      const tx = offsetX + outerPad * galleryScale + col * (thumbSize + gutter * galleryScale);
-      const ty = offsetY + topOffset * galleryScale + row * rowHeight;
-      
-      if (x >= tx && x <= tx + thumbSize && y >= ty && y <= ty + thumbSize) {
-        selectedThumbnail = allConstellations[idx];
-        targetZoom = 1;
+      // タップがサムネイルの範囲内かチェック
+      if (x >= thumbX && x <= thumbX + thumbSize &&
+          y >= thumbY && y <= thumbY + thumbSize) {
+        // 既に選択されているサムネイルをタップした場合は閉じる
+        if (selectedThumbnail === list[i]) {
+          targetZoom = 0;
+          setTimeout(() => {
+            if (targetZoom === 0) selectedThumbnail = null;
+          }, 300);
+        } else {
+          // 新しいサムネイルを選択
+          selectedThumbnail = list[i];
+          targetZoom = 1;
+        }
         return;
       }
     }
+    
+    // 次の月の開始位置に移動
+    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
   }
 }
 
@@ -1365,7 +1398,7 @@ function drawGallery2D() {
 
     // 月の見出し
     fill(255);
-    textSize(24); // 少し小さく
+    textSize(24);
     textAlign(LEFT, TOP);
     let monthNames = [
       "January", "February", "March", "April", "May", "June",
@@ -1385,7 +1418,7 @@ function drawGallery2D() {
 	    continue;
 	  }
 		
-      // マウスオーバー判定
+      // タップ/ホバー判定
       let mx = (mouseX - width/2) / galleryScale;
       let my = (mouseY - height/2 - scrollY) / galleryScale;
       let isHovered = (mx > x && mx < x + thumbSize && 
@@ -1402,21 +1435,13 @@ function drawGallery2D() {
 	  }
 
 	  if (list[i].thumbnail) {
-		  let scale = isHovered ? 1.05 : 1.0;
-		  let offset = (thumbSize * scale - thumbSize) / 2;
-		  image(list[i].thumbnail, 
-		       x + (thumbSize - thumbSize * scale)/2, 
-		       ty + (thumbSize - thumbSize * scale)/2, 
-		       thumbSize * scale, thumbSize * scale);
-	  }
-
-      // ホバー時に少し拡大
-      let scale = isHovered ? 1.05 : 1.0;
-      let offset = (thumbSize * scale - thumbSize) / 2;
-      image(list[i].thumbnail, 
-           x + (thumbSize - thumbSize * scale)/2, 
-           ty + (thumbSize - thumbSize * scale)/2, 
-           thumbSize * scale, thumbSize * scale);
+        let scale = isHovered ? 1.05 : 1.0;
+        let offset = (thumbSize * scale - thumbSize) / 2;
+        image(list[i].thumbnail, 
+             x + (thumbSize - thumbSize * scale)/2, 
+             ty + (thumbSize - thumbSize * scale)/2, 
+             thumbSize * scale, thumbSize * scale);
+      }
       
       // 日付を表示
       let date = new Date(list[i].created);
