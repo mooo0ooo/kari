@@ -1594,6 +1594,8 @@ function drawGallery2D() {
     text(monthNames[month], 20, y);  
     y += 35;
 
+	let monthContentHeight = ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
       let col = i % colCount;
