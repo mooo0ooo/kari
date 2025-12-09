@@ -417,6 +417,13 @@ function updateButtonVisibility() {
     galleryButton.show();
     addButton.html("追加");
     galleryButton.html("日記一覧");
+    
+    // PADの3つのボタンがすべて選択されている場合のみOKボタンを表示
+    if (selectedP !== null && selectedA !== null && selectedD !== null) {
+      okButton.show();
+      okButton.html("OK");
+      console.log("OKボタンを表示します");
+    }
   } 
   else if (state === "gallery") {
     console.log("galleryモードのボタンを表示");
@@ -765,6 +772,16 @@ function draw() {
 	  ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
 	  touchFeedback.alpha -= 5;
 	  pop();
+  }
+
+  if (debugMode) {
+    push();
+    fill(255);
+    textSize(12);
+    textAlign(LEFT, TOP);
+    text(`State: ${state}`, 10, 10);
+    text(`Selected P: ${selectedP}, A: ${selectedA}, D: ${selectedD}`, 10, 30);
+    pop();
   }
 }
 
