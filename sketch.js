@@ -612,6 +612,7 @@ function draw() {
 	// タッチフィードバックの描画
   if (touchFeedback && touchFeedback.alpha > 0) {
 	  push();
+	  resetMatrix();
 	  noStroke();
 	  fill(255, 255, 255, touchFeedback.alpha);
 	  ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
@@ -723,7 +724,9 @@ function touchStarted(event) {
 
 	 // PADボタンのタップ処理
     if (state === "select") {
-      if (handlePadButtonTap(touchStartX, touchStartY)) {
+      const canvasX = touchStartX - width/2;
+      const canvasY = touchStartY - height/2;
+      if (handlePadButtonTap(canvasX, canvasY)) {
         return false;
       }
     }
@@ -771,7 +774,7 @@ function touchStarted(event) {
     isDragging = true;
   }
 
-  return false;
+  return true;
 }
 
 function touchMoved(event) {
@@ -1036,9 +1039,9 @@ function touchCanceled(e) {
 function handlePadButtonTap(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const hitMargin = 5; // タップ判定の余白
+  const centerX = 0;
+  const centerY = 0;
+  const hitMargin = 5;
 
   // 画面中央を基準にした座標に変換
   const canvasX = x - centerX;
