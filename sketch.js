@@ -85,6 +85,10 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
+let galleryState = "year";  // "year" → "month" → "list"
+let selectedYear = null;
+let selectedMonth = null;
+
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -637,8 +641,18 @@ function draw() {
     }
   }
   else if (state === "gallery") {
-    scrollY = lerp(scrollY, targetScrollY, 0.2);
-    drawGallery2D();
+    background(5, 5, 20);
+
+    if (galleryState === "year") {
+        drawYearTabs(availableYears);
+    }
+    else if (galleryState === "month") {
+        drawMonthConstellationMenu();
+    }
+    else if (galleryState === "list") {
+        scrollY = lerp(scrollY, targetScrollY, 0.2);
+        drawGalleryListView();
+    }
   }
 　else if (state === "visual") {
 	  camera();
@@ -998,8 +1012,20 @@ function touchStarted(event) {
     }
   }
 
-  // ギャラリーのタッチ処理を無効化
-  if (state === "gallery") return false;
+  if (state === "gallery") {
+
+    if (galleryState === "year") {
+        touchYearTabs(availableYears, mouseX, mouseY);
+    }
+    else if (galleryState === "month") {
+        touchMonthMenu(mouseX, mouseY);
+    }
+    else if (galleryState === "list") {
+        handleThumbnailTouch(mouseX, mouseY);
+    }
+
+    return false;
+}
 
   // 2本指タッチ（ピンチ操作）の初期化
   if (event.touches.length === 2) {
@@ -1947,9 +1973,122 @@ function drawAxes() {
 }
 	
 /* =========================================================
-   drawGallery
+   ギャラリーページ
    ========================================================= */
-function drawGallery2D() {
+// 年
+function drawYearTabs(years) {
+  background(5, 5, 20);
+  textAlign(CENTER, CENTER);
+  textSize(22);
+  noStroke();
+
+  let tabW = width / years.length;
+  let tabH = 60;
+
+  for (let i = 0; i < years.length; i++) {
+    let y = years[i];
+
+    // タブ背景
+    fill(y === selectedYear ? 80 : 40);
+    rect(i * tabW, 0, tabW, tabH);
+
+    // 年文字
+    fill(255);
+    text(y, i * tabW + tabW/2, tabH/2);
+  }
+}
+
+function touchYearTabs(years, x, y) {
+  let tabH = 60;
+  if (y > tabH) return;
+
+  let tabW = width / years.length;
+  let index = floor(x / tabW);
+  selectedYear = years[index];
+  galleryState = "month";
+}
+
+// 月
+function drawMonthConstellationMenu() {
+  background(5, 5, 20);
+
+  let monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  let cellW = width / 3;
+  let cellH = height / 4;
+
+  textAlign(CENTER, CENTER);
+  textSize(20);
+  noStroke();
+
+  for (let m = 0; m < 12; m++) {
+    let cx = (m % 3) * cellW + cellW/2;
+    let cy = floor(m / 3) * cellH + cellH/2;
+
+    // ★ 星座を描く
+    drawConstellationSymbol(cx, cy, cellW * 0.3);
+
+    // 英語月名
+    fill(255);
+    text(monthNames[m], cx, cy + cellH * 0.25);
+  }
+}
+
+function drawConstellationSymbol(cx, cy, r) {
+  stroke(200, 200, 255);
+  strokeWeight(2);
+  noFill();
+
+  // 複数星を描いてつなげる
+  let pts = [];
+  for (let i = 0; i < 6; i++) {
+    let a = random(TWO_PI);
+    let rr = r * random(0.3, 1);
+    pts.push([cx + cos(a) * rr, cy + sin(a) * rr]);
+  }
+
+  // 星
+  for (let p of pts) {
+    fill(255);
+    noStroke();
+    circle(p[0], p[1], 4);
+  }
+
+  // 線で結ぶ
+  stroke(180, 180, 255, 150);
+  noFill();
+  beginShape();
+  for (let p of pts) vertex(p[0], p[1]);
+  endShape(CLOSE);
+}
+
+function touchMonthMenu(x, y) {
+  let cellW = width / 3;
+  let cellH = height / 4;
+
+  let col = floor(x / cellW);
+  let row = floor(y / cellH);
+  let index = row * 3 + col;
+
+  if (index >= 0 && index < 12) {
+    selectedMonth = index; // 0〜11
+    galleryState = "list";
+  }
+}
+
+// 一覧表示
+function drawGalleryListView() {
+　let filtered = allConstellations.filter(c => {
+    let d = new Date(c.created);
+    return (
+      d.getFullYear() === selectedYear &&
+      d.getMonth() === selectedMonth
+    );
+  });
+	
   resetMatrix();
   camera();
   background(5, 5, 20); 
@@ -2065,9 +2204,6 @@ function drawGallery2D() {
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
 
-/* =========================================================
-   generate2DThumbnail
-   ========================================================= */
 function generate2DThumbnail(cons, size) {	
   if (cons.thumbnail) {
     try {
