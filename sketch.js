@@ -253,7 +253,7 @@ function setup() {
     	console.log("状態をvisualに変更しました。現在のstate:", state);
 	    
 	    // ビジュアルを準備
-	    prepareVisual(false); 
+	    prepareVisual(); 
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
@@ -511,6 +511,9 @@ function addPAD() {
    prepareVisual
    ========================================================= */
 function prepareVisual(changeState = true) {
+  console.log("prepareVisual called with changeState =", changeState);
+  console.log("Current state before prepareVisual:", state);
+	
   points = [];
   for (let v of padValues) {
     let emo = findClosestEmotion(v.P, v.A, v.D);
@@ -542,6 +545,8 @@ function prepareVisual(changeState = true) {
    draw
    ========================================================= */
 function draw() {
+  console.log("draw called, current state:", state);
+	
   if (frameCount % 60 === 0) { 
 	cleanupThumbnails();
   }
