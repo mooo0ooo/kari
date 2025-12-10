@@ -77,7 +77,7 @@ button:active {
 }
 
 html, body {
-  overflow: hidden;
+  overflow: auto;
   touch-action: none;
   -webkit-overflow-scrolling: touch;
   height: 100%;
