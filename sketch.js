@@ -82,6 +82,8 @@ let lastTouchTime = 0;
 
 let touchFeedback = { x: 0, y: 0, alpha: 0 };
 
+let showGrid = true;
+
 // gallery
 let galleryButton;
 let scrollY = 0;
@@ -236,7 +238,6 @@ function setup() {
   addButton.mousePressed(() => {
 	  if (selectedP !== null && selectedA !== null && selectedD !== null) {
 	    addPAD();
-	    // Reset selections after adding
 	    selectedP = selectedA = selectedD = null;
 	    redraw();
 	  }
@@ -1637,110 +1638,183 @@ function screenPos(x, y, z) {
    ========================================================= */
 function draw3DView() {
   console.log("draw3DViewが呼ばれました");
+  
+  // カメラの設定
   orbitControl();
-  background(0);
+  perspective(PI/3, width/height, 0.1, 10000);
   
-  // グリッドの描画
-  drawGrid();
+  // 背景をグラデーションで描画
+  drawSpaceBackground();
   
-  // 座標軸の描画
-  drawAxes();
+  // グリッドと座標軸の描画
+  if (showGrid) {
+    drawGrid();
+    drawAxes();
+  }
   
-  // 背景の星の描画
-  for (let star of stars) {
+  // 星の描画
+  drawStars();
+  
+  // 星座線の描画
+  drawConstellationLines();
+  
+  // 星のハイライトとラベル表示
+  drawStarHighlights();
+}
+
+// 宇宙の背景を描画
+function drawSpaceBackground() {
+  // 画面全体を覆う四角形を描画
+  push();
+  noStroke();
+  for (let y = 0; y < height; y += 2) {
+    let inter = map(y, 0, height, 0, 1);
+    let c = lerpColor(
+      color(5, 5, 20),
+      color(0, 0, 40),
+      inter
+    );
+    stroke(c);
+    line(-width/2, y - height/2, width/2, y - height/2);
+  }
+  pop();
+  
+  // 遠くの星を描画
+  push();
+  noStroke();
+  for (let i = 0; i < 1000; i++) {
+    let x = random(-2000, 2000);
+    let y = random(-2000, 2000);
+    let z = random(1000, 2000);
+    
+    let size = random(0.5, 2);
+    let alpha = random(100, 200);
+    
     push();
-    translate(star.x, star.y, star.z);
-    fill(255, 255, 255, 200);
-    noStroke();
-    sphere(2);
+    translate(x, y, z);
+    fill(255, 255, 255, alpha);
+    sphere(size, 4, 4);
+    pop();
+  }
+  pop();
+}
+
+// 星の描画
+function drawStars() {
+  push();
+  noStroke();
+  
+  for (let p of points) {
+    let pos = p.pos;
+    let emo = p.emo;
+    
+    // 星の色をPAD値から計算
+    let r = map(emo.P, -1, 1, 100, 255);
+    let g = map(emo.A, -1, 1, 100, 200);
+    let b = map(emo.D, -1, 1, 150, 255);
+    
+    // 星のサイズを感情の強さに応じて変更
+    let size = map(emo.intensity, 0, 1, 2, 8);
+    
+    // 星の点滅効果
+    let pulse = 0.8 + 0.2 * sin(frameCount * 0.05 + pos.x * 0.01);
+    
+    push();
+    translate(pos.x, pos.y, pos.z);
+    
+    // 星の光の輪
+    let glowSize = size * 5 * pulse;
+    for (let i = 3; i > 0; i--) {
+      let s = glowSize * (i / 3);
+      fill(r, g, b, 30 / i);
+      sphere(s, 16, 16);
+    }
+    
+    // 星の中心
+    fill(r, g, b, 200);
+    sphere(size, 16, 16);
+    
     pop();
   }
   
-  // 星座線の描画
-  stroke(100, 100, 255, 150);
+  pop();
+}
+
+// 星座線の描画
+function drawConstellationLines() {
+  if (points.length < 2) return;
+  
+  push();
+  stroke(150, 150, 255, 150);
   strokeWeight(1);
+  noFill();
+  
+  // すべての星の組み合わせに対して線を引く
   for (let i = 0; i < points.length; i++) {
     for (let j = i + 1; j < points.length; j++) {
       let p1 = points[i].pos;
       let p2 = points[j].pos;
+      
+      // 距離に応じて線の透明度を調整
+      let d = dist(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+      let alpha = map(d, 0, 200, 200, 50, true);
+      
+      stroke(150, 150, 255, alpha);
       line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
     }
   }
   
-  // 点の描画（PAD値に基づく）
+  pop();
+}
+
+// 星のハイライトとラベル表示
+function drawStarHighlights() {
+  // マウスに近い星をハイライト
+  let closestDist = 50;
+  let closestStar = null;
+  
   for (let p of points) {
-    push();
-    translate(p.pos.x, p.pos.y, p.pos.z);
+    // 3D座標を2D画面座標に変換
+    let screenPos = this.screenPos(p.pos.x, p.pos.y, p.pos.z);
+    let d = dist(mouseX, mouseY, screenPos.x, screenPos.y);
     
-    // PAD値に基づいて色を設定
-    let r = map(p.emo.P, -1, 1, 0, 255);
-    let g = map(p.emo.A, -1, 1, 0, 255);
-    let b = map(p.emo.D, -1, 1, 0, 255);
-    fill(r, g, b);
-    
-    // 感情の強さに応じてサイズを変更
-    let size = map(p.emo.intensity, 0, 1, 2, 10);
-    noStroke();
-    sphere(size);
-    
-    // 感情ラベルを表示
-    if (dist(mouseX - width/2, mouseY - height/2, p.pos.x, p.pos.y) < 20) {
-      push();
-      fill(255);
-      noStroke();
-      textAlign(CENTER);
-      textSize(16);
-      text(p.emo.ja, 0, -20);
-      pop();
+    if (d < closestDist) {
+      closestDist = d;
+      closestStar = p;
     }
+  }
+  
+  // 最も近い星をハイライト
+  if (closestStar) {
+    let pos = closestStar.pos;
+    let emo = closestStar.emo;
+    
+    push();
+    translate(pos.x, pos.y, pos.z);
+    
+    // ハイライトの輪
+    noFill();
+    stroke(255, 255, 0, 200);
+    strokeWeight(1);
+    sphere(12, 16, 16);
+    
+    // 感情ラベル
+    let screenPos = this.screenPos(pos.x, pos.y, pos.z);
+    push();
+    resetMatrix();
+    camera();
+    textAlign(CENTER, BOTTOM);
+    textSize(16);
+    fill(255);
+    noStroke();
+    text(emo.ja, screenPos.x, screenPos.y - 15);
+    text(`${emo.en} (P:${nf(emo.P, 1,1)} A:${nf(emo.A, 1,1)} D:${nf(emo.D, 1,1)})`, 
+         screenPos.x, screenPos.y - 35);
+    pop();
+    
     pop();
   }
-}
-
-// 3Dグリッドを描画する補助関数
-function drawGrid() {
-  const size = 100;
-  const step = 20;
-  
-  push();
-  stroke(50);
-  strokeWeight(1);
-  
-  // XZ平面のグリッド
-  for (let x = -size; x <= size; x += step) {
-    line(x, 0, -size, x, 0, size);
-  }
-  for (let z = -size; z <= size; z += step) {
-    line(-size, 0, z, size, 0, z);
-  }
-  
-  pop();
-}
-
-// 座標軸を描画する補助関数
-function drawAxes() {
-  const len = 50;
-  
-  // X軸 (赤)
-  push();
-  strokeWeight(3);
-  stroke(255, 0, 0);
-  line(0, 0, 0, len, 0, 0);
-  pop();
-  
-  // Y軸 (緑)
-  push();
-  stroke(0, 255, 0);
-  line(0, 0, 0, 0, len, 0);
-  pop();
-  
-  // Z軸 (青)
-  push();
-  stroke(0, 0, 255);
-  line(0, 0, 0, 0, 0, len);
-  pop();
-}
-
+	
 /* =========================================================
    drawGallery
    ========================================================= */
