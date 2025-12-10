@@ -244,8 +244,8 @@ function setup() {
   });
   
   okButton.mousePressed((event) => {
+	  console.log("OKボタンが押されました!");
 	  if (event) event.preventDefault();
-	  console.log("OKボタンが押されました");
 	  
 	  // デバッグ用: padValuesの状態を確認
 	  console.log("padValuesの状態:", {
