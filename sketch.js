@@ -255,7 +255,7 @@ function setup() {
   console.log("PAD値あり、ビジュアルを準備します");
   
   // ビジュアルを準備
-  if (prepareVisual(true)) {  // 明示的に true を渡して状態変更を許可
+  if (prepareVisual(true)) {
     console.log("prepareVisualが正常に完了しました。state:", state);
     
     // 日付と星データの処理
@@ -620,16 +620,6 @@ function draw() {
       touchFeedback.alpha -= 5;
       pop();
     }
-    
-    // デバッグ情報
-    push();
-    resetMatrix();
-    fill(255);
-    textAlign(LEFT, TOP);
-    textSize(16);
-    text(`Selected: P${selectedP !== null ? selectedP : '_'} A${selectedA !== null ? selectedA : '_'} D${selectedD !== null ? selectedD : '_'}`, 20, 20);
-    text(`Points added: ${padValues.length}`, 20, 50);
-    pop();
   }
   else if (state === "gallery") {
     console.log("galleryモードの描画");
@@ -672,8 +662,7 @@ function draw() {
     }
   } else {
     console.log("未知の状態での描画:", state);
-    // drawPADInterface();  // この関数が定義されているか確認してください
-    state = "select";  // 安全のためselect状態に戻す
+    state = "select";
     updateButtonVisibility();
   }
 
