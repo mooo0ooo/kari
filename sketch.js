@@ -1201,6 +1201,7 @@ function groupByMonth(constellations) {
   
   return grouped;
 }
+
 function touchCanceled(event) {
   return touchEnded(event);
 }
@@ -1867,22 +1868,6 @@ function drawAxes() {
   text('Z', 0, 0, len + 10);
   
   pop();
-}
-
-function groupByMonth(constellations) {
-  const grouped = {};
-  for (let i = 0; i < 12; i++) {
-    grouped[i] = [];
-  }
-  
-  for (let c of constellations) {
-    if (!c.created) continue;
-    const date = new Date(c.created);
-    const month = date.getMonth(); // 0-11
-    grouped[month].push(c);
-  }
-  
-  return grouped;
 }
 	
 /* =========================================================
