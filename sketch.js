@@ -670,11 +670,11 @@ function draw() {
 	  }
 	  
 	  // 3D操作
-	  rotationX = lerp(rotationX, targetRotationX, 0.1);
-	  rotationY = lerp(rotationY, targetRotationY, 0.1);
+	  rotationX = lerp(rotationX, targetRotationX, 0.01);
+	  rotationY = lerp(rotationY, targetRotationY, 0.01);
 	  rotateX(rotationX);
  	  rotateY(rotationY);
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
+	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.05);
 	  scale(zoomLevel);
 		  
 	  // ★ 星空の描画
@@ -807,21 +807,6 @@ function draw() {
 	    textSize(20);
 	    text(selectedLabel, width/2, height-40);
 	    pop();
-	  }
-
-	  if (state === "visual" && !isDragging) {
-	    // 慣性を適用
-	    if (abs(velocityX) > 0.001 || abs(velocityY) > 0.001) {
-	      targetRotationY += velocityX * 2;
-	      targetRotationX += velocityY * 2;
-	      
-	      // 減衰
-	      velocityX *= 0.95;
-	      velocityY *= 0.95;
-	    } else {
-	      velocityX = 0;
-	      velocityY = 0;
-	    }
 	  }
 	} 
 	
@@ -1122,7 +1107,7 @@ function touchMoved(event) {
   }
   
   // ビジュアルモードでの回転操作
-  if (state === "visual" && isDragging) {
+  if (state === "visual") {
     const currentTime = millis();
     const deltaX = currentX - lastTouchX;
     const deltaY = currentY - lastTouchY;
@@ -1136,8 +1121,8 @@ function touchMoved(event) {
       }
     }
     
-    targetRotationY -= deltaX * 0.003;
-    targetRotationX -= deltaY * 0.003;
+    targetRotationY += deltaX * 0.005;
+    targetRotationX -= deltaY * 0.005;
     
     lastTouchX = currentX;
     lastTouchY = currentY;
@@ -1166,7 +1151,6 @@ function touchEnded(event) {
     // ボタンタップが処理された場合はここで終了
     if (touchHandled) {
       isTouching = false;
-      isDragging = false;
       return false;
     }
   }
@@ -1211,7 +1195,6 @@ function touchEnded(event) {
   }
   
   isTouching = false;
-  isDragging = false;
   
   return false;
 }
