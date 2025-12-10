@@ -196,7 +196,6 @@ function setup() {
   // ボタン作成
   addButton = createButton("追加");
   okButton = createButton("OK");
-  console.log("okButtonが作成されました。要素:", okButton.elt);
   backButton = createButton("← 記録ページ");
   galleryButton = createButton("日記一覧");
   createScrollButtons();
@@ -218,6 +217,24 @@ function setup() {
 	  btn.elt.style.touchAction = 'manipulation';
       btn.elt.style.webkitTapHighlightColor = 'transparent';
 	});
+
+	// ここから追加
+	  console.log("okButtonが作成されました。要素:", okButton.elt);
+	  
+	  // 既存のイベントリスナーをクリア
+	  okButton.elt.onclick = null;
+	  if (okButton.elt._p5jsButtonListeners) {
+	    okButton.elt._p5jsButtonListeners = [];
+	  }
+	  
+	  // 新しいイベントリスナーを追加
+	  okButton.mousePressed(() => {
+	    console.log("OKボタンが押されました！");
+	    state = "visual";
+	    console.log("状態をvisualに変更します");
+	    updateButtonVisibility();
+	    redraw();
+	  });
 
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
