@@ -241,21 +241,6 @@ function setup() {
 	  console.log("現在のstate:", state);
 	});
 
-	// 既存のイベントリスナーを削除
-okButton.elt.onclick = null;
-if (okButton.elt._p5jsButtonListeners) {
-  okButton.elt._p5jsButtonListeners = [];
-}
-
-// 直接DOMイベントリスナーを追加
-okButton.elt.addEventListener('click', function() {
-  console.log("直接追加したイベントリスナーが呼ばれました！");
-  state = "visual";
-  updateButtonVisibility();
-  redraw();
-  prepareVisual(false);
-});
-
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
 	resetViewButton.position(20, 20);
