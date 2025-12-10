@@ -244,66 +244,71 @@ function setup() {
   });
   
   okButton.mousePressed((event) => {
-  if (event) event.preventDefault();
-  console.log("OKボタンが押されました");
-  
-  if (!padValues || padValues.length === 0) {
-    console.log("PAD値がありません");
-    return;
-  }
-
-  console.log("PAD値あり、ビジュアルを準備します");
-  
-  // ビジュアルを準備
-  if (prepareVisual(true)) {
-    console.log("prepareVisualが正常に完了しました。state:", state);
-    
-    // 日付と星データの処理
-    let now = new Date();
-    let timestamp = now.toLocaleString();
-    let serialStars = points.map(s => {
-      if (!s || !s.pos) return null;
-      return { 
-        pos: { 
-          x: s.pos.x || 0, 
-          y: s.pos.y || 0, 
-          z: s.pos.z || 0 
-        }, 
-        emo: s.emo 
-      };
-    }).filter(Boolean);
-
-    if (serialStars.length > 0) {
-      let newConstellation = {
-        stars: serialStars, 
-        created: timestamp
-      };
-      
-      // データを保存
-      if (!Array.isArray(allConstellations)) {
-        allConstellations = [];
-      }
-      allConstellations.push(newConstellation);
-      
-      try {
-        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-        console.log("データを保存しました");
-      } catch (e) {
-        console.error("データの保存に失敗しました:", e);
-      }
-    }
-
-    // 状態をリセット
-    padValues = [];
-    selectedP = selectedA = selectedD = null;
-    
-    // 強制的に再描画
-    redraw();
-    console.log("再描画を要求しました。現在のstate:", state);
-  } else {
-    console.error("prepareVisualが失敗しました");
-  }
-});
+	  if (event) event.preventDefault();
+	  console.log("OKボタンが押されました");
+	  
+	  // デバッグ用: padValuesの状態を確認
+	  console.log("padValuesの状態:", {
+	    isArray: Array.isArray(padValues),
+	    length: padValues?.length,
+	    values: JSON.stringify(padValues)
+	  });
+	
+	  if (!padValues || padValues.length === 0) {
+	    console.log("PAD値がありません");
+	    return;
+	  }
+	  
+	  // ビジュアルを準備
+	  if (prepareVisual(true)) {
+	    console.log("prepareVisualが正常に完了しました。state:", state);
+	    
+	    // 日付と星データの処理
+	    let now = new Date();
+	    let timestamp = now.toLocaleString();
+	    let serialStars = points.map(s => {
+	      if (!s || !s.pos) return null;
+	      return { 
+	        pos: { 
+	          x: s.pos.x || 0, 
+	          y: s.pos.y || 0, 
+	          z: s.pos.z || 0 
+	        }, 
+	        emo: s.emo 
+	      };
+	    }).filter(Boolean);
+	
+	    if (serialStars.length > 0) {
+	      let newConstellation = {
+	        stars: serialStars, 
+	        created: timestamp
+	      };
+	      
+	      // データを保存
+	      if (!Array.isArray(allConstellations)) {
+	        allConstellations = [];
+	      }
+	      allConstellations.push(newConstellation);
+	      
+	      try {
+	        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	        console.log("データを保存しました");
+	      } catch (e) {
+	        console.error("データの保存に失敗しました:", e);
+	      }
+	    }
+	
+	    // 状態をリセット
+	    padValues = [];
+	    selectedP = selectedA = selectedD = null;
+	    
+	    // 強制的に再描画
+	    redraw();
+	    console.log("再描画を要求しました。現在のstate:", state);
+	  } else {
+	    console.error("prepareVisualが失敗しました");
+	  }
+	});
 
   backButton.mousePressed(() => {
 	  state = "select";
