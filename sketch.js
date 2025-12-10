@@ -260,7 +260,7 @@ function setup() {
 　okButton.mousePressed(() => {
 	  console.log("OKボタンが押されました!");
 	  
-	  // デバッグ用: padValuesの状態を確認
+	  // padValuesの状態を確認
 	  console.log("padValuesの状態:", {
 	    isArray: Array.isArray(padValues),
 	    length: padValues?.length,
@@ -283,7 +283,8 @@ function setup() {
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
-	    let timestamp = now.toLocaleString();
+	    let displayTimestamp = now.toLocaleString();
+    	let isoTimestamp = now.toISOString();
 	    let serialStars = points.map(s => {
 	      if (!s || !s.pos) return null;
 	      return { 
@@ -299,7 +300,8 @@ function setup() {
 	    if (serialStars.length > 0) {
 	      let newConstellation = {
 	        stars: serialStars, 
-	        created: timestamp
+	        createdISO: isoTimestamp,
+        	createdDisplay: displayTimestamp
 	      };
 	      
 	      // データを保存
@@ -334,7 +336,6 @@ function setup() {
 	  if (state === "gallery") {
 	    state = "select";
 	  } else {
-	    // select → gallery
 	    state = "gallery";
 	    galleryStars = [];
 	    targetScrollY = 0;
@@ -1989,6 +1990,13 @@ function drawYearTabs(years) {
   textSize(22);
   noStroke();
 
+  if (!years || years.length === 0) {
+    fill(180);
+    textSize(18);
+    text("No entries", width/2, 40);
+    return;
+  }
+
   let tabW = width / years.length;
   let tabH = 60;
 
@@ -2018,17 +2026,28 @@ function touchYearTabs(years, x, y) {
 function computeAvailableYears() {
   const years = {};
   for (let c of allConstellations) {
-    if (!c.created) continue;
-    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    const y = int(m[1]);
+    if (!c) continue;
+    let d = null;
+    if (c.createdISO) {
+      d = new Date(c.createdISO);
+    } else if (c.createdDisplay) {
+      d = new Date(c.createdDisplay);
+    } else if (c.created) {
+      d = new Date(c.created);
+    }
+
+    if (!d || isNaN(d.getTime())) continue;
+    const y = d.getFullYear();
     years[y] = true;
   }
+
   availableYears = Object.keys(years).map(y => int(y))
                    .sort((a, b) => b - a);
   // 初期選択年を設定
   if (availableYears.length > 0) {
     selectedYear = availableYears[0];
+  } else {
+    selectedYear = null;
   }
 }
 
@@ -2154,10 +2173,13 @@ function drawGalleryListView() {
   let grouped = {};
   for (let m = 0; m < 12; m++) grouped[m] = [];
   for (let c of allConstellations) {
-    if (!c.created) continue;
-    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    let monthIndex = int(m[2]) - 1;
+    if (!c) continue;
+    let d = null;
+    if (c.createdISO) d = new Date(c.createdISO);
+    else if (c.createdDisplay) d = new Date(c.createdDisplay);
+    else if (c.created) d = new Date(c.created);
+    if (!d || isNaN(d.getTime())) continue;
+    let monthIndex = d.getMonth();
     grouped[monthIndex].push(c);
   }
 
