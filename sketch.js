@@ -221,26 +221,37 @@ function setup() {
 
 	console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
-	okButton.mousePressed(function() {
-	  console.log("OKボタンが押されました");
-	  
-	  // 状態を直接変更
-	  state = "visual";
-	  console.log("状態をvisualに変更しました:", state);
-	  
-	  // ビジュアルを準備
-	  console.log("prepareVisualを呼び出します");
-	  const success = prepareVisual(false);
-	  console.log("prepareVisualの結果:", success);
-	  
-	  // ボタンの表示を更新
-	  updateButtonVisibility();
-	  console.log("ボタンの表示を更新しました");
-	  
-	  // 強制的に再描画
-	  redraw();
-	  console.log("再描画を要求しました。現在のstate:", state);
-	});
+	// 新しいイベントリスナーを設定
+okButton.mousePressed((event) => {
+  if (event) event.preventDefault();
+  console.log("OKボタンが押されました（新しいハンドラ）");
+  
+  // 状態を直接変更
+  state = "visual";
+  console.log("状態をvisualに変更します");
+  
+  // ボタンの表示を更新
+  updateButtonVisibility();
+  console.log("ボタンの表示を更新しました");
+  
+  // ビジュアルを準備
+  console.log("prepareVisualを呼び出します");
+  const success = prepareVisual(false);
+  console.log("prepareVisualの結果:", success);
+  
+  // 強制的に再描画
+  redraw();
+  console.log("再描画を要求しました。現在のstate:", state);
+  
+  return false;
+});
+
+// タッチデバイス用のイベントリスナーを追加
+okButton.elt.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  console.log("タッチイベント: OKボタン");
+  okButton.mousePressed(e);
+}, { passive: false });
 	
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
