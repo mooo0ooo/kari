@@ -1602,7 +1602,11 @@ function screenPos(x, y, z) {
    ========================================================= */
 function drawVisual() {
 
-  drawBeautifulSpace();  
+  push();
+  resetMatrix();
+  camera();
+  drawBeautifulSpace();
+  pop();
 
   camera();
 	 
