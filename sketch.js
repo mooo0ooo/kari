@@ -521,6 +521,10 @@ function addPAD() {
     
     padValues.push({P: p, A: a, D: d});
     console.log("Added PAD values:", p, a, d);
+
+	selectedP = null;
+	selectedA = null;
+	selectedD = null;
   }
 }
 /* =========================================================
