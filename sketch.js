@@ -172,6 +172,7 @@ function createScrollButtons() {
 /* =========================================================
    setup
    ========================================================= */
+console.log("prepareVisual関数が定義されていますか？", typeof prepareVisual);
 function setup() {
   console.log("setup() が呼ばれました");
   canvas = createCanvas(windowWidth, windowHeight, WEBGL);
@@ -218,7 +219,6 @@ function setup() {
       btn.elt.style.webkitTapHighlightColor = 'transparent';
 	});
 
-	// ここから追加
 	  console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
 	  // 既存のイベントリスナーをクリア
@@ -227,29 +227,25 @@ function setup() {
 	    okButton.elt._p5jsButtonListeners = [];
 	  }
 	  
-	  // 新しいイベントリスナーを追加
 	  okButton.mousePressed(() => {
-  console.log("OKボタンが押されました！");
-  
-  // 状態をvisualに変更
-  state = "visual";
-  console.log("状態をvisualに変更します");
-  
-  // ビジュアルを準備
-  if (prepareVisual(false)) {  // falseを渡して状態変更を防ぐ
-    console.log("prepareVisualが成功しました");
-	  
-    // ボタンの表示を更新
-    updateButtonVisibility();
-    
-    // 強制的に再描画
-    redraw();
-  } else {
-    console.error("prepareVisualが失敗しました");
-    state = "select";  // 失敗時はselectモードに戻す
-    updateButtonVisibility();
-  }
-});
+		  console.log("OKボタンが押されました！");
+		  
+		  // 状態をvisualに変更
+		  state = "visual";
+		  console.log("状態をvisualに変更します");
+		  
+		  // prepareVisualを直接呼び出す
+		  console.log("prepareVisualを呼び出します");
+		  const result = prepareVisual(false);
+		  console.log("prepareVisualの結果:", result);
+		  
+		  // ボタンの表示を更新
+		  updateButtonVisibility();
+		  
+		  // 強制的に再描画
+		  redraw();
+		  console.log("再描画を要求しました。現在のstate:", state);
+		});
 
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
