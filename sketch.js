@@ -518,7 +518,7 @@ function prepareVisual(changeState = true) {
     let z = map(v.D, 0, 1, -100, 100);
 
 	// 感情データを追加
-    emo.intensity = (v.P + v.A + v.D) / 3; // 感情の強さを計算
+    emo.intensity = (v.P + v.A + v.D) / 3;
     
     points.push({
       pos: createVector(x, y, z),
@@ -541,6 +541,8 @@ function prepareVisual(changeState = true) {
   state = "visual";
   updateButtonVisibility();
   visualStartTime = millis();
+
+  return true;
 }
 
 /* =========================================================
@@ -1777,7 +1779,7 @@ function drawStarHighlights() {
   
   for (let p of points) {
     // 3D座標を2D画面座標に変換
-    let screenPos = this.screenPos(p.pos.x, p.pos.y, p.pos.z);
+    let screenPos = screenPos(p.pos.x, p.pos.y, p.pos.z);
     let d = dist(mouseX, mouseY, screenPos.x, screenPos.y);
     
     if (d < closestDist) {
