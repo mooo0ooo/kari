@@ -84,6 +84,9 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 
 let showGrid = true;
 
+let backgroundStars = [];
+let shootingStars = [];
+
 // gallery
 let galleryState = "year";
 let selectedYear = null;
@@ -101,6 +104,13 @@ const SCROLL_AMOUNT = 150;
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
+
+function enterVisual() {
+  backgroundStars = [];
+  shootingStars = [];
+  createBackgroundStars();
+  visualStartTime = millis();
+}
 
 /* =========================================================
    preload
@@ -273,6 +283,7 @@ function setup() {
 	  }
 
 	  state = "visual";
+	  enterVisual();
 	  updateButtonVisibility();
 	  resetVisualView();
 	  console.log("状態をvisualに設定しました。現在のstate:", state);
@@ -661,148 +672,7 @@ function draw() {
     }
   }
 　else if (state === "visual") {
-	  camera();
-
-	  rotationX = lerp(rotationX, targetRotationX, 0.18);
-  	　rotationY = lerp(rotationY, targetRotationY, 0.18);
-
-	 rotateX(rotationX);
-  	 rotateY(rotationY);
-
-	 zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
-  	 scale(zoomLevel);
-		  
-	  // ★ 星空の描画
-	  push(); 
-	  noStroke();
-	  for (let s of stars) {
-	    if (random() < 0.02) s.on = !s.on;
-	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-	    let blink = (s.on ? 1 : 0);
-	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-	    let intensity = blink * pulse;
-	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
-	    let alpha = map(intensity, 0, 1, 10, 255);
-	    let r = 200 + random(-20, 20);
-	    let g = 200 + random(-20, 20);
-	    let b = 255;
-	    fill(r, g, b, alpha);
-	    push();
-	    translate(s.x, s.y, s.z);
-	    sphere(starSize);
-	    pop();
-	  }
-	  pop();
-	
-	  if (allConstellations.length === 0) return;
-	  let latest = allConstellations[allConstellations.length - 1];
-	  let latestMonth = -1;
-	
-	  if (latest?.created) {
-	    let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (m) latestMonth = int(m[2]);
-	  }
-	
-	  let sameMonthConstellations = [];
-	  for (let c of allConstellations) {
-	    if (!c.created) continue;
-	    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (!m) continue;
-	    if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
-	  }
-	
-	  let displayList = [...sameMonthConstellations];
-	  let idx = displayList.indexOf(latest);
-	  if (idx !== -1) displayList.splice(idx, 1);
-	  displayList.push(latest);
-	
-	  for (let i = 0; i < displayList.length; i++) {
-	    let constellation = displayList[i];
-	    push();
-	    if (i === displayList.length - 1) {
-	      translate(0, 0, 200);
-	      scale(1.5);
-	    } else {
-	      let col = i % 5;
-	      let arow = floor(i / 5);
-	      translate(-600 + col * 250, -300 + arow * 250, -800);
-	      scale(0.6);
-	    }
-	
-	    stroke(150, 80);
-	    noFill();
-	    box(220);
-	
-	    for (let p of constellation.stars) {
-	      let px = p.pos?.x ?? 0;
-	      let py = p.pos?.y ?? 0;
-	      let pz = p.pos?.z ?? 0;
-	
-	      push();
-	      translate(px, py, pz);
-	      let flicker = 220 + 35 * sin(frameCount*0.1 + i*37);
-	      fill(255, 255, 200, flicker);
-	      noStroke();
-	      sphere(8);
-	      pop();
-	    }
-	
-	    if (millis() - visualStartTime > 1200) {
-	      push();
-	      stroke(180, 200, 255, 90);
-	      strokeWeight(2);
-	      blendMode(ADD);
-	      for (let a = 0; a < constellation.stars.length; a++) {
-	        for (let b = a+1; b < constellation.stars.length; b++) {
-	          let aPos = constellation.stars[a].pos;
-	          let bPos = constellation.stars[b].pos;
-	          if (aPos && bPos) {
-	            line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-	          }
-	        }
-	      }
-	      pop();
-	    }
-	
-	    push();
-	    translate(0, 120, 0);
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(14);
-	    text(constellation.created, 0, 0);
-	    pop();
-	
-	    pop();
-	  }
-	
-	  if (allConstellations.length > 0) {
-	   latest = allConstellations[allConstellations.length - 1];
-	   let m = latest?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	   let monthIndex = m ? int(m[2]) - 1 : 0;
-	   let monthNames = [
-	     "January","February","March","April","May","June",
-	     "July","August","September","October","November","December"
-	   ];
-	   push();
-	   resetMatrix();               
-	   applyMatrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
-	   noLights();
-	   textAlign(CENTER, TOP);
-	   textSize(32);
-	   fill(255);
-	   text(monthNames[monthIndex], width/2, 20);
-	   pop();
-	 }
-	 
-	  if (selectedLabel) {
-	    push();
-	    camera();
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(20);
-	    text(selectedLabel, width/2, height-40);
-	    pop();
-	  }
+	 drawVisual();
 	} 
 	
 	// タッチフィードバックの描画
@@ -1728,6 +1598,154 @@ function screenPos(x, y, z) {
 /* =========================================================
    draw3DView
    ========================================================= */
+function drawVisual() {
+
+  drawBeautifulSpace();  
+
+  camera();
+	 
+	rotationX = lerp(rotationX, targetRotationX, 0.18);
+  　rotationY = lerp(rotationY, targetRotationY, 0.18);
+
+	rotateX(rotationX);
+  rotateY(rotationY);
+
+	zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
+  scale(zoomLevel);
+		  
+	// ★ 星空の描画
+	push(); 
+	noStroke();
+	for (let s of stars) {
+	    if (random() < 0.02) s.on = !s.on;
+	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
+	    let blink = (s.on ? 1 : 0);
+	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
+	    let intensity = blink * pulse;
+	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
+	    let alpha = map(intensity, 0, 1, 10, 255);
+	    let r = 200 + random(-20, 20);
+	    let g = 200 + random(-20, 20);
+	    let b = 255;
+	    fill(r, g, b, alpha);
+	    push();
+	    translate(s.x, s.y, s.z);
+	    sphere(starSize);
+	    pop();
+	  }
+pop();
+	
+if (allConstellations.length === 0) return;
+let latest = allConstellations[allConstellations.length - 1];
+let latestMonth = -1;
+	
+if (latest?.created) {
+	    let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	    if (m) latestMonth = int(m[2]);
+}
+	
+let sameMonthConstellations = [];
+for (let c of allConstellations) {
+	    if (!c.created) continue;
+	    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	    if (!m) continue;
+	    if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
+}
+	
+let displayList = [...sameMonthConstellations];
+let idx = displayList.indexOf(latest);
+if (idx !== -1) displayList.splice(idx, 1);
+displayList.push(latest);
+	
+	  for (let i = 0; i < displayList.length; i++) {
+	    let constellation = displayList[i];
+	    push();
+	    if (i === displayList.length - 1) {
+	      translate(0, 0, 200);
+	      scale(1.5);
+	    } else {
+	      let col = i % 5;
+	      let arow = floor(i / 5);
+	      translate(-600 + col * 250, -300 + arow * 250, -800);
+	      scale(0.6);
+	    }
+	
+	    stroke(150, 80);
+	    noFill();
+	    box(220);
+	
+	    for (let p of constellation.stars) {
+	      let px = p.pos?.x ?? 0;
+	      let py = p.pos?.y ?? 0;
+	      let pz = p.pos?.z ?? 0;
+	
+	      push();
+	      translate(px, py, pz);
+	      let flicker = 220 + 35 * sin(frameCount*0.1 + i*37);
+	      fill(255, 255, 200, flicker);
+	      noStroke();
+	      sphere(8);
+	      pop();
+	    }
+	
+	    if (millis() - visualStartTime > 1200) {
+	      push();
+	      stroke(180, 200, 255, 90);
+	      strokeWeight(2);
+	      blendMode(ADD);
+	      for (let a = 0; a < constellation.stars.length; a++) {
+	        for (let b = a+1; b < constellation.stars.length; b++) {
+	          let aPos = constellation.stars[a].pos;
+	          let bPos = constellation.stars[b].pos;
+	          if (aPos && bPos) {
+	            line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
+	          }
+	        }
+	      }
+	      pop();
+	    }
+	
+	    push();
+	    translate(0, 120, 0);
+	    fill(255);
+	    textAlign(CENTER, CENTER);
+	    textSize(14);
+	    text(constellation.created, 0, 0);
+	    pop();
+	
+	    pop();
+	  }
+	
+	  if (allConstellations.length > 0) {
+	   latest = allConstellations[allConstellations.length - 1];
+	   let m = latest?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	   let monthIndex = m ? int(m[2]) - 1 : 0;
+	   let monthNames = [
+	     "January","February","March","April","May","June",
+	     "July","August","September","October","November","December"
+	   ];
+	   push();
+	   resetMatrix();               
+	   applyMatrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
+	   noLights();
+	   textAlign(CENTER, TOP);
+	   textSize(32);
+	   fill(255);
+	   text(monthNames[monthIndex], width/2, 20);
+	   pop();
+	 }
+	 
+	  if (selectedLabel) {
+	    push();
+	    camera();
+	    fill(255);
+	    textAlign(CENTER, CENTER);
+	    textSize(20);
+	    text(selectedLabel, width/2, height-40);
+	    pop();
+	  }
+}
+
 function draw3DView() {
   console.log("draw3DViewが呼ばれました");
   
@@ -1979,7 +1997,99 @@ function drawAxes() {
   
   pop();
 }
-	
+
+function createBackgroundStars() {
+  for (let i = 0; i < 350; i++) {
+    backgroundStars.push({
+      x: random(width),
+      y: random(height),
+      size: random(0.8, 2.5),
+      layer: random([0, 1, 2]),
+      twinkleSpeed: random(0.005, 0.02),
+      twinkleOffset: random(TWO_PI),
+      color: color(
+        random([200, 240, 255, 255, 255, 255]),
+        random([200, 240, 255, 255, 220]),
+        random([255, 255, 230, 200, 180]),
+        255
+      )
+    });
+  }
+}
+
+function spawnShootingStar() {
+  shootingStars.push({
+    x: random(width * 0.2, width * 0.8),
+    y: random(height * 0.2, height * 0.6),
+    vx: random(12, 20),
+    vy: random(-3, 3),
+    life: 255
+  });
+}
+
+function drawBeautifulSpace() {
+
+  // 背景グラデーション
+  for (let y = 0; y < height; y++) {
+    let c = lerpColor(
+      color(5, 5, 20),
+      color(10, 5, 45),
+      y / height
+    );
+    stroke(c);
+    line(0, y, width, y);
+  }
+
+  noStroke();
+  for (let i = 0; i < 200; i++) {
+    let nx = random(width);
+    let ny = random(height);
+    let n = noise(nx * 0.002, ny * 0.002);
+    fill(80 + n * 100, 20 + n * 30, 110 + n * 80, 18);
+    ellipse(nx, ny, n * 180, n * 180);
+  }
+
+  // 全ての星を描画
+  for (let s of backgroundStars) {
+    let tw = map(
+      sin(frameCount * s.twinkleSpeed + s.twinkleOffset),
+      -1, 1,
+      0.4, 1
+    );
+
+    let glow = s.layer === 2 ? 8 : s.layer === 1 ? 3 : 0;
+
+    drawingContext.shadowBlur = glow;
+    drawingContext.shadowColor = s.color;
+
+    fill(
+      red(s.color),
+      green(s.color),
+      blue(s.color),
+      200 * tw
+    );
+    noStroke();
+    ellipse(s.x, s.y, s.size * tw);
+  }
+
+  drawingContext.shadowBlur = 0;
+
+  // 流れ星
+  if (random() < 0.01) spawnShootingStar();
+
+  for (let s of shootingStars) {
+    stroke(255, s.life);
+    strokeWeight(2);
+    line(s.x, s.y, s.x - 20, s.y + 4); // 尾
+
+    s.x += s.vx;
+    s.y += s.vy;
+    s.life -= 6;
+  }
+
+  shootingStars = shootingStars.filter(s => s.life > 0);
+}
+
 /* =========================================================
    ギャラリーページ
    ========================================================= */
