@@ -570,10 +570,8 @@ function draw() {
 
   // 状態に応じた描画
   if (state === "select") {
-    console.log("selectモードの描画");
     camera();
     drawPADButtons();
-
     // タッチフィードバック
     if (touchFeedback && touchFeedback.alpha > 0) {
       push();
