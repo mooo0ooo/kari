@@ -670,17 +670,6 @@ function draw() {
     state = "select";
     updateButtonVisibility();
   }
-
-  // デバッグ情報の表示
-  if (typeof debugMode !== 'undefined' && debugMode) {
-    push();
-    fill(255);
-    textSize(12);
-    textAlign(LEFT, TOP);
-    text(`State: ${state}`, 10, 10);
-    text(`Selected P: ${selectedP}, A: ${selectedA}, D: ${selectedD}`, 10, 30);
-    pop();
-  }
 }
 /* =========================================================
    drawPADButtons
