@@ -219,7 +219,7 @@ function setup() {
       btn.elt.style.webkitTapHighlightColor = 'transparent';
 	});
 
-	  console.log("okButtonが作成されました。要素:", okButton.elt);
+	console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
 	okButton.mousePressed(function() {
 	  console.log("OKボタンが押されました");
@@ -228,25 +228,19 @@ function setup() {
 	  state = "visual";
 	  console.log("状態をvisualに変更しました:", state);
 	  
+	  // ビジュアルを準備
+	  console.log("prepareVisualを呼び出します");
+	  const success = prepareVisual(false);
+	  console.log("prepareVisualの結果:", success);
+	  
 	  // ボタンの表示を更新
 	  updateButtonVisibility();
 	  console.log("ボタンの表示を更新しました");
-	  
-	  // ビジュアルを準備
-	  console.log("prepareVisualを呼び出します");
-	  prepareVisual(false);
-	  console.log("prepareVisualの呼び出し完了");
 	  
 	  // 強制的に再描画
 	  redraw();
 	  console.log("再描画を要求しました。現在のstate:", state);
 	});
-	
-	// タッチデバイス用のイベントも追加
-	okButton.elt.addEventListener('touchend', function(e) {
-	  e.preventDefault();
-	  okButton.mousePressed();
-	}, { passive: false });
 	
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
