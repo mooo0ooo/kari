@@ -1708,8 +1708,8 @@ function drawStarHighlights() {
   
   for (let p of points) {
     // 3D座標を2D画面座標に変換
-    let screenPos = screenPos(p.pos.x, p.pos.y, p.pos.z);
-    let d = dist(mouseX, mouseY, screenPos.x, screenPos.y);
+    let sp = screenPos(p.pos.x, p.pos.y, p.pos.z);
+    let d = dist(mouseX, mouseY, sp.x, sp.y);
     
     if (d < closestDist) {
       closestDist = d;
@@ -1731,7 +1731,7 @@ function drawStarHighlights() {
 	pop();
     
     // 感情ラベル
-    let screenCoords = screenPos(pos.x, pos.y, pos.z);
+    let sc = screenPos(pos.x, pos.y, pos.z);
     push();
     resetMatrix();
     camera();
@@ -1739,11 +1739,11 @@ function drawStarHighlights() {
     textSize(16);
     fill(255);
     noStroke();
-    text(emo.ja, screenCoords.x, screenCoords.y - 15);
+    text(emo.ja, sc.x, sc.y - 15);
     text(
       `${emo.en} (P:${nf(emo.P, 1, 1)} A:${nf(emo.A, 1, 1)} D:${nf(emo.D, 1, 1)})`,
-      screenCoords.x,
-      screenCoords.y - 35
+      sc.x,
+      sc.y - 35
     );
     pop();
   }
