@@ -1769,6 +1769,8 @@ function drawConstellationLines() {
 
 // 星のハイライトとラベル表示
 function drawStarHighlights() {
+  if (!points || points.length === 0) return;
+	
   // マウスに近い星をハイライト
   let closestDist = 50;
   let closestStar = null;
@@ -1791,15 +1793,14 @@ function drawStarHighlights() {
     
     push();
     translate(pos.x, pos.y, pos.z);
-    
-    // ハイライトの輪
     noFill();
     stroke(255, 255, 0, 200);
     strokeWeight(1);
     sphere(12, 16, 16);
+	pop();
     
     // 感情ラベル
-    let screenPos = this.screenPos(pos.x, pos.y, pos.z);
+    let screenCoords = screenPos(pos.x, pos.y, pos.z);
     push();
     resetMatrix();
     camera();
@@ -1807,13 +1808,79 @@ function drawStarHighlights() {
     textSize(16);
     fill(255);
     noStroke();
-    text(emo.ja, screenPos.x, screenPos.y - 15);
-    text(`${emo.en} (P:${nf(emo.P, 1,1)} A:${nf(emo.A, 1,1)} D:${nf(emo.D, 1,1)})`, 
-         screenPos.x, screenPos.y - 35);
-    pop();
-    
+    text(emo.ja, screenCoords.x, screenCoords.y - 15);
+    text(
+      `${emo.en} (P:${nf(emo.P, 1, 1)} A:${nf(emo.A, 1, 1)} D:${nf(emo.D, 1, 1)})`,
+      screenCoords.x,
+      screenCoords.y - 35
+    );
     pop();
   }
+}
+
+function drawGrid() {
+  const size = 200;  // グリッドのサイズ
+  const step = 20;   // グリッドの間隔
+  const alpha = 50;  // グリッドの透明度
+
+  push();
+  stroke(200, 200, 255, alpha);
+  strokeWeight(1);
+  noFill();
+
+  // XZ平面にグリッドを描画
+  for (let x = -size; x <= size; x += step) {
+    line(x, 0, -size, x, 0, size);
+    line(-size, 0, x, size, 0, x);
+  }
+  pop();
+}
+
+function drawAxes() {
+  const len = 100;  // 軸の長さ
+
+  push();
+  strokeWeight(2);
+
+  // X軸 (赤)
+  stroke(255, 0, 0);
+  line(0, 0, 0, len, 0, 0);
+  
+  // Y軸 (緑)
+  stroke(0, 255, 0);
+  line(0, 0, 0, 0, len, 0);
+  
+  // Z軸 (青)
+  stroke(0, 0, 255);
+  line(0, 0, 0, 0, 0, len);
+  
+  // 軸ラベル
+  textSize(16);
+  noStroke();
+  fill(255, 0, 0);
+  text('X', len + 10, 0, 0);
+  fill(0, 255, 0);
+  text('Y', 0, len + 10, 0);
+  fill(0, 0, 255);
+  text('Z', 0, 0, len + 10);
+  
+  pop();
+}
+
+function groupByMonth(constellations) {
+  const grouped = {};
+  for (let i = 0; i < 12; i++) {
+    grouped[i] = [];
+  }
+  
+  for (let c of constellations) {
+    if (!c.created) continue;
+    const date = new Date(c.created);
+    const month = date.getMonth(); // 0-11
+    grouped[month].push(c);
+  }
+  
+  return grouped;
 }
 	
 /* =========================================================
