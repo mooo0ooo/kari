@@ -1110,8 +1110,8 @@ function touchMoved(event) {
       }
     }
     
-    targetRotationY += deltaX * 0.01;
-    targetRotationX += deltaY * 0.01;
+    targetRotationY -= deltaX * 0.003;
+    targetRotationX -= deltaY * 0.003;
     
     lastTouchX = currentX;
     lastTouchY = currentY;
