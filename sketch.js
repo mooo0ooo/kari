@@ -511,8 +511,7 @@ function addPAD() {
    prepareVisual
    ========================================================= */
 function prepareVisual(changeState = true) {
-  console.log("prepareVisual called with changeState =", changeState);
-  console.log("Current state before prepareVisual:", state);
+  console.log("prepareVisualが呼ばれました。現在のstate:", state);
 	
   points = [];
   for (let v of padValues) {
@@ -522,6 +521,7 @@ function prepareVisual(changeState = true) {
     let z = map(v.D, 0, 1, -100, 100);
     points.push({pos:createVector(x,y,z), emo:emo});
   }
+  
   stars = [];
   for (let i = 0; i < 400; i++) {
     stars.push({
@@ -532,12 +532,10 @@ function prepareVisual(changeState = true) {
     });
   }
 
-　if (changeState) {
-    state = "visual";
-    updateButtonVisibility();
-  }
-  
+　state = "visual";
+  updateButtonVisibility();
   visualStartTime = millis();
+  
   console.log("ビジュアルの準備が完了しました。現在のstate:", state);
 }
 
