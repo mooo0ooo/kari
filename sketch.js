@@ -841,10 +841,11 @@ function touchStarted(event) {
 
 	const canvasX = touchStartX - width/2;
 	const canvasY = touchStartY - height/2;
+	  
     console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
     console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
     
-    if (handlePadButtonTap(touchStartX, touchStartY)) {
+    if (handlePadButtonTap(canvasX, canvasY)) {
       return false;
     }
   }
