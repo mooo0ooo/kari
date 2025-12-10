@@ -428,6 +428,8 @@ function setup() {
   }
 	if (state === "gallery") {
 	  createScrollButtons();
+	  pixelDensity(1);
+  	  resizeCanvas(windowWidth, windowHeight);
 	}
 }
 
@@ -516,8 +518,8 @@ function windowResized() {
 
   if (state === "gallery") {
     const maxScroll = -calculateMaxScroll();
-    targetScrollY = constrain(targetScrollY, maxScroll, 0);
-    scrollY = targetScrollY;
+    targetScrollY = 0;
+    scrollY = 0;
   }
 }
 
@@ -2234,6 +2236,14 @@ function touchMonthMenu(x, y) {
 
 // 一覧表示
 function drawGalleryListView() {
+  let designWidth = min(width, 800);
+  let scale = width / designWidth;
+  let scaledHeight = height / scale;
+  
+  let maxScroll = calculateMaxScroll();
+  targetScrollY = constrain(targetScrollY, -maxScroll, 0);
+  scrollY = lerp(scrollY, targetScrollY, 0.1);
+	
 　let filtered = allConstellations.filter(c => {
     let d = new Date(c.created);
     return (
@@ -2243,6 +2253,7 @@ function drawGalleryListView() {
   });
 	
   resetMatrix();
+  scale(scale);
   camera();
   background(5, 5, 20); 
   
@@ -2460,32 +2471,25 @@ function generate2DThumbnail(cons, size) {
    ========================================================= */
 function calculateMaxScroll() {
   const thumbSize = 150;
-  const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  const availableWidth = width - (outerPad * 2);
+  const itemsPerRow = max(1, floor(availableWidth / (thumbSize + gutter)));
   
   let totalHeight = topOffset;
-
-  if (!Array.isArray(allConstellations)) {
-    console.warn("allConstellations is not an array:", allConstellations);
-    return 0;
-  }
-
   const grouped = groupByMonth(allConstellations);
   
   for (let month = 0; month < 12; month++) {
     const monthItems = grouped[month];
     if (monthItems.length === 0) continue;
     
-    // 月の見出しの高さ
     totalHeight += 35;
     
-    // サムネイル行の高さ
     const rows = ceil(monthItems.length / itemsPerRow);
     totalHeight += rows * (thumbSize + gutter + 25) + 20;
   }
+  totalHeight += 50;
   
-  return max(0, totalHeight - height + 100);
+  return max(0, totalHeight - (height / (height / width)));
 }
-
 /* =========================================================
    galleryメモリ管理
    ========================================================= */
