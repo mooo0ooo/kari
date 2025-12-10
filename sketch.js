@@ -276,6 +276,7 @@ function setup() {
 
 	  state = "visual";
 	  updateButtonVisibility();
+	  resetVisualView();
 	  console.log("状態をvisualに設定しました。現在のstate:", state);
 	  
 	  // ビジュアルを準備
@@ -662,17 +663,37 @@ function draw() {
   }
 　else if (state === "visual") {
 	  camera();
-      orbitControl();
 
-	  if (touches.length > 0 && isTouching) {
-	    let touch = touches[0];
-	    let dx = touch.x - touchStartPos.x;
-	    let dy = touch.y - touchStartPos.y;
-	    
-	    targetRotationY += dx * 0.01;
-	    targetRotationX += dy * 0.01;
-	    
-	    touchStartPos = { x: touch.x, y: touch.y };
+	  if (touches.length > 0) {
+	    let t = touches[0];
+	
+	    if (!isDragging) {
+	      // ドラッグ開始
+	      isDragging = true;
+	      lastTouchX = t.clientX;
+	      lastTouchY = t.clientY;
+	      lastTouchTime = millis();
+	    } else {
+	      // ドラッグ継続：指の動きにそのまま回転を加える
+	      const dx = (t.clientX - lastTouchX);
+	      const dy = (t.clientY - lastTouchY);
+	
+	      // 速度係数
+	      const ROTATE_SPEED = 0.005;
+	
+	      // 指の向きと同じ向きに回転させる
+	      targetRotationY += dx * ROTATE_SPEED;
+	      targetRotationX += dy * ROTATE_SPEED;
+	
+	      // 更新
+	      lastTouchX = t.clientX;
+	      lastTouchY = t.clientY;
+	      lastTouchTime = millis();
+	    }
+	  } else {
+	    isDragging = false;
+	    velocityX = 0;
+	    velocityY = 0;
 	  }
 	  
 	  // 3D操作
@@ -1114,25 +1135,7 @@ function touchMoved(event) {
   
   // ビジュアルモードでの回転操作
   if (state === "visual") {
-    const currentTime = millis();
-    const deltaX = currentX - lastTouchX;
-    const deltaY = currentY - lastTouchY;
-    
-    // 速度計算
-    if (lastTouchTime > 0) {
-      const deltaTime = currentTime - lastTouchTime;
-      if (deltaTime > 0) {
-        velocityX = deltaX / deltaTime * 0.1;
-        velocityY = deltaY / deltaTime * 0.1;
-      }
-    }
-    
-    targetRotationY += deltaX * 0.005;
-    targetRotationX -= deltaY * 0.005;
-    
-    lastTouchX = currentX;
-    lastTouchY = currentY;
-    lastTouchTime = currentTime;
+    const touch = event.touches[0];
   }
   
   return false;
@@ -1194,8 +1197,8 @@ function touchEnded(event) {
         const touch = event.changedTouches[0];
         const dx = touch.clientX - lastTouchX;
         const dy = touch.clientY - lastTouchY;
-        velocityX = dx / deltaTime * 0.5;
-        velocityY = dy / deltaTime * 0.5;
+		velocityX = 0;
+  		velocityY = 0;
       }
     }
   }
@@ -1358,6 +1361,9 @@ function resetView() {
   velocityY = 0;
   
   // タッチ状態をリセット
+  lastTouchX = undefined;
+  lastTouchY = undefined;
+  lastTouchTime = 0;
   isTouching = false;
   isDragging = false;
   
