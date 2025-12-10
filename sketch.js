@@ -330,33 +330,30 @@ function setup() {
 	  }
 	});
 
-  galleryButton.mousePressed(() => {
+	  galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
 	    state = "select";
+	  } else {
+	    // select → gallery
+	    state = "gallery";
 	    galleryStars = [];
 	    targetScrollY = 0;
 	    scrollY = 0;
-	    selectedLabel = null;
-	  } else {
-	    state = "gallery";
-	    galleryStars = [];
-		targetScrollY = 0;
-    	scrollY = 0;
-		// スクロールボタンを再作成
 	    if (upButton) upButton.remove();
 	    if (downButton) downButton.remove();
+	
 	    createScrollButtons();
-	    // ギャラリー用の星を生成
-	    for (let i = 0; i < 400; i++) {
-	      galleryStars.push({
-	        x: random(-2000, 2000),
-	        y: random(-2000, 2000),
-	        z: random(-2000, 2000),
-	        twinkle: random(1000),
-	        baseSize: random(1, 4)
-	      });
-	    }
-	    // サムネイルの再生成
+	
+	    // ギャラリー用星リスト再生成
+	    galleryStars = Array.from({length: 400}, () => ({
+	      x: random(-2000, 2000),
+	      y: random(-2000, 2000),
+	      z: random(-2000, 2000),
+	      twinkle: random(1000),
+	      baseSize: random(1, 4)
+	    }));
+	
+	    // サムネイル再生成
 	    allConstellations.forEach(c => {
 	      if (c.thumbnail) {
 	        c.thumbnail.remove();
@@ -364,10 +361,13 @@ function setup() {
 	      }
 	    });
 	  }
+	
 	  updateButtonVisibility();
 	  layoutDOMButtons();
+	
+	  loop();
 	  redraw();
-  });
+　});
 
   resetViewButton.mousePressed(function() {
       resetView();
