@@ -662,45 +662,14 @@ function draw() {
 　else if (state === "visual") {
 	  camera();
 
-	  if (touches.length > 0) {
-	    let t = touches[0];
-	
-	    if (!isDragging) {
-	      // ドラッグ開始
-	      isDragging = true;
-	      lastTouchX = t.clientX;
-	      lastTouchY = t.clientY;
-	      lastTouchTime = millis();
-	    } else {
-	      // ドラッグ継続：指の動きにそのまま回転を加える
-	      const dx = (t.clientX - lastTouchX);
-	      const dy = (t.clientY - lastTouchY);
-	
-	      // 速度係数
-	      const ROTATE_SPEED = 0.005;
-	
-	      // 指の向きと同じ向きに回転させる
-	      targetRotationY += dx * ROTATE_SPEED;
-	      targetRotationX += dy * ROTATE_SPEED;
-	
-	      // 更新
-	      lastTouchX = t.clientX;
-	      lastTouchY = t.clientY;
-	      lastTouchTime = millis();
-	    }
-	  } else {
-	    isDragging = false;
-	    velocityX = 0;
-	    velocityY = 0;
-	  }
-	  
-	  // 3D操作
-	  rotationX = lerp(rotationX, targetRotationX, 0.01);
-	  rotationY = lerp(rotationY, targetRotationY, 0.01);
-	  rotateX(rotationX);
- 	  rotateY(rotationY);
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.05);
-	  scale(zoomLevel);
+	  rotationX = lerp(rotationX, targetRotationX, 0.18);
+  	　rotationY = lerp(rotationY, targetRotationY, 0.18);
+
+	 rotateX(rotationX);
+  	 rotateY(rotationY);
+
+	 zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
+  	 scale(zoomLevel);
 		  
 	  // ★ 星空の描画
 	  push(); 
@@ -1052,6 +1021,18 @@ function touchStarted(event) {
 
   if (state === "visual") {
     isDragging = true;
+
+	if (event && event.touches && event.touches[0]) {
+	    lastTouchX = event.touches[0].clientX;
+	    lastTouchY = event.touches[0].clientY;
+	    lastTouchTime = millis();
+	  } else {
+	    if (touches && touches.length > 0) {
+	      lastTouchX = touches[0].x;
+	      lastTouchY = touches[0].y;
+	      lastTouchTime = millis();
+	    }
+	}
   }
 
   return true;
@@ -1133,7 +1114,35 @@ function touchMoved(event) {
   
   // ビジュアルモードでの回転操作
   if (state === "visual") {
-    const touch = event.touches[0];
+	  if (!event.touches || event.touches.length === 0) return false;
+	  const touch = event.touches[0];
+	
+	  const currentX = touch.clientX;
+	  const currentY = touch.clientY;
+
+	  if (lastTouchX === undefined || lastTouchY === undefined) {
+	    lastTouchX = currentX;
+	    lastTouchY = currentY;
+	    lastTouchTime = millis();
+	    return false;
+	  }
+	
+	  const deltaX = currentX - lastTouchX;
+	  const deltaY = currentY - lastTouchY;
+	
+	  // 回転速度（スマホ向けに小さめ）
+	  const ROTATE_SPEED = 0.005;
+	
+	  // 指の動きと同じ方向に回転させる
+	  targetRotationY += deltaX * ROTATE_SPEED;
+	  targetRotationX += deltaY * ROTATE_SPEED;
+	
+	  // 更新
+	  lastTouchX = currentX;
+	  lastTouchY = currentY;
+	  lastTouchTime = millis();
+	
+	  return false;
   }
   
   return false;
@@ -1197,6 +1206,11 @@ function touchEnded(event) {
         const dy = touch.clientY - lastTouchY;
 		velocityX = 0;
   		velocityY = 0;
+		isDragging = false;
+
+		lastTouchX = undefined;
+		lastTouchY = undefined;
+		lastTouchTime = 0;
       }
     }
   }
