@@ -221,31 +221,40 @@ function setup() {
 
 	  console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
-	  // 既存のイベントリスナーをクリア
-	  okButton.elt.onclick = null;
-	  if (okButton.elt._p5jsButtonListeners) {
-	    okButton.elt._p5jsButtonListeners = [];
-	  }
+	okButton.mousePressed(function() {
+	  console.log("OKボタンが押されました！");
 	  
-	  okButton.mousePressed(() => {
-		  console.log("OKボタンが押されました！");
-		  
-		  // 状態をvisualに変更
-		  state = "visual";
-		  console.log("状態をvisualに変更します");
-		  
-		  // prepareVisualを直接呼び出す
-		  console.log("prepareVisualを呼び出します");
-		  const result = prepareVisual(false);
-		  console.log("prepareVisualの結果:", result);
-		  
-		  // ボタンの表示を更新
-		  updateButtonVisibility();
-		  
-		  // 強制的に再描画
-		  redraw();
-		  console.log("再描画を要求しました。現在のstate:", state);
-		});
+	  // 状態を直接変更
+	  state = "visual";
+	  console.log("状態をvisualに変更します");
+	  
+	  // ボタンの表示を更新
+	  updateButtonVisibility();
+	  
+	  // 強制的に再描画
+	  redraw();
+	  
+	  // prepareVisualを直接呼び出す
+	  console.log("prepareVisualを直接呼び出します");
+	  prepareVisual(false);
+	  
+	  console.log("現在のstate:", state);
+	});
+
+	// 既存のイベントリスナーを削除
+okButton.elt.onclick = null;
+if (okButton.elt._p5jsButtonListeners) {
+  okButton.elt._p5jsButtonListeners = [];
+}
+
+// 直接DOMイベントリスナーを追加
+okButton.elt.addEventListener('click', function() {
+  console.log("直接追加したイベントリスナーが呼ばれました！");
+  state = "visual";
+  updateButtonVisibility();
+  redraw();
+  prepareVisual(false);
+});
 
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
@@ -488,7 +497,7 @@ function addPAD() {
    prepareVisual
    ========================================================= */
 function prepareVisual(changeState = true) {
-  console.log("prepareVisualが呼ばれました。現在のstate:", state);
+  console.log("prepareVisualが呼ばれました");
   
   try {
     // 星の位置を計算
