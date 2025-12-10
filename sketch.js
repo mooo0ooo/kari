@@ -86,8 +86,6 @@ let showGrid = true;
 
 // gallery
 let galleryState = "year";
-let galleryState = "month";
-let galleryState = "list";
 let selectedYear = null;
 let selectedMonth = null;
 let availableYears = [];
