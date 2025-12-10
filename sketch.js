@@ -221,29 +221,32 @@ function setup() {
 
 	  console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
-	// 既存のokButton.mousePressedを削除して、以下のコードに置き換え
-	okButton.mousePressed(() => {
-	  console.log("1. OKボタンが押されました");
+	okButton.mousePressed(function() {
+	  console.log("OKボタンが押されました");
 	  
 	  // 状態を直接変更
 	  state = "visual";
-	  console.log("2. 状態をvisualに変更しました:", state);
+	  console.log("状態をvisualに変更しました:", state);
 	  
 	  // ボタンの表示を更新
 	  updateButtonVisibility();
-	  console.log("3. ボタンの表示を更新しました");
+	  console.log("ボタンの表示を更新しました");
 	  
 	  // ビジュアルを準備
-	  console.log("4. prepareVisualを呼び出します");
-	  const result = prepareVisual(false);
-	  console.log("5. prepareVisualの結果:", result);
+	  console.log("prepareVisualを呼び出します");
+	  prepareVisual(false);
+	  console.log("prepareVisualの呼び出し完了");
 	  
 	  // 強制的に再描画
-	  console.log("6. 再描画を要求します");
 	  redraw();
-	  
-	  console.log("7. 現在のstate:", state);
+	  console.log("再描画を要求しました。現在のstate:", state);
 	});
+	
+	// タッチデバイス用のイベントも追加
+	okButton.elt.addEventListener('touchend', function(e) {
+	  e.preventDefault();
+	  okButton.mousePressed();
+	}, { passive: false });
 	
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
@@ -477,7 +480,9 @@ function addPAD() {
    ========================================================= */
 function prepareVisual(changeState = true) {
   console.log("prepareVisualが呼ばれました。changeState =", changeState);
-  console.log("現在のstate:", state);
+  console.trace("prepareVisualの呼び出し元をトレース");
+  console.log("prepareVisualの型:", typeof prepareVisual);
+  console.log("prepareVisualの内容:", prepareVisual.toString().substring(0, 100) + "...");
   
   try {
     // 星の位置を計算
