@@ -1189,14 +1189,30 @@ function calculateMaxScroll() {
 // 月ごとにグループ化
 function groupByMonth(constellations) {
   const grouped = {};
-  for (let i = 0; i < 12; i++) grouped[i] = [];
+  for (let i = 0; i < 12; i++) {
+    grouped[i] = [];
+  }
+
+  if (!Array.isArray(constellations)) {
+    console.warn("Invalid constellations data in groupByMonth:", constellations);
+    return grouped;
+  }
   
-  for (const c of constellations) {
-    if (!c.created) continue;
-    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    const monthIndex = parseInt(m[2]) - 1; // 0-11
-    grouped[monthIndex].push(c);
+  for (let c of constellations) {
+    if (!c || !c.created) continue;
+    
+    try {
+      const date = new Date(c.created);
+      if (isNaN(date.getTime())) continue; // 無効な日付はスキップ
+      
+      const month = date.getMonth(); // 0-11
+      if (month >= 0 && month < 12) { // 月の範囲を確認
+        grouped[month].push(c);
+      }
+    } catch (e) {
+      console.warn("Error processing date:", c.created, e);
+      continue;
+    }
   }
   
   return grouped;
@@ -2098,6 +2114,12 @@ function calculateMaxScroll() {
   const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
   
   let totalHeight = topOffset;
+
+  if (!Array.isArray(allConstellations)) {
+    console.warn("allConstellations is not an array:", allConstellations);
+    return 0;
+  }
+
   const grouped = groupByMonth(allConstellations);
   
   for (let month = 0; month < 12; month++) {
