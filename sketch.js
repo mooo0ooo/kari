@@ -244,54 +244,66 @@ function setup() {
   });
   
   okButton.mousePressed((event) => {
-	  if (event) event.preventDefault();
-	  console.log("OKボタンが押されました");
-	  
-	  if (padValues.length > 0) {
-	    console.log("PAD値あり、ビジュアルを準備します");
+  if (event) event.preventDefault();
+  console.log("OKボタンが押されました");
+  
+  if (!padValues || padValues.length === 0) {
+    console.log("PAD値がありません");
+    return;
+  }
 
-		// ビジュアルを準備
-	    if (prepareVisual()) {
-	      console.log("prepareVisualが正常に完了しました。state:", state);
-	      
-	      // 日付と星データの処理
-	      let now = new Date();
-	      let timestamp = now.toLocaleString();
-	      let serialStars = points.map(s => {
-	        let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
-	        let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
-	        let pz = (s.pos && typeof s.pos.z !== "undefined") ? s.pos.z : 0;
-	        return { pos: { x: px, y: py, z: pz }, emo: s.emo };
-	      });
-	
-	      let newConstellation = {
-	        stars: serialStars, 
-	        created: timestamp
-	      };
-	      
-	      // データを保存
-	      allConstellations.push(newConstellation);
-	      try {
-	        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-	        console.log("データを保存しました");
-	      } catch (e) {
-	        console.error("データの保存に失敗しました:", e);
-	      }
-	      
-	      // 状態をリセット
-	      padValues = [];
-	      selectedP = selectedA = selectedD = null;
-	      
-	      // 強制的に再描画
-	      redraw();
-	      console.log("再描画を要求しました。現在のstate:", state);
-	    } else {
-	      console.error("prepareVisualが失敗しました");
-	    }
-	  } else {
-	    console.log("PAD値がありません");
-	  }
-  });
+  console.log("PAD値あり、ビジュアルを準備します");
+  
+  // ビジュアルを準備
+  if (prepareVisual(true)) {  // 明示的に true を渡して状態変更を許可
+    console.log("prepareVisualが正常に完了しました。state:", state);
+    
+    // 日付と星データの処理
+    let now = new Date();
+    let timestamp = now.toLocaleString();
+    let serialStars = points.map(s => {
+      if (!s || !s.pos) return null;
+      return { 
+        pos: { 
+          x: s.pos.x || 0, 
+          y: s.pos.y || 0, 
+          z: s.pos.z || 0 
+        }, 
+        emo: s.emo 
+      };
+    }).filter(Boolean);
+
+    if (serialStars.length > 0) {
+      let newConstellation = {
+        stars: serialStars, 
+        created: timestamp
+      };
+      
+      // データを保存
+      if (!Array.isArray(allConstellations)) {
+        allConstellations = [];
+      }
+      allConstellations.push(newConstellation);
+      
+      try {
+        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+        console.log("データを保存しました");
+      } catch (e) {
+        console.error("データの保存に失敗しました:", e);
+      }
+    }
+
+    // 状態をリセット
+    padValues = [];
+    selectedP = selectedA = selectedD = null;
+    
+    // 強制的に再描画
+    redraw();
+    console.log("再描画を要求しました。現在のstate:", state);
+  } else {
+    console.error("prepareVisualが失敗しました");
+  }
+});
 
   backButton.mousePressed(() => {
 	  state = "select";
@@ -508,271 +520,165 @@ function addPAD() {
    ========================================================= */
 function prepareVisual(changeState = true) {
   console.log("prepareVisualが呼ばれました。現在のstate:", state);
-	
-  // 星の位置を計算
-  points = [];
-  for (let v of padValues) {
-    let emo = findClosestEmotion(v.P, v.A, v.D);
-    let x = map(v.P, 0, 1, -100, 100);
-    let y = map(v.A, 0, 1, -100, 100);
-    let z = map(v.D, 0, 1, -100, 100);
-
-	// 感情データを追加
-    emo.intensity = (v.P + v.A + v.D) / 3;
-    
-    points.push({
-      pos: createVector(x, y, z),
-      emo: emo
-    });
-  }
   
-  // 背景の星を生成
-  stars = [];
-  for (let i = 0; i < 400; i++) {
-    stars.push({
-      x: random(-2000, 2000),
-      y: random(-2000, 2000),
-      z: random(-2000, 2000),
-      twinkle: random(1000)
-    });
+  try {
+    // 星の位置を計算
+    points = [];
+    if (!Array.isArray(padValues)) {
+      console.error("padValues is not an array");
+      return false;
+    }
+
+    for (let v of padValues) {
+      if (!v || typeof v !== 'object') {
+        console.warn("Invalid PAD value:", v);
+        continue;
+      }
+      
+      let emo = findClosestEmotion(v.P, v.A, v.D);
+      if (!emo) {
+        console.warn("No emotion found for PAD values:", v);
+        continue;
+      }
+
+      let x = map(v.P, 0, 1, -100, 100);
+      let y = map(v.A, 0, 1, -100, 100);
+      let z = map(v.D, 0, 1, -100, 100);
+
+      // 感情データを追加
+      emo.intensity = (v.P + v.A + v.D) / 3;
+      
+      points.push({
+        pos: createVector(x, y, z),
+        emo: emo
+      });
+    }
+
+    if (points.length === 0) {
+      console.warn("No valid points to display");
+      return false;
+    }
+    
+    // 背景の星を生成
+    stars = [];
+    for (let i = 0; i < 400; i++) {
+      stars.push({
+        x: random(-2000, 2000),
+        y: random(-2000, 2000),
+        z: random(-2000, 2000),
+        twinkle: random(1000)
+      });
+    }
+
+    // 状態をvisualに設定
+    if (changeState) {
+      state = "visual";
+      updateButtonVisibility();
+      visualStartTime = millis();
+      
+      // 3Dビューのリセット
+      rotationX = 0;
+      rotationY = 0;
+      targetRotationX = 0;
+      targetRotationY = 0;
+      zoomLevel = 1;
+      targetZoomLevel = 1;
+    }
+    
+    console.log("prepareVisual completed successfully");
+    return true;
+  } catch (error) {
+    console.error("Error in prepareVisual:", error);
+    return false;
   }
-
-  // 状態をvisualに設定
-  state = "visual";
-  updateButtonVisibility();
-  visualStartTime = millis();
-
-  return true;
 }
 
 /* =========================================================
    draw
    ========================================================= */
 function draw() {
-	
+  // フレームレートに基づいた処理
   if (frameCount % 60 === 0) { 
-	cleanupThumbnails();
+    cleanupThumbnails();
   }
-	
+  
+  // 背景をクリア
   background(5, 5, 20);
 
+  // 状態に応じた描画
   if (state === "select") {
-	  console.log("selectモードの描画");
-	  camera();
-	  drawPADButtons();
+    console.log("selectモードの描画");
+    camera();
+    drawPADButtons();
 
-	  if (touchFeedback.alpha > 0) {
-	    push();
-	    noStroke();
-	    fill(255, 0, 0, touchFeedback.alpha);
-	    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
-	    touchFeedback.alpha -= 5;
-	    pop();
-	  }
-	  
-	  push();
-	  resetMatrix();
-	  fill(255);
-	  textAlign(LEFT, TOP);
-	  textSize(16);
-	  text(`Selected: P${selectedP !== null ? selectedP : '_'} A${selectedA !== null ? selectedA : '_'} D${selectedD !== null ? selectedD : '_'}`, 20, 20);
-	  text(`Points added: ${padValues.length}`, 20, 50);
-	  pop();
-	  return;
+    // タッチフィードバック
+    if (touchFeedback && touchFeedback.alpha > 0) {
+      push();
+      noStroke();
+      fill(255, 0, 0, touchFeedback.alpha);
+      ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
+      touchFeedback.alpha -= 5;
+      pop();
+    }
+    
+    // デバッグ情報
+    push();
+    resetMatrix();
+    fill(255);
+    textAlign(LEFT, TOP);
+    textSize(16);
+    text(`Selected: P${selectedP !== null ? selectedP : '_'} A${selectedA !== null ? selectedA : '_'} D${selectedD !== null ? selectedD : '_'}`, 20, 20);
+    text(`Points added: ${padValues.length}`, 20, 50);
+    pop();
   }
   else if (state === "gallery") {
-	console.log("galleryモードの描画");
+    console.log("galleryモードの描画");
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
-    return;
   }
   else if (state === "visual") {
-	  console.log("visualモードの描画を開始します");
-	  draw3DView();
+    console.log("visualモードの描画を開始します");
+    try {
+      draw3DView();
+      
+      // ラベル表示
+      if (selectedLabel) {
+        push();
+        camera();
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(20);
+        text(selectedLabel, width/2, height-40);
+        pop();
+      }
 
-	  if (touches.length > 0 && isTouching) {
-	    let touch = touches[0];
-	    let dx = touch.x - touchStartPos.x;
-	    let dy = touch.y - touchStartPos.y;
-	    
-	    targetRotationY += dx * 0.01;
-	    targetRotationX += dy * 0.01;
-	    
-	    touchStartPos = { x: touch.x, y: touch.y };
-	  }
-	  
-	  // 3D操作
-	  rotationX = lerp(rotationX, targetRotationX, 0.1);
-	  rotationY = lerp(rotationY, targetRotationY, 0.1);
-	  rotateX(rotationX);
- 	  rotateY(rotationY);
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
-	  scale(zoomLevel);
-		  
-	  // ★ 星空の描画
-	  push(); 
-	  noStroke();
-	  for (let s of stars) {
-	    if (random() < 0.02) s.on = !s.on;
-	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-	    let blink = (s.on ? 1 : 0);
-	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-	    let intensity = blink * pulse;
-	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
-	    let alpha = map(intensity, 0, 1, 10, 255);
-	    let r = 200 + random(-20, 20);
-	    let g = 200 + random(-20, 20);
-	    let b = 255;
-	    fill(r, g, b, alpha);
-	    push();
-	    translate(s.x, s.y, s.z);
-	    sphere(starSize);
-	    pop();
-	  }
-	  pop();
-	
-	  if (allConstellations.length === 0) return;
-	  let latest = allConstellations[allConstellations.length - 1];
-	  let latestMonth = -1;
-	
-	  if (latest?.created) {
-	    let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (m) latestMonth = int(m[2]);
-	  }
-	
-	  let sameMonthConstellations = [];
-	  for (let c of allConstellations) {
-	    if (!c.created) continue;
-	    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (!m) continue;
-	    if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
-	  }
-	
-	  let displayList = [...sameMonthConstellations];
-	  let idx = displayList.indexOf(latest);
-	  if (idx !== -1) displayList.splice(idx, 1);
-	  displayList.push(latest);
-	
-	  for (let i = 0; i < displayList.length; i++) {
-	    let constellation = displayList[i];
-	    push();
-	    if (i === displayList.length - 1) {
-	      translate(0, 0, 200);
-	      scale(1.5);
-	    } else {
-	      let col = i % 5;
-	      let arow = floor(i / 5);
-	      translate(-600 + col * 250, -300 + arow * 250, -800);
-	      scale(0.6);
-	    }
-	
-	    stroke(150, 80);
-	    noFill();
-	    box(220);
-	
-	    for (let p of constellation.stars) {
-	      let px = p.pos?.x ?? 0;
-	      let py = p.pos?.y ?? 0;
-	      let pz = p.pos?.z ?? 0;
-	
-	      push();
-	      translate(px, py, pz);
-	      let flicker = 220 + 35 * sin(frameCount*0.1 + i*37);
-	      fill(255, 255, 200, flicker);
-	      noStroke();
-	      sphere(8);
-	      pop();
-	    }
-	
-	    if (millis() - visualStartTime > 1200) {
-	      push();
-	      stroke(180, 200, 255, 90);
-	      strokeWeight(2);
-	      blendMode(ADD);
-	      for (let a = 0; a < constellation.stars.length; a++) {
-	        for (let b = a+1; b < constellation.stars.length; b++) {
-	          let aPos = constellation.stars[a].pos;
-	          let bPos = constellation.stars[b].pos;
-	          if (aPos && bPos) {
-	            line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-	          }
-	        }
-	      }
-	      pop();
-	    }
-	
-	    push();
-	    translate(0, 120, 0);
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(14);
-	    text(constellation.created, 0, 0);
-	    pop();
-	
-	    pop();
-	  }
-	
-	  if (allConstellations.length > 0) {
-	   latest = allConstellations[allConstellations.length - 1];
-	   let m = latest?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	   let monthIndex = m ? int(m[2]) - 1 : 0;
-	   let monthNames = [
-	     "January","February","March","April","May","June",
-	     "July","August","September","October","November","December"
-	   ];
-	   push();
-	   resetMatrix();               
-	   applyMatrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
-	   noLights();
-	   textAlign(CENTER, TOP);
-	   textSize(32);
-	   fill(255);
-	   text(monthNames[monthIndex], width/2, 20);
-	   pop();
-	 }
-	 
-	  if (selectedLabel) {
-	    push();
-	    camera();
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(20);
-	    text(selectedLabel, width/2, height-40);
-	    pop();
-	  }
-
-	  if (state === "visual" && !isDragging) {
-	    // 慣性を適用
-	    if (abs(velocityX) > 0.001 || abs(velocityY) > 0.001) {
-	      targetRotationY += velocityX * 2;
-	      targetRotationX += velocityY * 2;
-	      
-	      // 減衰
-	      velocityX *= 0.95;
-	      velocityY *= 0.95;
-	    } else {
-	      velocityX = 0;
-	      velocityY = 0;
-	    }
-	  }
-	} 
-	else {
-	    console.log("未知の状態での描画:", state);
-	    drawPADInterface();
-	}
-	
-	// タッチフィードバックの描画
-  if (touchFeedback && touchFeedback.alpha > 0) {
-	  push();
-	  resetMatrix();
-	  noStroke();
-	  fill(255, 255, 255, touchFeedback.alpha);
-	  ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
-	  touchFeedback.alpha -= 5;
-	  pop();
+      // 慣性を適用
+      if (!isDragging && (abs(velocityX) > 0.001 || abs(velocityY) > 0.001)) {
+        targetRotationY += velocityX * 2;
+        targetRotationX += velocityY * 2;
+        
+        // 減衰
+        velocityX *= 0.95;
+        velocityY *= 0.95;
+      } else if (!isDragging) {
+        velocityX = 0;
+        velocityY = 0;
+      }
+    } catch (e) {
+      console.error("Error in draw3DView:", e);
+      state = "select";
+      updateButtonVisibility();
+      redraw();
+    }
+  } else {
+    console.log("未知の状態での描画:", state);
+    // drawPADInterface();  // この関数が定義されているか確認してください
+    state = "select";  // 安全のためselect状態に戻す
+    updateButtonVisibility();
   }
 
-  if (debugMode) {
+  // デバッグ情報の表示
+  if (typeof debugMode !== 'undefined' && debugMode) {
     push();
     fill(255);
     textSize(12);
@@ -782,7 +688,6 @@ function draw() {
     pop();
   }
 }
-
 /* =========================================================
    drawPADButtons
    ========================================================= */
@@ -1670,6 +1575,28 @@ function draw3DView() {
     drawGrid();
     drawAxes();
   }
+
+  // 3D操作
+  if (touches.length > 0 && isTouching) {
+    let touch = touches[0];
+    let dx = touch.x - touchStartPos.x;
+    let dy = touch.y - touchStartPos.y;
+    
+    targetRotationY += dx * 0.01;
+    targetRotationX += dy * 0.01;
+    
+    touchStartPos = { x: touch.x, y: touch.y };
+  }
+  
+  // スムーズな回転
+  rotationX = lerp(rotationX, targetRotationX, 0.1);
+  rotationY = lerp(rotationY, targetRotationY, 0.1);
+  rotateX(rotationX);
+  rotateY(rotationY);
+  
+  // ズーム
+  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
+  scale(zoomLevel);
   
   // 星の描画
   drawStars();
@@ -1683,7 +1610,7 @@ function draw3DView() {
 
 // 宇宙の背景を描画
 function drawSpaceBackground() {
-  // 画面全体を覆う四角形を描画
+  // 画面全体を覆うグラデーション
   push();
   noStroke();
   for (let y = 0; y < height; y += 2) {
