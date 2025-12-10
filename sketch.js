@@ -583,12 +583,10 @@ function draw() {
     }
   }
   else if (state === "gallery") {
-    console.log("galleryモードの描画");
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
   }
   else if (state === "visual") {
-    console.log("visualモードの描画を開始します");
     try {
       draw3DView();
       
