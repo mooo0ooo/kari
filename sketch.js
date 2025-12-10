@@ -259,14 +259,25 @@ function setup() {
 	resetViewButton.style('transition', 'all 0.2s');
 
   // ボタンクリックイベント
-  addButton.mousePressed(() => {
-	  if (selectedP !== null && selectedA !== null && selectedD !== null) {
-	    addPAD();
-	    selectedP = selectedA = selectedD = null;
-	    redraw();
-	  }
-  });
-  
+  okButton.mousePressed(() => {
+	  console.log("OKボタンが押されました！");
+	  
+	  // 状態を直接変更
+	  state = "visual";
+	  console.log("状態をvisualに変更します");
+	  
+	  // ボタンの表示を更新
+	  updateButtonVisibility();
+	  
+	  // ビジュアルを準備
+	  console.log("prepareVisualを呼び出します");
+	  prepareVisual(false);
+	  
+	  // 強制的に再描画
+	  redraw();
+	  
+	  console.log("現在のstate:", state);
+	});
   
   backButton.mousePressed(() => {
 	  state = "select";
@@ -1501,7 +1512,6 @@ function draw3DView() {
   console.log("draw3DViewが呼ばれました");
   
   // カメラの設定
-  orbitControl();
   perspective(PI/3, width/height, 0.1, 10000);
   
   // 背景をグラデーションで描画
