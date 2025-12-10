@@ -572,11 +572,11 @@ function prepareVisual(changeState = true) {
    draw
    ========================================================= */
 function draw() {
-  console.log("draw実行中 - state:", state, " frameCount:", frameCount);
 	
   // フレームレートに基づいた処理
   if (frameCount % 60 === 0) { 
     cleanupThumbnails();
+	console.log("drawが実行中です。現在のstate:", state);
   }
   
   // 背景をクリア
