@@ -2152,9 +2152,6 @@ function drawGalleryListView() {
   }
   pop();
 
-  // 画面中央に配置
-  translate(-width / 2, -height / 2);
-
   // デザイン幅とスケールを計算
   let designWidth = 430;
   let galleryScale = min(1, width / designWidth);
