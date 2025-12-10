@@ -841,8 +841,8 @@ function touchStarted(event) {
   // PADボタンのタップ処理
   if (state === "select") {
 
-	const canvasX = touchStartX - width/2;
-	const canvasY = touchStartY - height/2;
+	const canvasX = touchStartX;
+	const canvasY = touchStartY;
 	  
     console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
     console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
