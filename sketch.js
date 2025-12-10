@@ -545,7 +545,6 @@ function prepareVisual(changeState = true) {
    draw
    ========================================================= */
 function draw() {
-  console.log("draw called, current state:", state);
 	
   if (frameCount % 60 === 0) { 
 	cleanupThumbnails();
