@@ -252,7 +252,6 @@ function setup() {
 
 　okButton.mousePressed(() => {
 	  console.log("OKボタンが押されました!");
-	  if (event) event.preventDefault();
 	  
 	  // デバッグ用: padValuesの状態を確認
 	  console.log("padValuesの状態:", {
@@ -268,11 +267,11 @@ function setup() {
 
 	  state = "visual";
 	  updateButtonVisibility();
-	  console.log("状態をvisualに設定しました。現在のstate:", visual);
+	  console.log("状態をvisualに設定しました。現在のstate:", state);
 	  
 	  // ビジュアルを準備
 	  if (prepareVisual(false)) {
-	    console.log("prepareVisualが正常に完了しました。state:", visual);
+	    console.log("prepareVisualが正常に完了しました。state:", state);
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
@@ -315,7 +314,7 @@ function setup() {
 	    
 	    // 強制的に再描画
 	    redraw();
-	    console.log("再描画を要求しました。現在のstate:", visual);
+	    console.log("再描画を要求しました。現在のstate:", state);
 	  } else {
 	    state = "select";
 	    updateButtonVisibility();
