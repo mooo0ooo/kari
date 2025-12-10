@@ -224,11 +224,11 @@ function setup() {
 	// 新しいイベントリスナーを設定
 okButton.mousePressed((event) => {
   if (event) event.preventDefault();
-  console.log("OKボタンが押されました（新しいハンドラ）");
+  console.log("OKボタンが押されました");
   
   // 状態を直接変更
   state = "visual";
-  console.log("状態をvisualに変更します");
+  console.log("状態をvisualに変更します（新しい値:", state, ")");
   
   // ボタンの表示を更新
   updateButtonVisibility();
@@ -239,9 +239,15 @@ okButton.mousePressed((event) => {
   const success = prepareVisual(false);
   console.log("prepareVisualの結果:", success);
   
+  // 状態を再度確認
+  console.log("現在のstate（再確認）:", state);
+  
   // 強制的に再描画
   redraw();
-  console.log("再描画を要求しました。現在のstate:", state);
+  console.log("再描画を要求しました");
+  
+  // グローバルなstate変数の状態を確認
+  console.log("グローバルなstate変数の状態:", window.state);
   
   return false;
 });
@@ -373,7 +379,8 @@ okButton.elt.addEventListener('touchend', (e) => {
    ========================================================= */
 function updateButtonVisibility() {
   console.log("updateButtonVisibility: state =", state);
-  
+  console.trace("updateButtonVisibilityの呼び出し元");  
+	
   // すべてのボタンを非表示に
   addButton.hide();
   okButton.hide();
@@ -565,10 +572,11 @@ function prepareVisual(changeState = true) {
    draw
    ========================================================= */
 function draw() {
+  console.log("draw実行中 - state:", state, " frameCount:", frameCount);
+	
   // フレームレートに基づいた処理
   if (frameCount % 60 === 0) { 
     cleanupThumbnails();
-	console.log("drawが実行中です。現在のstate:", state);
   }
   
   // 背景をクリア
