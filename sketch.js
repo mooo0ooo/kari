@@ -515,7 +515,14 @@ function prepareVisual(changeState = true) {
     let x = map(v.P, 0, 1, -100, 100);
     let y = map(v.A, 0, 1, -100, 100);
     let z = map(v.D, 0, 1, -100, 100);
-    points.push({pos: createVector(x, y, z), emo: emo});
+
+	// 感情データを追加
+    emo.intensity = (v.P + v.A + v.D) / 3; // 感情の強さを計算
+    
+    points.push({
+      pos: createVector(x, y, z),
+      emo: emo
+    });
   }
   
   // 背景の星を生成
@@ -531,12 +538,8 @@ function prepareVisual(changeState = true) {
 
   // 状態をvisualに設定
   state = "visual";
-  console.log("stateをvisualに設定しました。現在のstate:", state);
   updateButtonVisibility();
   visualStartTime = millis();
-  
-  console.log("ビジュアルの準備が完了しました。現在のstate:", state);
-  return true;
 }
 
 /* =========================================================
@@ -582,8 +585,7 @@ function draw() {
   }
   else if (state === "visual") {
 	  console.log("visualモードの描画を開始します");
-	  camera();
-      orbitControl();
+	  draw3DView();
 
 	  if (touches.length > 0 && isTouching) {
 	    let touch = touches[0];
@@ -1628,6 +1630,115 @@ function screenPos(x, y, z) {
   let sy = map(-ndcY, -1, 1, 0, height);
 
   return createVector(sx, sy);
+}
+
+/* =========================================================
+   draw3DView
+   ========================================================= */
+function draw3DView() {
+  console.log("draw3DViewが呼ばれました");
+  orbitControl();
+  background(0);
+  
+  // グリッドの描画
+  drawGrid();
+  
+  // 座標軸の描画
+  drawAxes();
+  
+  // 背景の星の描画
+  for (let star of stars) {
+    push();
+    translate(star.x, star.y, star.z);
+    fill(255, 255, 255, 200);
+    noStroke();
+    sphere(2);
+    pop();
+  }
+  
+  // 星座線の描画
+  stroke(100, 100, 255, 150);
+  strokeWeight(1);
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      let p1 = points[i].pos;
+      let p2 = points[j].pos;
+      line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+    }
+  }
+  
+  // 点の描画（PAD値に基づく）
+  for (let p of points) {
+    push();
+    translate(p.pos.x, p.pos.y, p.pos.z);
+    
+    // PAD値に基づいて色を設定
+    let r = map(p.emo.P, -1, 1, 0, 255);
+    let g = map(p.emo.A, -1, 1, 0, 255);
+    let b = map(p.emo.D, -1, 1, 0, 255);
+    fill(r, g, b);
+    
+    // 感情の強さに応じてサイズを変更
+    let size = map(p.emo.intensity, 0, 1, 2, 10);
+    noStroke();
+    sphere(size);
+    
+    // 感情ラベルを表示
+    if (dist(mouseX - width/2, mouseY - height/2, p.pos.x, p.pos.y) < 20) {
+      push();
+      fill(255);
+      noStroke();
+      textAlign(CENTER);
+      textSize(16);
+      text(p.emo.ja, 0, -20);
+      pop();
+    }
+    pop();
+  }
+}
+
+// 3Dグリッドを描画する補助関数
+function drawGrid() {
+  const size = 100;
+  const step = 20;
+  
+  push();
+  stroke(50);
+  strokeWeight(1);
+  
+  // XZ平面のグリッド
+  for (let x = -size; x <= size; x += step) {
+    line(x, 0, -size, x, 0, size);
+  }
+  for (let z = -size; z <= size; z += step) {
+    line(-size, 0, z, size, 0, z);
+  }
+  
+  pop();
+}
+
+// 座標軸を描画する補助関数
+function drawAxes() {
+  const len = 50;
+  
+  // X軸 (赤)
+  push();
+  strokeWeight(3);
+  stroke(255, 0, 0);
+  line(0, 0, 0, len, 0, 0);
+  pop();
+  
+  // Y軸 (緑)
+  push();
+  stroke(0, 255, 0);
+  line(0, 0, 0, 0, len, 0);
+  pop();
+  
+  // Z軸 (青)
+  push();
+  stroke(0, 0, 255);
+  line(0, 0, 0, 0, 0, len);
+  pop();
 }
 
 /* =========================================================
