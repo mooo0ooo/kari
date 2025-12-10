@@ -354,7 +354,6 @@ function setup() {
 
   // 初期状態のボタン表示を更新
   updateButtonVisibility();
-  updateButtonPositions();
   layoutDOMButtons();
   computeBtnSize();
 
