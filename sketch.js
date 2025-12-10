@@ -261,27 +261,6 @@ function setup() {
 	resetViewButton.style('font-family', 'sans-serif');
 	resetViewButton.style('font-size', '14px');
 	resetViewButton.style('transition', 'all 0.2s');
-
-  // ボタンクリックイベント
-  okButton.mousePressed(() => {
-	  console.log("OKボタンが押されました！");
-	  
-	  // 状態を直接変更
-	  state = "visual";
-	  console.log("状態をvisualに変更します");
-	  
-	  // ボタンの表示を更新
-	  updateButtonVisibility();
-	  
-	  // ビジュアルを準備
-	  console.log("prepareVisualを呼び出します");
-	  prepareVisual(false);
-	  
-	  // 強制的に再描画
-	  redraw();
-	  
-	  console.log("現在のstate:", state);
-	});
   
   backButton.mousePressed(() => {
 	  state = "select";
