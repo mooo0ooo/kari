@@ -173,6 +173,7 @@ function createScrollButtons() {
    setup
    ========================================================= */
 function setup() {
+  console.log("setup() が呼ばれました");
   canvas = createCanvas(windowWidth, windowHeight, WEBGL);
   textFont(myFont);
   textSize(16);
@@ -195,6 +196,7 @@ function setup() {
   // ボタン作成
   addButton = createButton("追加");
   okButton = createButton("OK");
+  console.log("okButtonが作成されました。要素:", okButton.elt);
   backButton = createButton("← 記録ページ");
   galleryButton = createButton("日記一覧");
   createScrollButtons();
@@ -243,7 +245,7 @@ function setup() {
 	  }
   });
   
-  okButton.mousePressed((event) => {
+  okButton.mousePressed(() => {
 	  console.log("OKボタンが押されました!");
 	  if (event) event.preventDefault();
 	  
