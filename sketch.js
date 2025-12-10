@@ -221,44 +221,6 @@ function setup() {
 
 	console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
-	// 新しいイベントリスナーを設定
-okButton.mousePressed((event) => {
-  if (event) event.preventDefault();
-  console.log("OKボタンが押されました");
-  
-  // 状態を直接変更
-  state = "visual";
-  console.log("状態をvisualに変更します（新しい値:", state, ")");
-  
-  // ボタンの表示を更新
-  updateButtonVisibility();
-  console.log("ボタンの表示を更新しました");
-  
-  // ビジュアルを準備
-  console.log("prepareVisualを呼び出します");
-  const success = prepareVisual(false);
-  console.log("prepareVisualの結果:", success);
-  
-  // 状態を再度確認
-  console.log("現在のstate（再確認）:", state);
-  
-  // 強制的に再描画
-  redraw();
-  console.log("再描画を要求しました");
-  
-  // グローバルなstate変数の状態を確認
-  console.log("グローバルなstate変数の状態:", window.state);
-  
-  return false;
-});
-
-// タッチデバイス用のイベントリスナーを追加
-okButton.elt.addEventListener('touchend', (e) => {
-  e.preventDefault();
-  console.log("タッチイベント: OKボタン");
-  okButton.mousePressed(e);
-}, { passive: false });
-	
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
 	resetViewButton.position(20, 20);
@@ -287,6 +249,79 @@ okButton.elt.addEventListener('touchend', (e) => {
 	  scrollY = 0;
 	  resetView();
   });
+
+　okButton.mousePressed(() => {
+	  console.log("OKボタンが押されました!");
+	  if (event) event.preventDefault();
+	  
+	  // デバッグ用: padValuesの状態を確認
+	  console.log("padValuesの状態:", {
+	    isArray: Array.isArray(padValues),
+	    length: padValues?.length,
+	    values: JSON.stringify(padValues)
+	  });
+	
+	  if (!padValues || padValues.length === 0) {
+	    console.log("PAD値がありません");
+	    return;
+	  }
+
+	  state = "visual";
+	  updateButtonVisibility();
+	  console.log("状態をvisualに設定しました。現在のstate:", visual);
+	  
+	  // ビジュアルを準備
+	  if (prepareVisual(false)) {
+	    console.log("prepareVisualが正常に完了しました。state:", visual);
+	    
+	    // 日付と星データの処理
+	    let now = new Date();
+	    let timestamp = now.toLocaleString();
+	    let serialStars = points.map(s => {
+	      if (!s || !s.pos) return null;
+	      return { 
+	        pos: { 
+	          x: s.pos.x || 0, 
+	          y: s.pos.y || 0, 
+	          z: s.pos.z || 0 
+	        }, 
+	        emo: s.emo 
+	      };
+	    }).filter(Boolean);
+	
+	    if (serialStars.length > 0) {
+	      let newConstellation = {
+	        stars: serialStars, 
+	        created: timestamp
+	      };
+	      
+	      // データを保存
+	      if (!Array.isArray(allConstellations)) {
+	        allConstellations = [];
+	      }
+	      allConstellations.push(newConstellation);
+	      
+	      try {
+	        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	        console.log("データを保存しました");
+	      } catch (e) {
+	        console.error("データの保存に失敗しました:", e);
+	      }
+	    }
+	
+	    // 状態をリセット
+	    padValues = [];
+	    selectedP = selectedA = selectedD = null;
+	    
+	    // 強制的に再描画
+	    redraw();
+	    console.log("再描画を要求しました。現在のstate:", visual);
+	  } else {
+	    state = "select";
+	    updateButtonVisibility();
+	    redraw();
+	  }
+	});
 
   galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
