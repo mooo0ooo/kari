@@ -229,12 +229,27 @@ function setup() {
 	  
 	  // 新しいイベントリスナーを追加
 	  okButton.mousePressed(() => {
-	    console.log("OKボタンが押されました！");
-	    state = "visual";
-	    console.log("状態をvisualに変更します");
-	    updateButtonVisibility();
-	    redraw();
-	  });
+  console.log("OKボタンが押されました！");
+  
+  // 状態をvisualに変更
+  state = "visual";
+  console.log("状態をvisualに変更します");
+  
+  // ビジュアルを準備
+  if (prepareVisual(false)) {  // falseを渡して状態変更を防ぐ
+    console.log("prepareVisualが成功しました");
+	  
+    // ボタンの表示を更新
+    updateButtonVisibility();
+    
+    // 強制的に再描画
+    redraw();
+  } else {
+    console.error("prepareVisualが失敗しました");
+    state = "select";  // 失敗時はselectモードに戻す
+    updateButtonVisibility();
+  }
+});
 
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
