@@ -85,9 +85,12 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
-let galleryState = "year";  // "year" → "month" → "list"
+let galleryState = "year";
+let galleryState = "month";
+let galleryState = "list";
 let selectedYear = null;
 let selectedMonth = null;
+let availableYears = [];
 
 let galleryButton;
 let scrollY = 0;
@@ -377,6 +380,9 @@ function setup() {
   updateButtonVisibility();
   layoutDOMButtons();
   computeBtnSize();
+
+　computeAvailableYears();
+　galleryState = "year";
 
   // タッチデバイス用の設定
   if ('ontouchstart' in window) {
@@ -1989,6 +1995,23 @@ function touchYearTabs(years, x, y) {
   let index = floor(x / tabW);
   selectedYear = years[index];
   galleryState = "month";
+}
+
+function computeAvailableYears() {
+  const years = {};
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    const y = int(m[1]);
+    years[y] = true;
+  }
+  availableYears = Object.keys(years).map(y => int(y))
+                   .sort((a, b) => b - a);
+  // 初期選択年を設定
+  if (availableYears.length > 0) {
+    selectedYear = availableYears[0];
+  }
 }
 
 // 月
