@@ -1814,6 +1814,7 @@ function drawStarHighlights() {
     
     pop();
   }
+}
 	
 /* =========================================================
    drawGallery
