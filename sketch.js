@@ -249,47 +249,44 @@ function setup() {
 	  if (padValues.length > 0) {
 	    console.log("PAD値あり、ビジュアルを準備します");
 
-		state = "visual";
-    	console.log("状態をvisualに変更しました。現在のstate:", state);
-	    
-	    // ビジュアルを準備
-	    prepareVisual(); 
-	    
-	    // 日付と星データの処理
-	    let now = new Date();
-	    let timestamp = now.toLocaleString();
-	    let serialStars = points.map(s => {
-	      let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
-	      let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
-	      let pz = (s.pos && typeof s.pos.z !== "undefined") ? s.pos.z : 0;
-	      return { pos: { x: px, y: py, z: pz }, emo: s.emo };
-	    });
+		// ビジュアルを準備
+	    if (prepareVisual()) {
+	      console.log("prepareVisualが正常に完了しました。state:", state);
+	      
+	      // 日付と星データの処理
+	      let now = new Date();
+	      let timestamp = now.toLocaleString();
+	      let serialStars = points.map(s => {
+	        let px = (s.pos && typeof s.pos.x !== "undefined") ? s.pos.x : 0;
+	        let py = (s.pos && typeof s.pos.y !== "undefined") ? s.pos.y : 0;
+	        let pz = (s.pos && typeof s.pos.z !== "undefined") ? s.pos.z : 0;
+	        return { pos: { x: px, y: py, z: pz }, emo: s.emo };
+	      });
 	
-	    let newConstellation = {
-	      stars: serialStars, 
-	      created: timestamp
-	    };
-	    
-	    // データを保存
-	    allConstellations.push(newConstellation);
-	    try {
-	      localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-	      console.log("データを保存しました");
-	    } catch (e) {
-	      console.error("データの保存に失敗しました:", e);
+	      let newConstellation = {
+	        stars: serialStars, 
+	        created: timestamp
+	      };
+	      
+	      // データを保存
+	      allConstellations.push(newConstellation);
+	      try {
+	        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
+	        console.log("データを保存しました");
+	      } catch (e) {
+	        console.error("データの保存に失敗しました:", e);
+	      }
+	      
+	      // 状態をリセット
+	      padValues = [];
+	      selectedP = selectedA = selectedD = null;
+	      
+	      // 強制的に再描画
+	      redraw();
+	      console.log("再描画を要求しました。現在のstate:", state);
+	    } else {
+	      console.error("prepareVisualが失敗しました");
 	    }
-	    
-	    // 状態をリセット
-	    padValues = [];
-	    selectedP = selectedA = selectedD = null;
-	    
-	    // UIを更新
-	    updateButtonVisibility();
-	    visualStartTime = millis();
-	    console.log("UIを更新しました");
-	    
-	    // 強制的に再描画
-	    redraw();
 	  } else {
 	    console.log("PAD値がありません");
 	  }
@@ -427,10 +424,8 @@ function updateButtonVisibility() {
   else if (state === "visual") {
     console.log("visualモードのボタンを表示します");
     resetViewButton.show();
-    backButton.show();
     galleryButton.show();
     resetViewButton.position(20, 20);
-    backButton.position(20, 60);
     galleryButton.position(20, 100);
     resetViewButton.html("↻ リセット");
     backButton.html("← 戻る");
@@ -513,15 +508,17 @@ function addPAD() {
 function prepareVisual(changeState = true) {
   console.log("prepareVisualが呼ばれました。現在のstate:", state);
 	
+  // 星の位置を計算
   points = [];
   for (let v of padValues) {
     let emo = findClosestEmotion(v.P, v.A, v.D);
     let x = map(v.P, 0, 1, -100, 100);
     let y = map(v.A, 0, 1, -100, 100);
     let z = map(v.D, 0, 1, -100, 100);
-    points.push({pos:createVector(x,y,z), emo:emo});
+    points.push({pos: createVector(x, y, z), emo: emo});
   }
   
+  // 背景の星を生成
   stars = [];
   for (let i = 0; i < 400; i++) {
     stars.push({
@@ -532,11 +529,14 @@ function prepareVisual(changeState = true) {
     });
   }
 
-　state = "visual";
+  // 状態をvisualに設定
+  state = "visual";
+  console.log("stateをvisualに設定しました。現在のstate:", state);
   updateButtonVisibility();
   visualStartTime = millis();
   
   console.log("ビジュアルの準備が完了しました。現在のstate:", state);
+  return true;
 }
 
 /* =========================================================
