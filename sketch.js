@@ -237,6 +237,8 @@ function setup() {
 	resetViewButton.style('font-family', 'sans-serif');
 	resetViewButton.style('font-size', '14px');
 	resetViewButton.style('transition', 'all 0.2s');
+
+　addButton.mousePressed(addPAD);
   
   backButton.mousePressed(() => {
 	  state = "select";
