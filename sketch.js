@@ -221,26 +221,30 @@ function setup() {
 
 	  console.log("okButtonが作成されました。要素:", okButton.elt);
 	  
-	okButton.mousePressed(function() {
-	  console.log("OKボタンが押されました！");
+	// 既存のokButton.mousePressedを削除して、以下のコードに置き換え
+	okButton.mousePressed(() => {
+	  console.log("1. OKボタンが押されました");
 	  
 	  // 状態を直接変更
 	  state = "visual";
-	  console.log("状態をvisualに変更します");
+	  console.log("2. 状態をvisualに変更しました:", state);
 	  
 	  // ボタンの表示を更新
 	  updateButtonVisibility();
+	  console.log("3. ボタンの表示を更新しました");
+	  
+	  // ビジュアルを準備
+	  console.log("4. prepareVisualを呼び出します");
+	  const result = prepareVisual(false);
+	  console.log("5. prepareVisualの結果:", result);
 	  
 	  // 強制的に再描画
+	  console.log("6. 再描画を要求します");
 	  redraw();
 	  
-	  // prepareVisualを直接呼び出す
-	  console.log("prepareVisualを直接呼び出します");
-	  prepareVisual(false);
-	  
-	  console.log("現在のstate:", state);
+	  console.log("7. 現在のstate:", state);
 	});
-
+	
 	// リセットボタン
 	resetViewButton = createButton('↻ リセット');
 	resetViewButton.position(20, 20);
@@ -493,7 +497,8 @@ function addPAD() {
    prepareVisual
    ========================================================= */
 function prepareVisual(changeState = true) {
-  console.log("prepareVisualが呼ばれました");
+  console.log("prepareVisualが呼ばれました。changeState =", changeState);
+  console.log("現在のstate:", state);
   
   try {
     // 星の位置を計算
@@ -574,6 +579,7 @@ function draw() {
   // フレームレートに基づいた処理
   if (frameCount % 60 === 0) { 
     cleanupThumbnails();
+	console.log("drawが実行中です。現在のstate:", state);
   }
   
   // 背景をクリア
