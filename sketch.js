@@ -258,10 +258,14 @@ function setup() {
 	    console.log("PAD値がありません");
 	    return;
 	  }
+
+	  state = "visual";
+	  updateButtonVisibility();
+	  console.log("状態をvisualに設定しました。現在のstate:", visual);
 	  
 	  // ビジュアルを準備
-	  if (prepareVisual(true)) {
-	    console.log("prepareVisualが正常に完了しました。state:", state);
+	  if (prepareVisual(false)) {
+	    console.log("prepareVisualが正常に完了しました。state:", visual);
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
@@ -304,9 +308,11 @@ function setup() {
 	    
 	    // 強制的に再描画
 	    redraw();
-	    console.log("再描画を要求しました。現在のstate:", state);
+	    console.log("再描画を要求しました。現在のstate:", visual);
 	  } else {
-	    console.error("prepareVisualが失敗しました");
+	    state = "select";
+	    updateButtonVisibility();
+	    redraw();
 	  }
 	});
 
