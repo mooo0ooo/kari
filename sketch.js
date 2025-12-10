@@ -1135,7 +1135,7 @@ function touchMoved(event) {
 	
 	  // 指の動きと同じ方向に回転させる
 	  targetRotationY += deltaX * ROTATE_SPEED;
-	  targetRotationX += deltaY * ROTATE_SPEED;
+	  targetRotationX -= deltaY * ROTATE_SPEED;
 	
 	  // 更新
 	  lastTouchX = currentX;
