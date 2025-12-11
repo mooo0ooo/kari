@@ -535,6 +535,31 @@ function windowResized() {
   }
 }
 
+// 改行
+function drawWrappedText(txt, x, y, maxWidth, lineHeight = 25) {
+  push();
+  textAlign(CENTER, TOP);
+  let words = txt.split(' ');
+  let line = '';
+  let ty = y;
+  
+  for (let i = 0; i < words.length; i++) {
+    let testLine = line + words[i] + ' ';
+    let testWidth = textWidth(testLine);
+    
+    if (testWidth > maxWidth && i > 0) {
+      text(line, x, ty);
+      line = words[i] + ' ';
+      ty += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  
+  text(line, x, ty);
+  pop();
+  return ty + lineHeight - y;
+}
 /* =========================================================
    computeBtnSize
    ========================================================= */
@@ -741,35 +766,40 @@ function draw() {
 	    if (i === displayList.length - 1) {
 	      translate(0, 0, 200);
 	      scale(1.5);
+
+		　// テキスト表示
 		  push();
 		  translate(0, 250, 0);
 		  textAlign(CENTER, CENTER);
 		  textSize(16);
 		  fill(200, 220, 255, 200);
-		  if (constellation.stars && constellation.stars.length > 0) {
-		  let yOffset = 0;
-		  text("選択された感情:", 0, yOffset);
-		  yOffset += 25;
-		  
-		  // 重複を避ける
-		  const uniqueEmotions = new Set();
-		  
+			
+		　let textY = 0;
+		　const uniqueEmotions = new Set();
+ 		  const emotionList = [];
+			
 		  // 重複を除いて感情を収集
 		  for (const star of constellation.stars) {
 		    if (star.emo) {
 		      const emoKey = `${star.emo.ja}-${star.emo.en}`;
 		      if (!uniqueEmotions.has(emoKey)) {
 		        uniqueEmotions.add(emoKey);
-		        text(`・${star.emo.ja} (${star.emo.en})`, 0, yOffset);
-		        yOffset += 25;
+		        emotionList.push(star.emo);
 		      }
 		    }
 		  }
 		  
-		  yOffset += 10;
-		  text("今日の思い出を写真に残してみませんか？", 0, yOffset);
-		}
-		   pop();
+		  // 感情を表示
+		  textY += drawWrappedText("選択された感情:", 0, textY, textWidthLimit);
+		  // 各感情を表示
+		  for (const emo of emotionList) {
+		    textY += drawWrappedText(`・${emo.ja} (${emo.en})`, 0, textY, textWidthLimit, 20);
+		  }
+		  
+		  textY += 10;
+		  drawWrappedText("今日の思い出を写真に残してみませんか？", 0, textY, textWidthLimit);
+		  pop();
+			
 	    } else {
 	      let col = i % 5;
 	      let arow = floor(i / 5);
@@ -879,7 +909,7 @@ function drawPADButtons(){
   scale(padLayout.scl); 
 
   // 案内文を追加
-  textSize(25);
+  textSize(25 * padLayout.scl); 
   textAlign(CENTER, CENTER);
   fill(255);
   let guideMaxWidth = width * 0.8 / padLayout.scl; 
