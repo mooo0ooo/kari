@@ -852,7 +852,7 @@ function drawPADButtons(){
   }
 	
   // A 行
-  text("A", cx - 200, cy);
+  text("A", cx - 100, cy);
   for(let i = 0; i < 7; i++) {
     let blackAmount = map(i, 0, 6, 0, 0.7);
     let baseColor = color(0, 100, 255);
