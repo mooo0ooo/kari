@@ -1952,6 +1952,7 @@ function generate2DThumbnail(cons, size) {
   }
 	
   // 星同士を線でつなぐ
+  pg.blendMode(ADD);
   for (let i = 0; i < stars.length; i++) {
     let s1 = stars[i];
     for (let j = i + 1; j < stars.length; j++) {
@@ -1959,9 +1960,9 @@ function generate2DThumbnail(cons, size) {
       let d = dist(s1.x, s1.y, s2.x, s2.y);
       
       if (d < size * 0.4) {
-        pg.stroke(180, 200, 255, 90);
-        pg.strokeWeight(2);
-        pg.blendMode(ADD);
+        let alpha = map(d, 0, size * 0.4, 100, 30, true);
+        pg.stroke(180, 200, 255, alpha);
+        pg.strokeWeight(1.5);
         pg.line(s1.x, s1.y, s2.x, s2.y);
       }
     }
