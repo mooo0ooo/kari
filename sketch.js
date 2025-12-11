@@ -824,16 +824,16 @@ function drawPADButtons(){
 
   // 案内文を追加
   textSize(16);
-  textAlign(CENTER, TOP);
+  textAlign(CENTER, CENTER);
   fill(255);
-  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 200);
+  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
 
   // PADのスタイル
   textSize(24);
   textAlign(RIGHT, CENTER);
 
   // P 行
-  text("P", cx - 150, cy - 120);
+  text("P", cx - 200, cy - 120);
   for(let i = 0; i < 7; i++) {
     let sat = map(i, 0, 6, 100, 40);
     let col = color(255, 165, 0, sat * 2.55);
@@ -847,7 +847,7 @@ function drawPADButtons(){
   }
 	
   // A 行
-  text("A", cx - 150, cy);
+  text("A", cx - 200, cy);
   for(let i = 0; i < 7; i++) {
     let sat = map(i, 0, 6, 100, 40);
     let col = color(0, 100, 255, sat * 2.55);
@@ -863,7 +863,7 @@ function drawPADButtons(){
   }
 	
   // D 行
-  text("D", cx - 150, cy + 120);
+  text("D", cx - 200, cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(200);
     let sides = i + 3;
