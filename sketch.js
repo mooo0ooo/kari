@@ -1927,6 +1927,7 @@ function generate2DThumbnail(cons, size) {
   let stars = [];
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (let s of cons.stars) {
+    if (!s || !s.pos) continue;
     if (s.pos.x < minX) minX = s.pos.x;
     if (s.pos.x > maxX) maxX = s.pos.x;
     if (s.pos.y < minY) minY = s.pos.y;
@@ -1936,10 +1937,11 @@ function generate2DThumbnail(cons, size) {
   const rangeY = maxY - minY || 1;
   const maxRange = max(rangeX, rangeY) * 1.1;
   for (let s of cons.stars) {
+    if (!s || !s.pos) continue;
     stars.push({
       x: padding + ((s.pos.x - minX) / maxRange) * contentSize,
       y: padding + ((s.pos.y - minY) / maxRange) * contentSize,
-      emo: s.emo
+      emo: s.emo || { P: 0, A: 0, D: 0 } // デフォルト値
     });
   }
 	
@@ -1949,13 +1951,11 @@ function generate2DThumbnail(cons, size) {
     for (let j = i + 1; j < stars.length; j++) {
       let s2 = stars[j];
       let d = dist(s1.x, s1.y, s2.x, s2.y);
-      if (d > size * 0.6) continue;
-      let r = 150, g = 150, b = 255;
-      // 発光エフェクト
-      for (let w = 3; w > 0; w--) {
-        let alpha = map(w, 1, 3, 100, 30);
-        pg.stroke(r, g, b, alpha);
-        pg.strokeWeight(w * 1.5);
+      
+      if (d < size * 0.4) {
+        pg.stroke(180, 200, 255, 90);
+        pg.strokeWeight(2);
+        pg.blendMode(ADD);
         pg.line(s1.x, s1.y, s2.x, s2.y);
       }
     }
@@ -1963,39 +1963,17 @@ function generate2DThumbnail(cons, size) {
 
   // 星を描画
   for (let s of stars) {
-    let r = map(s.emo.P, -1, 1, 150, 255);
-    let g = map(s.emo.A, -1, 1, 150, 255);
-    let b = map(s.emo.D, -1, 1, 150, 255);
-    
-    let intensity = (s.emo.P + s.emo.A + s.emo.D) / 3;
-    let starSize = map(intensity, -1, 1, 2, 6);
-    
-    // 星の光の輪
-    let gradient = pg.drawingContext.createRadialGradient(
-      s.x, s.y, 0,
-      s.x, s.y, starSize * 2
-    );
-    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
-    gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.1)`);
-    
-    pg.drawingContext.fillStyle = gradient;
-    pg.drawingContext.beginPath();
-    pg.drawingContext.arc(s.x, s.y, starSize * 2, 0, TWO_PI);
-    pg.drawingContext.fill();
-    
-    // 星の中心
-    pg.fill(r, g, b);
+    pg.fill(255, 255, 200, 220);
     pg.noStroke();
-    pg.ellipse(s.x, s.y, starSize);
-  }
+	
+    let starSize = 8 * (size / 200);
 
-  pg.noFill();
-  pg.stroke(100, 100, 150, 100);
-  pg.strokeWeight(1);
-  pg.rect(2, 2, size-4, size-4, 4);
-  cons.thumbnail = pg;
-  cons.lastAccessed = Date.now();
-  return pg;
+	pg.ellipse(s.x, s.y, starSize);
+
+	cons.thumbnail = pg;
+    cons.lastAccessed = Date.now();
+    return pg;
+  }
 }
 
 /* =========================================================
