@@ -748,26 +748,27 @@ function draw() {
 		textSize(16);
 		fill(200, 220, 255, 200);
 		
-		// 感情を表示
+		// テキストのY座標
 		let textY = 0;
-		text("選択された感情:", 0, textY);
-		textY += 30;  // 改行の代わりにY座標を手動で調整
-		
-		// 各感情を表示
-		const uniqueEmotions = new Set();
+		// 重複を除いて感情を収集
+		const uniqueEmotions = new Map();
 		for (const star of constellation.stars) {
 		  if (star.emo) {
 		    const emoKey = `${star.emo.ja}-${star.emo.en}`;
 		    if (!uniqueEmotions.has(emoKey)) {
-		      uniqueEmotions.add(emoKey);
-		      text(`・${star.emo.ja} (${star.emo.en})`, 0, textY);
-		      textY += 25;  // 行間を調整
+		      uniqueEmotions.set(emoKey, star.emo);
 		    }
 		  }
 		}
-		
-		// プロンプトを表示
-		textY += 20;  // 余白を追加
+		// 感情を表示
+		text("選択された感情:", 0, textY);
+		textY += 25;
+		// 各感情を表示
+		for (const emo of uniqueEmotions.values()) {
+		  text(`・${emo.ja} (${emo.en})`, 0, textY);
+		  textY += 20;
+		}
+		textY += 15;
 		text("今日の思い出を写真に残してみませんか？", 0, textY);
 		pop();
 	    } else {
