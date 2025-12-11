@@ -863,7 +863,7 @@ function drawPADButtons(){
   textSize(30);
   textAlign(CENTER, CENTER);
   fill(255);
-  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 2500);
+  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
 
   // PADのスタイル
   textSize(20);
