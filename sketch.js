@@ -830,13 +830,13 @@ function drawPADButtons(){
 
   // PADのスタイル
   textSize(24);
-  textAlign(RIGHT, CENTER);
+  textAlign(LEFT, CENTER);
 
   // P 行
-  text("P", cx - 400, cy - 120);
+  text("P", cx - 200, cy - 120);
   for(let i = 0; i < 7; i++) {
     let blackAmount = map(i, 0, 6, 0, 0.7);
-    let baseColor = color(255, 165, 0);
+    let baseColor = color(255, 255, 0);
     let r = lerp(red(baseColor), 0, blackAmount);
     let g = lerp(green(baseColor), 0, blackAmount);
     let b = lerp(blue(baseColor), 0, blackAmount);
@@ -852,7 +852,7 @@ function drawPADButtons(){
   }
 	
   // A 行
-  text("A", cx - 100, cy);
+  text("A", cx - 200, cy);
   for(let i = 0; i < 7; i++) {
     let blackAmount = map(i, 0, 6, 0, 0.7);
     let baseColor = color(0, 100, 255);
@@ -873,7 +873,7 @@ function drawPADButtons(){
   }
 	
   // D 行
-  text("D", cx, cy + 120);
+  text("D", cx - 200, cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(200);
     let sides = i + 3;
