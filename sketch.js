@@ -1929,9 +1929,10 @@ function drawGallery2D() {
 	  let now = millis();
 	  if (now - lastTapTime > TAP_DEBOUNCE) {
 	    lastTapTime = now;
-	    selectedConstellation = list[i];   // 選択した日記を保存
-	    visual2StartTime = millis();       // エフェクトタイミング用
-	    state = "visual2";                 // visual2 に遷移
+	    selectedConstellation = list[i]; 
+		viewConstellation = list[i]; 
+	    visual2StartTime = millis();
+	    state = "visual2";
 	  }
     }
     
