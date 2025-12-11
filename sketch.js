@@ -768,38 +768,40 @@ function draw() {
 	      scale(1.5);
 
 		　// テキスト表示
-		  push();
-		  translate(0, 150, 0);
-		  textAlign(CENTER, CENTER);
-		  textSize(16);
-		  fill(200, 220, 255, 200);
-			
-		　let textY = 0;
-		　const uniqueEmotions = new Set();
- 		  const emotionList = [];
-			
-		  // 重複を除いて感情を収集
-		  for (const star of constellation.stars) {
-		    if (star.emo) {
-		      const emoKey = `${star.emo.ja}-${star.emo.en}`;
-		      if (!uniqueEmotions.has(emoKey)) {
-		        uniqueEmotions.add(emoKey);
-		        emotionList.push(star.emo);
-		      }
+		push();
+		translate(0, 150, 0);
+		textAlign(CENTER, TOP);
+		textSize(16);
+		fill(200, 220, 255, 200);
+		
+		const textWidthLimit = 300;  // 最大幅を定義
+		let textY = 0;
+		const uniqueEmotions = new Set();
+		const emotionList = [];
+		
+		// 重複を除いて感情を収集
+		for (const star of constellation.stars) {
+		  if (star.emo) {
+		    const emoKey = `${star.emo.ja}-${star.emo.en}`;
+		    if (!uniqueEmotions.has(emoKey)) {
+		      uniqueEmotions.add(emoKey);
+		      emotionList.push(star.emo);
 		    }
 		  }
-		  
-		  // 感情を表示
-		  textY += drawWrappedText("選択された感情:", 0, textY, textWidthLimit);
-		  // 各感情を表示
-		  for (const emo of emotionList) {
-		    textY += drawWrappedText(`・${emo.ja} (${emo.en})`, 0, textY, textWidthLimit, 20);
-		  }
-		  
-		  textY += 10;
-		  drawWrappedText("今日の思い出を写真に残してみませんか？", 0, textY, textWidthLimit);
-		  pop();
-			
+		}
+		
+		// 感情を表示
+		textY = drawWrappedText("選択された感情:", 0, textY, textWidthLimit);
+		
+		// 各感情を表示
+		for (const emo of emotionList) {
+		  textY = drawWrappedText(`・${emo.ja} (${emo.en})`, 0, textY, textWidthLimit, 25);
+		}
+		
+		// プロンプトを表示
+		textY += 10;
+		drawWrappedText("今日の思い出を写真に残してみませんか？", 0, textY, textWidthLimit);
+		pop();
 	    } else {
 	      let col = i % 5;
 	      let arow = floor(i / 5);
