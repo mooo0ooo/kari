@@ -833,7 +833,7 @@ function drawPADButtons(){
   textAlign(RIGHT, CENTER);
 
   // P 行
-  text("P", cx - 50, cy - 120);
+  text("P", cx - 400, cy - 120);
   for(let i = 0; i < 7; i++) {
     let blackAmount = map(i, 0, 6, 0, 0.7);
     let baseColor = color(255, 165, 0);
@@ -852,7 +852,7 @@ function drawPADButtons(){
   }
 	
   // A 行
-  text("A", cx - 50, cy);
+  text("A", cx - 200, cy);
   for(let i = 0; i < 7; i++) {
     let blackAmount = map(i, 0, 6, 0, 0.7);
     let baseColor = color(0, 100, 255);
@@ -873,7 +873,7 @@ function drawPADButtons(){
   }
 	
   // D 行
-  text("D", cx - 50, cy + 120);
+  text("D", cx, cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(200);
     let sides = i + 3;
