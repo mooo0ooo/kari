@@ -1927,22 +1927,28 @@ function generate2DThumbnail(cons, size) {
   let stars = [];
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (let s of cons.stars) {
-    if (!s || !s.pos) continue;
-    if (s.pos.x < minX) minX = s.pos.x;
-    if (s.pos.x > maxX) maxX = s.pos.x;
-    if (s.pos.y < minY) minY = s.pos.y;
-    if (s.pos.y > maxY) maxY = s.pos.y;
+	  if (!s || !s.pos) continue;
+	  if (s.pos.x < minX) minX = s.pos.x;
+	  if (s.pos.x > maxX) maxX = s.pos.x;
+	  if (s.pos.y < minY) minY = s.pos.y;
+	  if (s.pos.y > maxY) maxY = s.pos.y;
   }
+  if (minX === Infinity) minX = maxX = 0;
+  if (minY === Infinity) minY = maxY = 0;
   const rangeX = maxX - minX || 1;
   const rangeY = maxY - minY || 1;
-  const maxRange = max(rangeX, rangeY) * 1.1;
+  const maxRange = max(rangeX, rangeY) || 1;
+  const offsetX = (rangeX - maxRange) / 2;
+  const offsetY = (rangeY - maxRange) / 2;
   for (let s of cons.stars) {
-    if (!s || !s.pos) continue;
-    stars.push({
-      x: padding + ((s.pos.x - minX) / maxRange) * contentSize,
-      y: padding + ((s.pos.y - minY) / maxRange) * contentSize,
-      emo: s.emo || { P: 0, A: 0, D: 0 } // デフォルト値
-    });
+	  if (!s || !s.pos) continue;
+	  let nx = (s.pos.x - minX - offsetX) / maxRange;
+	  let ny = (s.pos.y - minY - offsetY) / maxRange;
+	  stars.push({
+	    x: padding + nx * contentSize,
+	    y: padding + ny * contentSize,
+	    emo: s.emo || { P: 0, A: 0, D: 0 }
+	  });
   }
 	
   // 星同士を線でつなぐ
