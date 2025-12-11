@@ -287,20 +287,19 @@ function setup() {
 	infoButton.style('color', '#fff');
 	infoButton.style('cursor', 'pointer');
 	infoButton.style('font-size', '16px');
-	infoButton.mousePressed(() => {
-	  if (state === "visual" && showEmotionInfo) {
-		  // 閉じるボタンがクリックされたかチェック
-		  if (mouseX > width - 120 && mouseX < width - 80 && 
-		      mouseY > 70 && mouseY < 95) {
-		    showEmotionInfo = false;
-		    return false;
-		  }
-	  }
+	infoButton.mousePressed(function() {
 	  showEmotionInfo = !showEmotionInfo;
 	  redraw();
 	});
-
-　addButton.mousePressed(addPAD);
+	infoButton.hide(); // 最初は非表示
+	// タッチデバイス用のイベント
+	infoButton.elt.addEventListener('touchend', function(e) {
+	  e.preventDefault();
+	  showEmotionInfo = !showEmotionInfo;
+	  redraw();
+	}, { passive: false });
+	
+　	addButton.mousePressed(addPAD);
   
   backButton.mousePressed(() => {
 	  state = "select";
@@ -488,6 +487,7 @@ function updateButtonVisibility() {
   resetViewButton.hide();
   if (upButton) upButton.hide();
   if (downButton) downButton.hide();
+　infoButton.hide();
 
   if (state === "select") {
     console.log("selectモードのボタンを表示");
@@ -509,6 +509,7 @@ function updateButtonVisibility() {
     console.log("visualモードのボタンを表示します");
     resetViewButton.show();
     galleryButton.show();
+    infoButton.show();
     resetViewButton.position(20, 20);
     galleryButton.position(20, 100);
     resetViewButton.html("↻ リセット");
@@ -1050,6 +1051,7 @@ function touchStarted(event) {
   if (!event) return false;
   event.preventDefault();
 
+  // 既存のタッチ処理
   if (event.touches && event.touches[0]) {
     const touch = event.touches[0];
     if (checkButtonTouches(touch)) {
@@ -1057,12 +1059,36 @@ function touchStarted(event) {
     }
   }
 
+  // 感情情報ポップアップのタッチ処理を追加
+  if (state === "visual" && showEmotionInfo) {
+    const touch = event.touches[0];
+    const rect = canvas.elt.getBoundingClientRect();
+    const touchX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    const touchY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+    
+    // 閉じるボタンがタップされたかチェック
+    if (touchX > width/2 - 40 && touchX < width/2 + 40 && 
+        touchY > height/2 + 150 && touchY < height/2 + 190) {
+      showEmotionInfo = false;
+      redraw();
+      return false;
+    }
+    // ポップアップの外側をタップしても閉じる
+    if (touchX < width/2 - 200 || touchX > width/2 + 200 ||
+        touchY < height/2 - 200 || touchY > height/2 + 200) {
+      showEmotionInfo = false;
+      redraw();
+      return false;
+    }
+    return false; // ポップアップ表示中は他の処理をブロック
+  }
+
+  // 既存の処理を続行
   isTouching = true;
   isScrolling = false;
   isDragging = false;
   touchStartTime = millis();
   
-  // タッチ位置の更新
   if (!event.touches || !event.touches[0]) return false;
   
   const touch = event.touches[0];
@@ -1083,10 +1109,9 @@ function touchStarted(event) {
   
   // PADボタンのタップ処理
   if (state === "select") {
-
-	const canvasX = touchStartX;
-	const canvasY = touchStartY;
-	  
+    const canvasX = touchStartX;
+    const canvasY = touchStartY;
+      
     console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
     console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
     
@@ -1114,19 +1139,17 @@ function touchStarted(event) {
   if (state === "visual") {
     isDragging = true;
 
-	if (event && event.touches && event.touches[0]) {
-	    lastTouchX = event.touches[0].clientX;
-	    lastTouchY = event.touches[0].clientY;
-	    lastTouchTime = millis();
-	  } else {
-	    if (touches && touches.length > 0) {
-	      lastTouchX = touches[0].x;
-	      lastTouchY = touches[0].y;
-	      lastTouchTime = millis();
-	    }
-	}
+    if (event && event.touches && event.touches[0]) {
+      lastTouchX = event.touches[0].clientX;
+      lastTouchY = event.touches[0].clientY;
+      lastTouchTime = millis();
+    } else if (touches && touches.length > 0) {
+      lastTouchX = touches[0].x;
+      lastTouchY = touches[0].y;
+      lastTouchTime = millis();
+    }
   }
-	
+    
   return true;
 }
 
@@ -2219,28 +2242,34 @@ function drawEmotionInfo() {
   resetMatrix();
   camera();
   
-  // 半透明の背景
+  // 半透明の背景（タッチイベントをブロック）
   fill(0, 0, 30, 200);
   noStroke();
-  rect(50, 50, width - 100, height - 100, 10);
+  rect(0, 0, width, height);  // 画面全体をカバー
+  
+  // ポップアップの背景
+  fill(20, 20, 50);
+  stroke(100, 100, 150);
+  strokeWeight(2);
+  rect(width/2 - 200, height/2 - 200, 400, 400, 10);
   
   // タイトル
   fill(255);
   textSize(24);
   textAlign(CENTER, TOP);
-  text("感情の記録", width/2, 80);
+  text("感情の記録", width/2, height/2 - 180);
   
   // メッセージ
   textSize(16);
   textAlign(CENTER, CENTER);
-  text("写真を撮って思い出を残してみませんか？", width/2, height/2 - 50);
+  text("写真を撮って思い出を残してみませんか？", width/2, height/2 - 100);
   
   // 感情の種類を表示
   textSize(14);
   textAlign(LEFT, TOP);
-  let startY = height/2;
+  let startY = height/2 - 50;
   let col1 = width/2 - 150;
-  let col2 = width/2 + 50;
+  let col2 = width/2 + 20;
   let y = startY;
   
   // 重複を除いた感情のリストを作成
@@ -2264,13 +2293,18 @@ function drawEmotionInfo() {
   
   // 閉じるボタン
   fill(255, 100, 100);
-  rect(width - 120, 70, 40, 25, 5);
+  rect(width/2 - 40, height/2 + 150, 80, 40, 5);
   fill(255);
-  textSize(14);
+  textSize(16);
   textAlign(CENTER, CENTER);
-  text("閉じる", width - 100, 82);
+  text("閉じる", width/2, height/2 + 170);
   
   pop();
+}
+
+function toggleEmotionInfo() {
+  showEmotionInfo = !showEmotionInfo;
+  redraw();
 }
 
 window.setup = setup;
