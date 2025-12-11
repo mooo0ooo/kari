@@ -131,6 +131,9 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
+let selectedDiaryIndex = -1;
+let isGalleryItemTouched = false;
+
 /* =========================================================
    preload
    ========================================================= */
@@ -1064,6 +1067,25 @@ function touchStarted(event) {
   // ギャラリーのタッチ処理を無効化
   if (state === "gallery") return false;
 
+  isGalleryItemTouched = false;
+  touchStartX = mouseX;
+  touchStartY = mouseY;
+  touchStartTime = millis();
+
+  // ギャラリーアイテムのタップ判定
+  for (let i = 0; i < allConstellations.length; i++) {
+    let item = allConstellations[i];
+    if (item.bounds && 
+        mouseX > item.bounds.x && 
+        mouseX < item.bounds.x + item.bounds.w &&
+        mouseY > item.bounds.y && 
+        mouseY < item.bounds.y + item.bounds.h) {
+      isGalleryItemTouched = true;
+      selectedDiaryIndex = i;
+      break;
+    }
+  }
+
   // 2本指タッチ（ピンチ操作）の初期化
   if (event.touches.length === 2) {
     if (state === "gallery") return false;
@@ -1206,7 +1228,6 @@ function touchMoved(event) {
 function touchEnded(event) {
   if (!event) return true;
   if (event.cancelable) event.preventDefault();
-
   const currentTime = millis();
   const tapDuration = currentTime - touchStartTime;
   let isTap = false;
@@ -1224,12 +1245,8 @@ function touchEnded(event) {
       isTouching = false;
       return false;
     }
-  }
-
-  // タップ判定（短いタッチ）
-  if (state === "gallery" && !touchHandled) {
-    if (event.changedTouches && event.changedTouches.length > 0) {
-      const touch = event.changedTouches[0];
+    // ギャラリーモードでのタップ処理
+    if (state === "gallery" && !touchHandled) {
       const dx = touch.clientX - touchStartPos.x;
       const dy = touch.clientY - touchStartPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1244,11 +1261,24 @@ function touchEnded(event) {
         const scale = width / rect.width;
         const x = (touch.clientX - rect.left) * scale;
         const y = (touch.clientY - rect.top) * scale;
-        handleGalleryTap(x, y);
+        
+        // ギャラリーアイテムのタップ判定
+        for (let i = 0; i < allConstellations.length; i++) {
+          const item = allConstellations[i];
+          if (item.bounds && 
+              x > item.bounds.x && 
+              x < item.bounds.x + item.bounds.w &&
+              y > item.bounds.y && 
+              y < item.bounds.y + item.bounds.h) {
+            // 日記詳細を表示
+            showDiaryDetail(i);
+            touchHandled = true;
+            break;
+          }
+        }
       }
     }
   }
-  
   // ビジュアルモードの慣性処理
   if (state === "visual" && !touchHandled) {
     const now = millis();
@@ -1259,19 +1289,17 @@ function touchEnded(event) {
         const touch = event.changedTouches[0];
         const dx = touch.clientX - lastTouchX;
         const dy = touch.clientY - lastTouchY;
-		velocityX = 0;
-  		velocityY = 0;
-		isDragging = false;
-
-		lastTouchX = undefined;
-		lastTouchY = undefined;
-		lastTouchTime = 0;
+        velocityX = 0;
+        velocityY = 0;
+        isDragging = false;
+        lastTouchX = undefined;
+        lastTouchY = undefined;
+        lastTouchTime = 0;
       }
     }
   }
   
   isTouching = false;
-  
   return false;
 }
 
@@ -1422,17 +1450,6 @@ function resetView() {
   targetRotationY = 0;
   zoomLevel = 1;
   targetZoomLevel = 1;
-  
-  // 慣性をリセット
-  velocityX = 0;
-  velocityY = 0;
-  
-  // タッチ状態をリセット
-  isTouching = false;
-  isDragging = false;
-  
-  // カメラをリセット
-  camera();
 }
 
 // 状態変更
@@ -2107,28 +2124,32 @@ function drawGallery2D() {
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
       let ty = y + row * (thumbSize + gutter + 25);
+
+	　list[i].bounds = {
+	      x: x,
+	      y: ty,
+	      w: thumbSize,
+	      h: thumbSize + 25
+	  };
 		
-      // タップ/ホバー判定
-      let mx = (mouseX - width/2) / galleryScale;
-      let my = (mouseY - height/2 - scrollY) / galleryScale;
+      let isHovered = (mouseX > x && mouseX < x + thumbSize && 
+                    mouseY > ty && mouseY < ty + thumbSize + 25);
       
-      // サムネイルの背景
-	  fill('rgba(5, 5, 20, 0.8)');
-	  stroke('rgba(150, 150, 150, 0.5)');
+      // サムネイル背景
+	  fill(isHovered ? 'rgba(100, 100, 150, 0.4)' : 'rgba(5, 5, 20, 0.8)');
+	  stroke(isHovered ? 'rgba(200, 200, 255, 0.8)' : 'rgba(150, 150, 150, 0.5)');
 	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
-		
+	    
+	  // サムネイル画像
 	  if (!list[i].thumbnail) {
-		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	      list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
 	  }
-		
-	  if (list[i].thumbnail) {
-		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
-	  }
+	  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
       
-      // 日付を表示
+      // 日付表示
       let date = new Date(list[i].created);
-      let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      let weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
       fill(200, 220, 255);
       textSize(12);
@@ -2249,6 +2270,28 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
+}
+
+function showDiaryDetail(index) {
+  if (index < 0 || index >= allConstellations.length) return;
+  
+  // 選択された日記のデータをセット
+  let diary = allConstellations[index];
+  points = diary.stars.map(star => ({
+    pos: createVector(star.x, star.y, star.z || 0),
+    emo: star.emo || {P: 0, A: 0, D: 0, ja: '感情', en: 'emotion'}
+  }));
+  
+  // ビジュアル表示モードに切り替え
+  state = "visual";
+  updateButtonVisibility();
+  layoutDOMButtons();
+  
+  // 3Dビューのリセット
+  resetView();
+  
+  // 選択された日付を表示
+  selectedLabel = `記録日: ${new Date(diary.created).toLocaleString()}`;
 }
 
 /* =========================================================
