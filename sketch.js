@@ -2293,11 +2293,11 @@ function drawEmotionInfo() {
   
   // 閉じるボタン
   fill(255, 100, 100);
-  rect(width/2 - 40, height/2 + 150, 80, 40, 5);
+  rect(width/2 - 40, height/2 + 90, 80, 40, 5);
   fill(255);
   textSize(16);
   textAlign(CENTER, CENTER);
-  text("閉じる", width/2, height/2 + 170);
+  text("閉じる", width/2, height/2 + 90);
   
   pop();
 }
