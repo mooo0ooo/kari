@@ -789,6 +789,9 @@ function draw() {
 	    textAlign(CENTER, CENTER);
 	    textSize(14);
 	    text(constellation.created, 0, 0);
+		textSize(16);
+		fill(200, 220, 255, 200);
+		text("凶の思い出を写真に残してみませんか？", 0, -height/2 + 80);
 	    pop();
 	
 	    pop();
