@@ -1971,20 +1971,36 @@ function generate2DThumbnail(cons, size) {
 
   // 星同士を線でつなぐ
   pg.blendMode(ADD);
+　const maxConnections = 4;
   for (let i = 0; i < stars.length; i++) {
     let s1 = stars[i];
-    for (let j = i + 1; j < stars.length; j++) {
-      let s2 = stars[j];
-      let d = dist(s1.x, s1.y, s2.x, s2.y);
-      
-      if (d < size * 0.4) {
-        let alpha = map(d, 0, size * 0.4, 100, 30, true);
-        pg.stroke(180, 200, 255, alpha);
-        pg.strokeWeight(1.5);
-        pg.line(s1.x, s1.y, s2.x, s2.y);
-      }
+    let connections = [];
+    
+    // 他の全ての星との距離を計算
+    for (let j = 0; j < stars.length; j++) {
+        if (i === j) continue;
+        let s2 = stars[j];
+        let d = dist(s1.x, s1.y, s2.x, s2.y);
+        connections.push({index: j, distance: d});
     }
-  }
+    
+    // 距離が近い順にソート
+    connections.sort((a, b) => a.distance - b.distance);
+    
+    // 近い順に最大maxConnections個の星と線を引く
+    for (let k = 0; k < min(maxConnections, connections.length); k++) {
+        let j = connections[k].index;
+        let s2 = stars[j];
+        let d = connections[k].distance;
+        
+        if (d < size * 0.5) {  // 最大距離を少し広げる
+            let alpha = map(d, 0, size * 0.5, 100, 20, true);
+            pg.stroke(180, 200, 255, alpha);
+            pg.strokeWeight(1.5);
+            pg.line(s1.x, s1.y, s2.x, s2.y);
+        }
+    }
+}
 
   // 星を描画
   pg.fill(255, 255, 200, 220);
