@@ -2171,19 +2171,35 @@ function generate2DThumbnail(cons, size) {
   // 2Dで描画
   let pg = createGraphics(size, size);
 
-  pg.background(5, 5, 20, 200);
+  pg.background(10, 10, 30);
+
+  // 余白
+  const padding = size * 0.15;
+  const contentSize = size - padding * 2;
   
   // 星の位置を正規化
-  let stars = cons.stars.map(s => ({
-    x: (s.pos.x + 100) * size / 200,
-    y: (s.pos.y + 100) * size / 200,
-    z: s.pos.z,
-    emo: s.emo
-  }));
-
+  let stars = [];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let s of cons.stars) {
+    if (s.pos.x < minX) minX = s.pos.x;
+    if (s.pos.x > maxX) maxX = s.pos.x;
+    if (s.pos.y < minY) minY = s.pos.y;
+    if (s.pos.y > maxY) maxY = s.pos.y;
+  }
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const maxRange = max(rangeX, rangeY) * 1.1;
+  for (let s of cons.stars) {
+    stars.push({
+      x: padding + ((s.pos.x - minX) / maxRange) * contentSize,
+      y: padding + ((s.pos.y - minY) / maxRange) * contentSize,
+      emo: s.emo
+    });
+  }
+	
   // 星同士を線でつなぐ
-  pg.stroke(150, 150, 255, 50);
-  pg.strokeWeight(0.8);
+  pg.stroke(200, 200, 255, 150);
+  pg.strokeWeight(1.5);
   
   // すべての星の組み合わせに対して線を引く
   for (let i = 0; i < stars.length; i++) {
@@ -2192,38 +2208,47 @@ function generate2DThumbnail(cons, size) {
     for (let j = i + 1; j < stars.length; j++) {
       let s2 = stars[j];
       
-      // 距離を計算
       let d = dist(s1.x, s1.y, s2.x, s2.y);
-      let alpha = map(d, 0, size, 100, 20, true);
-      
-      pg.stroke(150, 150, 255, alpha);
-      pg.line(s1.x, s1.y, s2.x, s2.y);
+      if (d < size * 0.6) {
+        let alpha = map(d, 0, size * 0.6, 200, 50, true);
+        pg.stroke(200, 200, 255, alpha);
+        pg.line(s1.x, s1.y, s2.x, s2.y);
+      }
     }
   }
 
   // 星を描画
   for (let s of stars) {
-    let r = map(s.emo.P, -1, 1, 100, 255);
-    let g = map(s.emo.A, -1, 1, 100, 200);
+    let r = map(s.emo.P, -1, 1, 150, 255);
+    let g = map(s.emo.A, -1, 1, 150, 255);
     let b = map(s.emo.D, -1, 1, 150, 255);
     
     let intensity = (s.emo.P + s.emo.A + s.emo.D) / 3;
-    let starSize = map(intensity, -1, 1, 1, 4);
+    let starSize = map(intensity, -1, 1, 2, 6);
     
     // 星の光の輪
-    for (let i = 3; i > 0; i--) {
-      let s = starSize * 1.5 * (i / 3);
-      pg.fill(r, g, b, 50 / i);
-      pg.noStroke();
-      pg.ellipse(s.x, s.y, s);
-    }
+    let gradient = pg.drawingContext.createRadialGradient(
+      s.x, s.y, 0,
+      s.x, s.y, starSize * 2
+    );
+    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+    gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.1)`);
+    
+    pg.drawingContext.fillStyle = gradient;
+    pg.drawingContext.beginPath();
+    pg.drawingContext.arc(s.x, s.y, starSize * 2, 0, TWO_PI);
+    pg.drawingContext.fill();
     
     // 星の中心
-    pg.fill(r, g, b, 200);
+    pg.fill(r, g, b);
     pg.noStroke();
     pg.ellipse(s.x, s.y, starSize);
   }
 
+  pg.noFill();
+  pg.stroke(100, 100, 150, 100);
+  pg.strokeWeight(1);
+  pg.rect(2, 2, size-4, size-4, 4);
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
