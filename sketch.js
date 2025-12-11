@@ -835,8 +835,14 @@ function drawPADButtons(){
   // P 行
   text("P", cx - 200, cy - 120);
   for(let i = 0; i < 7; i++) {
-    let sat = map(i, 0, 6, 100, 40);
-    let col = color(255, 165, 0, sat * 2.55);
+    let sat = map(i, 0, 6, 100, 30);
+    colorMode(HSB, 360, 100, 100, 1);
+    let h = 35;
+    let s = sat;
+    let b = 100;
+    let col = color(h, s, b);
+    colorMode(RGB, 255);
+    
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy - 120, 
                padLayout.btnSize, 
@@ -849,8 +855,14 @@ function drawPADButtons(){
   // A 行
   text("A", cx - 200, cy);
   for(let i = 0; i < 7; i++) {
-    let sat = map(i, 0, 6, 100, 40);
-    let col = color(0, 100, 255, sat * 2.55);
+    let sat = map(i, 0, 6, 100, 30);
+    colorMode(HSB, 360, 100, 100, 1);
+    let h = 220;
+    let s = sat;
+    let b = 100;
+    let col = color(h, s, b);
+    colorMode(RGB, 255);
+    
     let sides = i + 3;
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy, 
