@@ -2153,7 +2153,7 @@ function drawGallery2D() {
 /* =========================================================
    generate2DThumbnail
    ========================================================= */
-function generate2DThumbnail(cons, size) {	
+function generate2DThumbnail(cons, size) {
   if (cons.thumbnail) {
     try {
       if (cons.thumbnail.canvas) {
@@ -2164,91 +2164,93 @@ function generate2DThumbnail(cons, size) {
       console.warn("Failed to clean up thumbnail:", e);
     }
   }
-    
-    // 新しいサムネイルを生成
-    let pg = createGraphics(size, size);
-
-  // 枠の描画
-  pg.stroke(150, 80);  
-  pg.strokeWeight(1);
-  pg.noFill();
-  pg.rect(0, 0, size, size, 4);
   
-  // 星の位置を計算
-  let stars = cons.stars.map(s => ({
-    x: s.pos.x,
-    y: s.pos.y,
-    size: s.size || 1 
-  }));
-
+  let pg = createGraphics(size, size, WEBGL);
+  pg.ortho(-size/2, size/2, -size/2, size/2, -1000, 1000);
+  
   // 星の位置を正規化
+  let stars = cons.stars.map(s => ({
+    x: s.pos.x || 0,
+    y: s.pos.y || 0,
+    z: s.pos.z || 0,
+    emo: s.emo
+  }));
+  
+  // 星の座標範囲を計算
   let minX = min(...stars.map(s => s.x));
   let maxX = max(...stars.map(s => s.x));
   let minY = min(...stars.map(s => s.y));
   let maxY = max(...stars.map(s => s.y));
+  let minZ = min(...stars.map(s => s.z));
+  let maxZ = max(...stars.map(s => s.z));
   
   // 正規化用の範囲を計算
-  let range = max(maxX - minX, maxY - minY, 1);
-  let centerX = (minX + maxX) / 2;
-  let centerY = (minY + maxY) / 2;
-
-  const normalize = (val, minVal, maxVal, newMin, newMax) => {
-    return ((val - minVal) / (maxVal - minVal)) * (newMax - newMin) + newMin;
-  };
+  let rangeX = maxX - minX || 1;
+  let rangeY = maxY - minY || 1;
+  let rangeZ = maxZ - minZ || 1;
+  let maxRange = max(rangeX, rangeY, rangeZ, 1) * 1.2;
+  
+  pg.push();
+  pg.scale(size / maxRange * 0.8);
   
   // 星を描画
-  for (let i = 0; i < stars.length; i++) {
-    let s = stars[i];
-    let x = map(s.x, centerX - range/2, centerX + range/2, size * 0.1, size * 0.9);
-    let y = map(s.y, centerY - range/2, centerY + range/2, size * 0.1, size * 0.9);
+  for (let s of stars) {
+    // 星の色をPAD値から計算
+    let r = map(s.emo.P, -1, 1, 100, 255);
+    let g = map(s.emo.A, -1, 1, 100, 200);
+    let b = map(s.emo.D, -1, 1, 150, 255);
+    
+    // 星のサイズを感情の強さに応じて変更
+    let intensity = (s.emo.P + s.emo.A + s.emo.D) / 3;
+    let starSize = map(intensity, -1, 1, 1, 4);
+    
+    pg.push();
+    pg.noStroke();
+    pg.translate(s.x, s.y, s.z);
     
     // 星の光の輪
-    let gradient = pg.drawingContext.createRadialGradient(
-      x, y, 0, 
-      x, y, 3
-    );
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
-    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
+    for (let i = 3; i > 0; i--) {
+      let s = starSize * 2 * (i / 3);
+      pg.fill(r, g, b, 50 / i);
+      pg.sphere(s, 8, 8);
+    }
     
-    pg.drawingContext.fillStyle = gradient;
-    pg.drawingContext.beginPath();
-    pg.drawingContext.arc(x, y, 3, 0, TWO_PI); 
-    pg.drawingContext.fill();
-    
-    // 星の中心（小さな白い点）
-    pg.noStroke();
-    pg.fill(255, 255, 255);
-    pg.ellipse(x, y, 1, 1);
+    // 星の中心
+    pg.fill(r, g, b, 200);
+    pg.sphere(starSize, 8, 8);
+    pg.pop();
   }
-    
-    // 星同士を線でつなぐ（すべての星を繋ぐ）
-  pg.stroke(255, 200, 255, 0.8);
-  pg.strokeWeight(0.8);
-  pg.blendMode(ADD);
+  
+  // 星同士を線でつなぐ
+  pg.stroke(150, 150, 255, 150);
+  pg.strokeWeight(0.5);
+  pg.noFill();
   
   // すべての星の組み合わせに対して線を引く
   for (let i = 0; i < stars.length; i++) {
-    let x1 = normalize(stars[i].x, minX, maxX, size * 0.15, size * 0.85);
-    let y1 = normalize(stars[i].y, minY, maxY, size * 0.15, size * 0.85);
-    
+    let s1 = stars[i];
     for (let j = i + 1; j < stars.length; j++) {
-      let x2 = normalize(stars[j].x, minX, maxX, size * 0.15, size * 0.85);
-      let y2 = normalize(stars[j].y, minY, maxY, size * 0.15, size * 0.85);
+      let s2 = stars[j];
       
-      let d = dist(x1, y1, x2, y2);
-      let alpha = map(d, 0, size * 0.7, 100, 20, true);
-      pg.stroke(255, 200, 255, alpha);
+      // 距離を計算
+      let d = dist(s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
+      let alpha = map(d, 0, maxRange, 200, 50, true);
       
-      // 線を引く
-      pg.line(x1, y1, x2, y2);
+      pg.stroke(150, 150, 255, alpha);
+      pg.line(s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
     }
   }
-  pg.blendMode(BLEND);
-
-  cons.thumbnail = pg;
+  
+  pg.pop();
+  
+  // 2Dコンテキストに変換
+  let img = pg.get();
+  let finalImg = createGraphics(size, size);
+  finalImg.image(img, 0, 0, size, size);
+  
+  cons.thumbnail = finalImg;
   cons.lastAccessed = Date.now();
-  return pg;
+  return finalImg;
 }
 
 /* =========================================================
