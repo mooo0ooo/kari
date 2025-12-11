@@ -2245,19 +2245,18 @@ function drawEmotionInfo() {
   // 半透明の背景（タッチイベントをブロック）
   fill(0, 0, 30, 200);
   noStroke();
-  rect(0, 0, width, height);  // 画面全体をカバー
+  rect(0, 0, width, height);
+
+  let popupX = width / 2;
+  let popupY = height - 150;
+  let popupWidth = 400;
+  let popupHeight = 280;
   
   // ポップアップの背景
   fill(20, 20, 50);
   stroke(100, 100, 150);
   strokeWeight(2);
   rect(width/2 - 200, height/2 - 200, 400, 400, 10);
-  
-  // タイトル
-  fill(255);
-  textSize(24);
-  textAlign(CENTER, TOP);
-  text("感情の記録", width/2, height/2 - 180);
   
   // メッセージ
   textSize(16);
