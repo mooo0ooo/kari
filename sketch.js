@@ -867,8 +867,6 @@ function drawPADButtons(){
 	
 　const colors = colorPatterns[currentColorPattern];
 
-  drawPADLavels();
-
   // P 行
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
@@ -918,7 +916,8 @@ function drawPADButtons(){
                "polygon", 
                sides);
   }
-  
+
+  drawPADLavels();
   pop();
 }
 
