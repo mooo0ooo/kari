@@ -769,7 +769,7 @@ function draw() {
 
 		　// テキスト表示
 		  push();
-		  translate(0, 250, 0);
+		  translate(0, 150, 0);
 		  textAlign(CENTER, CENTER);
 		  textSize(16);
 		  fill(200, 220, 255, 200);
