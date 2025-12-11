@@ -1922,19 +1922,44 @@ function generate2DThumbnail(cons, size) {
   const padding = size * 0.15;
   const contentSize = size - padding * 2;
   
-  // 星の位置を計算
+  // 星の位置を正規化
   let stars = [];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  
+  // 座標の範囲を計算
+  for (let s of cons.stars) {
+    if (!s || !s.pos) continue;
+    minX = min(minX, s.pos.x);
+    maxX = max(maxX, s.pos.x);
+    minY = min(minY, s.pos.y);
+    maxY = max(maxY, s.pos.y);
+  }
+  
+  // すべての星が同じ位置にある場合の処理
+  if (minX === maxX) {
+    minX -= 1;
+    maxX += 1;
+  }
+  if (minY === maxY) {
+    minY -= 1;
+    maxY += 1;
+  }
+  
+  const rangeX = maxX - minX;
+  const rangeY = maxY - minY;
+  const maxRange = max(rangeX, rangeY) * 1.1; // 少し余裕を持たせる
+  
+  // 中心を計算
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  
+  // 星の位置を計算
   for (let s of cons.stars) {
     if (!s || !s.pos) continue;
     
-    // visualモードと同じ座標系を使用
-    // x, y座標をそのまま使用し、z座標は無視
-    let x = s.pos.x;
-    let y = s.pos.y;
-    
-    // 座標を正規化（-1.0 〜 1.0 の範囲を想定）
-    let nx = (x + 1) * 0.5;  // 0.0 〜 1.0 に変換
-    let ny = (y + 1) * 0.5;  // 0.0 〜 1.0 に変換
+    // 中心を原点に移動して正規化
+    let nx = (s.pos.x - centerX) / maxRange + 0.5;
+    let ny = (s.pos.y - centerY) / maxRange + 0.5;
     
     // キャンバス上の座標に変換
     stars.push({
@@ -1974,7 +1999,6 @@ function generate2DThumbnail(cons, size) {
   cons.lastAccessed = Date.now();
   return pg;
 }
-
 /* =========================================================
    最大スクロール量を計算
    ========================================================= */
