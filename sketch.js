@@ -1970,42 +1970,68 @@ function generate2DThumbnail(cons, size) {
   }
 
   // ドロネー図を計算
-function calculateDelaunay(stars) {
-  // 有効な星だけをフィルタリング
-  const validStars = stars.filter(star => star && typeof star.x === 'number' && typeof star.y === 'number');
-  
-  // 有効な星が2つ未満の場合は接続しない
-  if (validStars.length < 2) return [];
-  
-  try {
-    let points = validStars.map(s => [s.x, s.y]);
-    let delaunay = Delaunator.from(points);
-    let triangles = delaunay.triangles;
-    
-    let connections = new Set();
-    for (let i = 0; i < triangles.length; i += 3) {
-      let a = triangles[i];
-      let b = triangles[i+1];
-      let c = triangles[i+2];
-      // 重複を避けるためにソートしてから追加
-      [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-      [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-      [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-    }
-    
-    return Array.from(connections).map(conn => {
-      let [i, j] = conn.split('-').map(Number);
-      return {
-        i: i, 
-        j: j, 
-        d: dist(validStars[i].x, validStars[i].y, validStars[j].x, validStars[j].y)
-      };
-    });
-  } catch (e) {
-    console.error('ドロネー図の計算中にエラーが発生しました:', e);
-    return []; // エラーが発生した場合は空の接続を返す
-  }
-}
+	function calculateDelaunay(stars) {
+	  // デバッグ用：stars配列の内容を確認
+	  console.log('Stars array:', stars);
+	  
+	  // 有効な星だけをフィルタリング
+	  const validStars = stars.filter(star => {
+	    const isValid = star && typeof star.x === 'number' && typeof star.y === 'number';
+	    if (!isValid) {
+	      console.warn('Invalid star data:', star);
+	    }
+	    return isValid;
+	  });
+	
+	  console.log(`Valid stars: ${validStars.length}/${stars.length}`);
+	
+	  // 有効な星が2つ未満の場合は接続しない
+	  if (validStars.length < 2) {
+	    console.log('Not enough valid stars to create connections');
+	    return [];
+	  }
+	
+	  try {
+	    // 座標の配列を作成
+	    const points = validStars.map(s => [s.x, s.y]);
+	    console.log('Points for Delaunay:', points);
+	
+	    // ドロネー三角形分割を実行
+	    const delaunay = Delaunator.from(points);
+	    const triangles = delaunay.triangles;
+	    console.log('Triangles:', triangles);
+	
+	    let connections = new Set();
+	    for (let i = 0; i < triangles.length; i += 3) {
+	      let a = triangles[i];
+	      let b = triangles[i+1];
+	      let c = triangles[i+2];
+	      // 重複を避けるためにソートしてから追加
+	      [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	      [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	      [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	    }
+	
+	    const result = Array.from(connections).map(conn => {
+	      let [i, j] = conn.split('-').map(Number);
+	      const s1 = validStars[i];
+	      const s2 = validStars[j];
+	      return {
+	        i: i, 
+	        j: j, 
+	        d: dist(s1.x, s1.y, s2.x, s2.y),
+	        s1: s1,
+	        s2: s2
+	      };
+	    });
+	
+	    console.log('Generated connections:', result);
+	    return result;
+	  } catch (e) {
+	    console.error('Error in Delaunay calculation:', e);
+	    return []; // エラーが発生した場合は空の接続を返す
+	  }
+	}
 	
   // 星を描画
   pg.fill(255, 255, 200, 220);
