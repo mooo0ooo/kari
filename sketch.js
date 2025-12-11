@@ -864,15 +864,10 @@ function drawPADButtons(){
   textAlign(CENTER, CENTER);
   fill(255);
   text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
-
-  // PADのスタイル
-  textSize(20);
-  textAlign(LEFT, CENTER);
-
+	
 　const colors = colorPatterns[currentColorPattern];
 
   // P 行
-  text("P", cx - (padLayout.btnSize * 5 + padLayout.spacing), cy - 120);
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
     let r = lerp(colors.P.start[0], colors.P.end[0], amount);
@@ -887,10 +882,14 @@ function drawPADButtons(){
                i, 
                selectedP === i,
                "rect");
+
+	if (i === 3) {
+      fill(255);
+      text("P", x, y);
+    }
   }
 	
   // A 行
-  text("A", cx - (padLayout.btnSize * 5 + padLayout.spacing), cy);
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
     let r = lerp(colors.A.start[0], colors.A.end[0], amount);
@@ -907,10 +906,14 @@ function drawPADButtons(){
                selectedA === i,
                "polygon", 
                sides);
+
+	if (i === 3) {
+      fill(255);
+      text("A", x, y);
+    }
   }
 	
   // D 行
-  text("D", cx - (padLayout.btnSize * 5 + padLayout.spacing), cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(colors.D[0], colors.D[1], colors.D[2]);
     let sides = i + 3;
@@ -922,6 +925,11 @@ function drawPADButtons(){
                selectedD === i,
                "polygon", 
                sides);
+
+	if (i === 3) {
+      fill(255);
+      text("D", x, y);
+    }
   }
   
   pop();
