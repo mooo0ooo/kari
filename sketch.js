@@ -2199,20 +2199,18 @@ function generate2DThumbnail(cons, size) {
   }
 	
   // 星同士を線でつなぐ
-  pg.stroke(200, 200, 255, 150);
-  pg.strokeWeight(1.5);
-  
-  // すべての星の組み合わせに対して線を引く
   for (let i = 0; i < stars.length; i++) {
     let s1 = stars[i];
-    
     for (let j = i + 1; j < stars.length; j++) {
       let s2 = stars[j];
-      
       let d = dist(s1.x, s1.y, s2.x, s2.y);
-      if (d < size * 0.6) {
-        let alpha = map(d, 0, size * 0.6, 200, 50, true);
-        pg.stroke(200, 200, 255, alpha);
+      if (d > size * 0.6) continue;
+      let r = 150, g = 150, b = 255;
+      // 発光エフェクト
+      for (let w = 3; w > 0; w--) {
+        let alpha = map(w, 1, 3, 100, 30);
+        pg.stroke(r, g, b, alpha);
+        pg.strokeWeight(w * 1.5);
         pg.line(s1.x, s1.y, s2.x, s2.y);
       }
     }
