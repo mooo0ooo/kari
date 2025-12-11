@@ -741,6 +741,17 @@ function draw() {
 	    if (i === displayList.length - 1) {
 	      translate(0, 0, 200);
 	      scale(1.5);
+		  push();
+		  translate(0, 150, 0);
+		  textAlign(CENTER, CENTER);
+		  textSize(16);
+		  fill(200, 220, 255, 200);
+		  if (constellation.stars && constellation.stars[0] && constellation.stars[0].emo) {
+		      const emo = constellation.stars[0].emo;
+		      text(`選択された感情: ${emo.ja} (${emo.en})`, 0, 0);
+		      text("今日の思い出を写真に残してみませんか？", 0, 25);
+		   }
+		   pop();
 	    } else {
 	      let col = i % 5;
 	      let arow = floor(i / 5);
@@ -789,18 +800,6 @@ function draw() {
 		textAlign(CENTER, CENTER);
 		textSize(14);
 		text(constellation.created, 0, 0);
-		console.log("Selected Label:", selectedLabel);
-		console.log("Constellation:", constellation);
-		const emotion = constellation.emotion || selectedLabel;
-		if (emotion) {
-		    textSize(14);
-		    fill(200, 220, 255, 180);
-		    text("選択された感情: " + emotion.ja, 0, 30);
-		    text("(" + (emotion.en || '') + ")", 0, 50);
-		}
-		textSize(16);
-		fill(200, 220, 255, 200);
-		text("今日の思い出を写真に残してみませんか？", 0, 80);
 		pop();
 	
 	    pop();
