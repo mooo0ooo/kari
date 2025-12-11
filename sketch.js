@@ -861,7 +861,7 @@ function drawPADButtons(){
   scale(padLayout.scl); 
 
   // 案内文を追加
-  textSize(16);
+  textSize(20);
   textAlign(CENTER, CENTER);
   fill(255);
   text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
@@ -873,7 +873,7 @@ function drawPADButtons(){
 　const colors = colorPatterns[currentColorPattern];
 
   // P 行
-  text("P", cx - 100, cy - 120);
+  text("P", cx - 150, cy - 120);
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
     let r = lerp(colors.P.start[0], colors.P.end[0], amount);
