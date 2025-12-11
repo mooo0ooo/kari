@@ -534,32 +534,6 @@ function windowResized() {
     scrollY = targetScrollY;
   }
 }
-
-// 改行
-function drawWrappedText(txt, x, y, maxWidth, lineHeight = 25) {
-  push();
-  textAlign(CENTER, TOP);
-  let words = txt.split(' ');
-  let line = '';
-  let ty = y;
-  
-  for (let i = 0; i < words.length; i++) {
-    let testLine = line + words[i] + ' ';
-    let testWidth = textWidth(testLine);
-    
-    if (testWidth > maxWidth && i > 0) {
-      text(line, x, ty);
-      line = words[i] + ' ';
-      ty += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  
-  text(line, x, ty);
-  pop();
-  return ty + lineHeight - y;
-}
 /* =========================================================
    computeBtnSize
    ========================================================= */
@@ -767,40 +741,34 @@ function draw() {
 	      translate(0, 0, 200);
 	      scale(1.5);
 
-		　// テキスト表示
+		// テキスト表示部分を修正
 		push();
 		translate(0, 150, 0);
 		textAlign(CENTER, TOP);
 		textSize(16);
 		fill(200, 220, 255, 200);
 		
-		const textWidthLimit = 300;  // 最大幅を定義
+		// 感情を表示
 		let textY = 0;
-		const uniqueEmotions = new Set();
-		const emotionList = [];
+		text("選択された感情:", 0, textY);
+		textY += 30;  // 改行の代わりにY座標を手動で調整
 		
-		// 重複を除いて感情を収集
+		// 各感情を表示
+		const uniqueEmotions = new Set();
 		for (const star of constellation.stars) {
 		  if (star.emo) {
 		    const emoKey = `${star.emo.ja}-${star.emo.en}`;
 		    if (!uniqueEmotions.has(emoKey)) {
 		      uniqueEmotions.add(emoKey);
-		      emotionList.push(star.emo);
+		      text(`・${star.emo.ja} (${star.emo.en})`, 0, textY);
+		      textY += 25;  // 行間を調整
 		    }
 		  }
 		}
 		
-		// 感情を表示
-		textY = drawWrappedText("選択された感情:", 0, textY, textWidthLimit);
-		
-		// 各感情を表示
-		for (const emo of emotionList) {
-		  textY = drawWrappedText(`・${emo.ja} (${emo.en})`, 0, textY, textWidthLimit, 25);
-		}
-		
 		// プロンプトを表示
-		textY += 10;
-		drawWrappedText("今日の思い出を写真に残してみませんか？", 0, textY, textWidthLimit);
+		textY += 20;  // 余白を追加
+		text("今日の思い出を写真に残してみませんか？", 0, textY);
 		pop();
 	    } else {
 	      let col = i % 5;
@@ -887,7 +855,7 @@ function draw() {
 /* =========================================================
    drawPADButtons
    ========================================================= */
-function drawPADButtons(){
+function drawPADButtons() {
   let cx = 0;
   let cy = 0;
 
@@ -914,11 +882,12 @@ function drawPADButtons(){
   textSize(25 * padLayout.scl); 
   textAlign(CENTER, CENTER);
   fill(255);
-  let guideMaxWidth = width * 0.8 / padLayout.scl; 
   let guideText = "今の気分に合う色や形をP,A,D１つずつ選んでください";
-  text(guideText, cx - guideMaxWidth / 2, cy - 250, guideMaxWidth);
-	
-　const colors = colorPatterns[currentColorPattern];
+  let guideY = cy - 250;
+  text("今の気分に合う色や形を", 0, guideY);
+  text("P,A,D１つずつ選んでください", 0, guideY + 30);
+
+  const colors = colorPatterns[currentColorPattern];
 
   // P 行
   for(let i = 0; i < 7; i++) {
@@ -955,7 +924,7 @@ function drawPADButtons(){
                "polygon", 
                sides);
   }
-	
+  
   // D 行
   for(let i = 0; i < 7; i++) {
     let col = color(colors.D[0], colors.D[1], colors.D[2]);
