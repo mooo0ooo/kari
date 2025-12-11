@@ -1947,7 +1947,7 @@ function generate2DThumbnail(cons, size) {
   
   const rangeX = maxX - minX;
   const rangeY = maxY - minY;
-  const maxRange = max(rangeX, rangeY) * 1.1; // 少し余裕を持たせる
+  const maxRange = max(rangeX, rangeY) * 1.1;
   
   // 中心を計算
   const centerX = (minX + maxX) / 2;
@@ -1969,6 +1969,46 @@ function generate2DThumbnail(cons, size) {
     });
   }
 
+  // ドロネー図を計算する関数（簡易版）
+	function calculateDelaunay(stars) {
+	  let points = stars.map(s => [s.x, s.y]);
+	  // ドロネー三角形分割を実行
+	  let triangles = Delaunator.from(points).triangles;
+	  
+	  let connections = new Set();
+	  for (let i = 0; i < triangles.length; i += 3) {
+	    let a = triangles[i];
+	    let b = triangles[i+1];
+	    let c = triangles[i+2];
+	    // 重複を避けるためにソートしてから追加
+	    [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	    [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	    [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+	  }
+	  
+	  return Array.from(connections).map(conn => {
+	    let [i, j] = conn.split('-').map(Number);
+	    return {i, j, d: dist(stars[i].x, stars[i].y, stars[j].x, stars[j].y)};
+	  });
+	}
+	
+	// 星同士を線でつなぐ（ドロネー図を使用）
+	pg.blendMode(ADD);
+	let connections = calculateDelaunay(stars);
+	
+	// 接続を描画
+	for (let {i, j, d} of connections) {
+	  let s1 = stars[i];
+	  let s2 = stars[j];
+	  // 距離が大きすぎる接続は描画しない
+	  if (d < size * 0.6) {  // この閾値は調整してください
+	    let alpha = map(d, 0, size * 0.6, 100, 20, true);
+	    pg.stroke(180, 200, 255, alpha);
+	    pg.strokeWeight(1.5);
+	    pg.line(s1.x, s1.y, s2.x, s2.y);
+	  }
+	}
+
   // 星を描画
   pg.fill(255, 255, 200, 220);
   pg.noStroke();
@@ -1981,46 +2021,6 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
-}
-
-// ドロネー図を計算する関数（簡易版）
-function calculateDelaunay(stars) {
-  let points = stars.map(s => [s.x, s.y]);
-  // ドロネー三角形分割を実行
-  let triangles = Delaunator.from(points).triangles;
-  
-  let connections = new Set();
-  for (let i = 0; i < triangles.length; i += 3) {
-    let a = triangles[i];
-    let b = triangles[i+1];
-    let c = triangles[i+2];
-    // 重複を避けるためにソートしてから追加
-    [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-    [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-    [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-  }
-  
-  return Array.from(connections).map(conn => {
-    let [i, j] = conn.split('-').map(Number);
-    return {i, j, d: dist(stars[i].x, stars[i].y, stars[j].x, stars[j].y)};
-  });
-}
-
-// 星同士を線でつなぐ（ドロネー図を使用）
-pg.blendMode(ADD);
-let connections = calculateDelaunay(stars);
-
-// 接続を描画
-for (let {i, j, d} of connections) {
-  let s1 = stars[i];
-  let s2 = stars[j];
-  // 距離が大きすぎる接続は描画しない
-  if (d < size * 0.6) {  // この閾値は調整してください
-    let alpha = map(d, 0, size * 0.6, 100, 20, true);
-    pg.stroke(180, 200, 255, alpha);
-    pg.strokeWeight(1.5);
-    pg.line(s1.x, s1.y, s2.x, s2.y);
-  }
 }
 /* =========================================================
    最大スクロール量を計算
