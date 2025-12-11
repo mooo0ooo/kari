@@ -2154,103 +2154,78 @@ function drawGallery2D() {
    generate2DThumbnail
    ========================================================= */
 function generate2DThumbnail(cons, size) {
+  // 既存のサムネイルをクリーンアップ
   if (cons.thumbnail) {
     try {
       if (cons.thumbnail.canvas) {
         cons.thumbnail.canvas = null;
       }
+      cons.thumbnail.remove();
       cons.thumbnail = null;
     } catch (e) {
       console.warn("Failed to clean up thumbnail:", e);
     }
   }
-  
-  let pg = createGraphics(size, size, WEBGL);
-  pg.ortho(-size/2, size/2, -size/2, size/2, -1000, 1000);
+
+  // 2Dで描画
+  let pg = createGraphics(size, size);
+
+  pg.background(5, 5, 20, 200);
   
   // 星の位置を正規化
   let stars = cons.stars.map(s => ({
-    x: s.pos.x || 0,
-    y: s.pos.y || 0,
-    z: s.pos.z || 0,
+    x: (s.pos.x + 100) * size / 200,
+    y: (s.pos.y + 100) * size / 200,
+    z: s.pos.z,
     emo: s.emo
   }));
-  
-  // 星の座標範囲を計算
-  let minX = min(...stars.map(s => s.x));
-  let maxX = max(...stars.map(s => s.x));
-  let minY = min(...stars.map(s => s.y));
-  let maxY = max(...stars.map(s => s.y));
-  let minZ = min(...stars.map(s => s.z));
-  let maxZ = max(...stars.map(s => s.z));
-  
-  // 正規化用の範囲を計算
-  let rangeX = maxX - minX || 1;
-  let rangeY = maxY - minY || 1;
-  let rangeZ = maxZ - minZ || 1;
-  let maxRange = max(rangeX, rangeY, rangeZ, 1) * 1.2;
-  
-  pg.push();
-  pg.scale(size / maxRange * 0.8);
-  
-  // 星を描画
-  for (let s of stars) {
-    // 星の色をPAD値から計算
-    let r = map(s.emo.P, -1, 1, 100, 255);
-    let g = map(s.emo.A, -1, 1, 100, 200);
-    let b = map(s.emo.D, -1, 1, 150, 255);
-    
-    // 星のサイズを感情の強さに応じて変更
-    let intensity = (s.emo.P + s.emo.A + s.emo.D) / 3;
-    let starSize = map(intensity, -1, 1, 1, 4);
-    
-    pg.push();
-    pg.noStroke();
-    pg.translate(s.x, s.y, s.z);
-    
-    // 星の光の輪
-    for (let i = 3; i > 0; i--) {
-      let s = starSize * 2 * (i / 3);
-      pg.fill(r, g, b, 50 / i);
-      pg.sphere(s, 8, 8);
-    }
-    
-    // 星の中心
-    pg.fill(r, g, b, 200);
-    pg.sphere(starSize, 8, 8);
-    pg.pop();
-  }
-  
+
   // 星同士を線でつなぐ
-  pg.stroke(150, 150, 255, 150);
-  pg.strokeWeight(0.5);
-  pg.noFill();
+  pg.stroke(150, 150, 255, 50);
+  pg.strokeWeight(0.8);
   
   // すべての星の組み合わせに対して線を引く
   for (let i = 0; i < stars.length; i++) {
     let s1 = stars[i];
+    
     for (let j = i + 1; j < stars.length; j++) {
       let s2 = stars[j];
       
       // 距離を計算
-      let d = dist(s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
-      let alpha = map(d, 0, maxRange, 200, 50, true);
+      let d = dist(s1.x, s1.y, s2.x, s2.y);
+      let alpha = map(d, 0, size, 100, 20, true);
       
       pg.stroke(150, 150, 255, alpha);
-      pg.line(s1.x, s1.y, s1.z, s2.x, s2.y, s2.z);
+      pg.line(s1.x, s1.y, s2.x, s2.y);
     }
   }
-  
-  pg.pop();
-  
-  // 2Dコンテキストに変換
-  let img = pg.get();
-  let finalImg = createGraphics(size, size);
-  finalImg.image(img, 0, 0, size, size);
-  
-  cons.thumbnail = finalImg;
+
+  // 星を描画
+  for (let s of stars) {
+    let r = map(s.emo.P, -1, 1, 100, 255);
+    let g = map(s.emo.A, -1, 1, 100, 200);
+    let b = map(s.emo.D, -1, 1, 150, 255);
+    
+    let intensity = (s.emo.P + s.emo.A + s.emo.D) / 3;
+    let starSize = map(intensity, -1, 1, 1, 4);
+    
+    // 星の光の輪
+    for (let i = 3; i > 0; i--) {
+      let s = starSize * 1.5 * (i / 3);
+      pg.fill(r, g, b, 50 / i);
+      pg.noStroke();
+      pg.ellipse(s.x, s.y, s);
+    }
+    
+    // 星の中心
+    pg.fill(r, g, b, 200);
+    pg.noStroke();
+    pg.ellipse(s.x, s.y, starSize);
+  }
+
+  cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
-  return finalImg;
+  return pg;
 }
 
 /* =========================================================
