@@ -791,7 +791,13 @@ function draw() {
 	    text(constellation.created, 0, 0);
 		textSize(16);
 		fill(200, 220, 255, 200);
-		text("凶の思い出を写真に残してみませんか？", 0, -height/2 + 80);
+		text("今日の思い出を写真に残してみませんか？", 0, 30);
+		if (selectedLabel) {
+		    textSize(14);
+		    fill(200, 220, 255, 180);
+		    text("選択された感情: " + selectedLabel.ja, 0, 60);
+		    text("(" + selectedLabel.en + ")", 0, 80);
+	　　 }
 	    pop();
 	
 	    pop();
@@ -815,16 +821,6 @@ function draw() {
 	   text(monthNames[monthIndex], width/2, 20);
 	   pop();
 	 }
-	 
-	  if (selectedLabel) {
-	    push();
-	    camera();
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(20);
-	    text(selectedLabel, width/2, height-40);
-	    pop();
-	  }
 
 	  if (touchFeedback && touchFeedback.alpha > 0) {
 	    push();
