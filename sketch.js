@@ -131,14 +131,6 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
-let viewConstellation = null;
-let visual2StartTime = 0;
-let lastTapTime = 0;
-const TAP_DEBOUNCE = 300;  
-let touchMovedFlag = false;
-
-let textBaseY = 100;
-
 /* =========================================================
    preload
    ========================================================= */
@@ -182,29 +174,28 @@ function createScrollButtons() {
   });
 
   // スクロール処理の関数
-  const galleryScrollUp = (e) => {
-	  if (e) e.preventDefault();
-	  if (state !== "gallery") return;
-	  
-	  const maxScroll = -calculateMaxScroll();
-	  targetScrollY = Math.min(0, targetScrollY + 300);
-	  targetScrollY = Math.max(maxScroll, targetScrollY);
-	};
-	const galleryScrollDown = (e) => {
-	  if (e) e.preventDefault();
-	  if (state !== "gallery") return;
-	  
-	  const maxScroll = -calculateMaxScroll();
-	  targetScrollY = Math.max(maxScroll, targetScrollY - 300);
-	};
+  const scrollUp = (e) => {
+    if (e) e.preventDefault();
+    targetScrollY = min(0, targetScrollY + 300);
+    redraw();
+  };
+
+  const scrollDown = (e) => {
+    if (e) e.preventDefault();
+    const maxScroll = -calculateMaxScroll();
+    targetScrollY = max(maxScroll, targetScrollY - 300);
+    redraw();
+  };
 
   // マウスイベント
-  upButton.mousePressed(galleryScrollUp);
-  downButton.mousePressed(galleryScrollDown);
-
-  upButton.elt.addEventListener('touchend', galleryScrollUp, { passive: false });
-  downButton.elt.addEventListener('touchend', galleryScrollDown, { passive: false });
-
+  upButton.mousePressed(scrollUp);
+  downButton.mousePressed(scrollDown);
+  
+  // タッチイベント
+  upButton.elt.addEventListener('touchend', scrollUp, { passive: false });
+  downButton.elt.addEventListener('touchend', scrollDown, { passive: false });
+  
+  // タッチハイライトを防ぐ
   [upButton, downButton].forEach(btn => {
     btn.elt.addEventListener('touchstart', (e) => {
       e.preventDefault();
@@ -860,21 +851,7 @@ function draw() {
 	    touchFeedback.alpha -= 5;
 	    pop();
 	  }
-	} else if (state === "visual2") {
-	    camera();
-	
-	    // 3D操作
-	    rotationX = lerp(rotationX, targetRotationX, 0.18);
-	    rotationY = lerp(rotationY, targetRotationY, 0.18);
-	
-	    rotateX(rotationX);
-	    rotateY(rotationY);
-	
-	    zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
-	    scale(zoomLevel);
-	
-	    drawVisual2Content();  // ★ 新しく作る関数
-	}
+	} 
 }
 /* =========================================================
    drawPADButtons
@@ -1085,11 +1062,9 @@ function touchStarted(event) {
   touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
   touchStartPos = { x: touch.clientX, y: touch.clientY };
   
-  touchMovedFlag = false;
-  touchStartX = mouseX;
-  touchStartY = mouseY;
-  touchStartTime = millis();
-  
+  mouseX = touchStartX;
+  mouseY = touchStartY;
+
   // ボタンのタッチ判定
   if (checkButtonTouches(touch)) {
     return false;
@@ -1110,10 +1085,8 @@ function touchStarted(event) {
   }
 
   // ギャラリーのタッチ処理を無効化
-  if (state === "gallery") {
-    return false;
-  }
-	
+  if (state === "gallery") return false;
+
   // 2本指タッチ（ピンチ操作）の初期化
   if (event.touches.length === 2) {
     if (state === "gallery") return false;
@@ -1294,6 +1267,7 @@ function touchEnded(event) {
         const scale = width / rect.width;
         const x = (touch.clientX - rect.left) * scale;
         const y = (touch.clientY - rect.top) * scale;
+        handleGalleryTap(x, y);
       }
     }
   }
@@ -1393,6 +1367,73 @@ function groupByMonth(constellations) {
 
 function touchCanceled(event) {
   return touchEnded(event);
+}
+
+// ギャラリーのタップ処理
+function handleGalleryTap(x, y) {
+  if (!allConstellations || allConstellations.length === 0) return;
+  
+  // ギャラリーのレイアウトパラメータ
+  const designWidth = 430;
+  const galleryScale = min(1, width / designWidth);
+  const thumbSize = 150 * galleryScale;
+  const colCount = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  const rowStartX = (width - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  
+  // タップ位置をスケールに合わせて調整
+  x = x * (width / 430);
+  y = (y - scrollY) * (width / 430);
+  
+  // 各サムネイルに対してヒットテスト
+  let currentY = topOffset;
+  
+  // 月ごとに分類
+  let grouped = {};
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    let monthIndex = int(m[2]) - 1;
+    grouped[monthIndex].push(c);
+  }
+  
+  // 各月のサムネイルをチェック
+  for (let month = 0; month < 12; month++) {
+    let list = grouped[month];
+    if (list.length === 0) continue;
+    
+    // 月の見出しの高さをスキップ
+    currentY += 35;
+    
+    // サムネイルをチェック
+    for (let i = 0; i < list.length; i++) {
+      let col = i % colCount;
+      let row = floor(i / colCount);
+      let thumbX = rowStartX + col * (thumbSize + gutter);
+      let thumbY = currentY + row * (thumbSize + gutter + 25);
+      
+      // タップがサムネイルの範囲内かチェック
+      if (x >= thumbX && x <= thumbX + thumbSize &&
+          y >= thumbY && y <= thumbY + thumbSize) {
+        // 既に選択されているサムネイルをタップした場合は閉じる
+        if (selectedThumbnail === list[i]) {
+          targetZoom = 0;
+          setTimeout(() => {
+            if (targetZoom === 0) selectedThumbnail = null;
+          }, 300);
+        } else {
+          // 新しいサムネイルを選択
+          selectedThumbnail = list[i];
+          targetZoom = 1;
+        }
+        return;
+      }
+    }
+    
+    // 次の月の開始位置に移動
+    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+  }
 }
 
 // リセット
@@ -1500,6 +1541,35 @@ function handlePadButtonTap(x, y) {
   }
   
   return false;
+}
+
+// ギャラリー
+function handleGalleryClick() {
+    const DESIGN_WIDTH = 430;
+    const THUMBNAIL_SIZE = 150;
+    const CLOSE_BUTTON_RADIUS = 30;
+    
+    // 座標変換
+    const galleryScale = min(1, width / DESIGN_WIDTH);
+    const offsetX = (width - DESIGN_WIDTH * galleryScale) / 2;
+    const mx = (mouseX - offsetX) / galleryScale;
+    const my = (mouseY - scrollY) / galleryScale;
+
+    // サムネイルグリッドの計算
+    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
+    const rowStartX = (width / galleryScale - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
+    
+    // サムネイルのクリック検出
+    if (checkThumbnailClicks(mx, my, rowStartX, colCount, THUMBNAIL_SIZE)) {
+        return;
+    }
+    
+    // 拡大表示中の処理
+    if (selectedThumbnail) {
+        handleZoomedViewInteraction();
+    }
+    
+    return false;
 }
 
 function setupButtonInteractions() {
@@ -1832,26 +1902,7 @@ function drawGallery2D() {
       textSize(12);
       textAlign(CENTER, TOP);
       text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
-
-	　let isInside = 
-		  mx >= x && mx <= x + thumbSize &&
-		  my >= ty && my <= ty + thumbSize;
-		  
-		if (isInside && (mouseIsPressed || (touches && touches.length > 0))) {
-		  if (!touchMovedFlag) {
-		    let now = millis();
-		    if (now - lastTapTime > TAP_DEBOUNCE) {
-		      lastTapTime = now;
-		      selectedConstellation = list[i]; 
-		      viewConstellation = list[i]; 
-		      visual2StartTime = millis();
-		      state = "visual2";
-		      updateButtonVisibility();
-		      resetView();
-		      redraw();
-		    }
-		  }
-   }
+    }
     
     // 次の月の開始位置を計算
     y += monthContentHeight;;
@@ -2147,94 +2198,6 @@ function loadConstellations() {
     }
   }
 }
-
-/* =========================================================
-   visual2 (ギャラリーから選んだ日記の3D表示)
-   ========================================================= */
-function drawVisual2Content() {
-    if (!viewConstellation) return;
-
-    // ★ 星空の描画
-	  push(); 
-	  noStroke();
-	  for (let s of stars) {
-	    if (random() < 0.02) s.on = !s.on;
-	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-	    let blink = (s.on ? 1 : 0);
-	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-	    let intensity = blink * pulse;
-	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
-	    let alpha = map(intensity, 0, 1, 10, 255);
-	    let r = 200 + random(-20, 20);
-	    let g = 200 + random(-20, 20);
-	    let b = 255;
-	    fill(r, g, b, alpha);
-	    push();
-	    translate(s.x, s.y, s.z);
-	    sphere(starSize);
-	    pop();
-	  }
-	  pop();
-
-    // ★ 選択した星座データ
-    let constellation = viewConstellation;
-
-    push();
-    stroke(150, 80);
-    noFill();
-    box(220);
-
-    // --- 星の描画 ---
-    for (let p of constellation.stars) {
-        push();
-        translate(p.pos.x, p.pos.y, p.pos.z);
-        let flicker = 220 + 35 * sin(frameCount * 0.1);
-        fill(255, 255, 200, flicker);
-        noStroke();
-        sphere(8);
-        pop();
-    }
-
-    // --- 線の描画 ---
-    if (millis() - visual2StartTime > 1200) {
-        push();
-        stroke(180, 200, 255, 90);
-        strokeWeight(2);
-        blendMode(ADD);
-        for (let a = 0; a < constellation.stars.length; a++) {
-            for (let b = a + 1; b < constellation.stars.length; b++) {
-                let aPos = constellation.stars[a].pos;
-                let bPos = constellation.stars[b].pos;
-                if (aPos && bPos) {
-                    line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-                }
-            }
-        }
-        pop();
-    }
-
-    pop();
-
-    // --- 日付などの表示 ---
-    push();
-  resetMatrix();
-  noLights();
-  textAlign(CENTER, TOP);
-  textSize(24);
-  fill(255);
-  text(viewConstellation.created || "日付なし", width/2, 20);
-	
-	textFont(myFont);
-  let textBaseY = height - 100;
-  textSize(16);
-  text("写真フォルダで思い出を見返してみましょう", width / 2, textBaseY);
-  
-  if (viewConstellation.emotionLabel) {
-    text(viewConstellation.emotionLabel, width / 2, textBaseY + 26);
-  }
-  pop();
-}
-
 
 window.setup = setup;
 window.draw = draw;
