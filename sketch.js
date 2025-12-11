@@ -1969,46 +1969,44 @@ function generate2DThumbnail(cons, size) {
     });
   }
 
-  // ドロネー図を計算する関数（簡易版）
-	function calculateDelaunay(stars) {
-	  let points = stars.map(s => [s.x, s.y]);
-	  // ドロネー三角形分割を実行
-	  let triangles = Delaunator.from(points).triangles;
-	  
-	  let connections = new Set();
-	  for (let i = 0; i < triangles.length; i += 3) {
-	    let a = triangles[i];
-	    let b = triangles[i+1];
-	    let c = triangles[i+2];
-	    // 重複を避けるためにソートしてから追加
-	    [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-	    [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-	    [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
-	  }
-	  
-	  return Array.from(connections).map(conn => {
-	    let [i, j] = conn.split('-').map(Number);
-	    return {i, j, d: dist(stars[i].x, stars[i].y, stars[j].x, stars[j].y)};
-	  });
-	}
+  // ドロネー図を計算
+function calculateDelaunay(stars) {
+  // 有効な星だけをフィルタリング
+  const validStars = stars.filter(star => star && typeof star.x === 'number' && typeof star.y === 'number');
+  
+  // 有効な星が2つ未満の場合は接続しない
+  if (validStars.length < 2) return [];
+  
+  try {
+    let points = validStars.map(s => [s.x, s.y]);
+    let delaunay = Delaunator.from(points);
+    let triangles = delaunay.triangles;
+    
+    let connections = new Set();
+    for (let i = 0; i < triangles.length; i += 3) {
+      let a = triangles[i];
+      let b = triangles[i+1];
+      let c = triangles[i+2];
+      // 重複を避けるためにソートしてから追加
+      [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+      [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+      [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+    }
+    
+    return Array.from(connections).map(conn => {
+      let [i, j] = conn.split('-').map(Number);
+      return {
+        i: i, 
+        j: j, 
+        d: dist(validStars[i].x, validStars[i].y, validStars[j].x, validStars[j].y)
+      };
+    });
+  } catch (e) {
+    console.error('ドロネー図の計算中にエラーが発生しました:', e);
+    return []; // エラーが発生した場合は空の接続を返す
+  }
+}
 	
-	// 星同士を線でつなぐ（ドロネー図を使用）
-	pg.blendMode(ADD);
-	let connections = calculateDelaunay(stars);
-	
-	// 接続を描画
-	for (let {i, j, d} of connections) {
-	  let s1 = stars[i];
-	  let s2 = stars[j];
-	  // 距離が大きすぎる接続は描画しない
-	  if (d < size * 0.6) {  // この閾値は調整してください
-	    let alpha = map(d, 0, size * 0.6, 100, 20, true);
-	    pg.stroke(180, 200, 255, alpha);
-	    pg.strokeWeight(1.5);
-	    pg.line(s1.x, s1.y, s2.x, s2.y);
-	  }
-	}
-
   // 星を描画
   pg.fill(255, 255, 200, 220);
   pg.noStroke();
