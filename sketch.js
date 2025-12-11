@@ -835,7 +835,8 @@ function drawPADButtons(){
   // P 行
   text("P", cx - 150, cy - 120);
   for(let i = 0; i < 7; i++) {
-    let col = lerpColor(color(255, 150, 0), color(0, 100, 255), i/6);
+    let sat = map(i, 0, 6, 100, 40);
+    let col = color(255, 165, 0, sat * 2.55);
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy - 120, 
                padLayout.btnSize, 
@@ -848,8 +849,9 @@ function drawPADButtons(){
   // A 行
   text("A", cx - 150, cy);
   for(let i = 0; i < 7; i++) {
-    let col = lerpColor(color(255, 220, 0), color(0, 0, 100), i/6);
-    let sides = int(map(i, 0, 6, 3, 30));
+    let sat = map(i, 0, 6, 100, 40);
+    let col = color(0, 100, 255, sat * 2.55);
+    let sides = i + 3;
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy, 
                padLayout.btnSize, 
@@ -864,7 +866,7 @@ function drawPADButtons(){
   text("D", cx - 150, cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(200);
-    let sides = int(map(i, 0, 6, 4, 30));
+    let sides = i + 3;
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy + 120, 
                padLayout.btnSize, 
