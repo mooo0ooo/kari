@@ -784,21 +784,24 @@ function draw() {
 	    }
 	
 	    push();
-	    translate(0, 120, 0);
-	    fill(255);
-	    textAlign(CENTER, CENTER);
-	    textSize(14);
-	    text(constellation.created, 0, 0);
-		textSize(16);
-		fill(200, 220, 255, 200);
-		text("今日の思い出を写真に残してみませんか？", 0, 30);
-		if (selectedLabel) {
+		translate(0, 120, 0);
+		fill(255);
+		textAlign(CENTER, CENTER);
+		textSize(14);
+		text(constellation.created, 0, 0);
+		console.log("Selected Label:", selectedLabel);
+		console.log("Constellation:", constellation);
+		const emotion = constellation.emotion || selectedLabel;
+		if (emotion) {
 		    textSize(14);
 		    fill(200, 220, 255, 180);
-		    text("選択された感情: " + selectedLabel.ja, 0, 60);
-		    text("(" + selectedLabel.en + ")", 0, 80);
-	　　 }
-	    pop();
+		    text("選択された感情: " + emotion.ja, 0, 30);
+		    text("(" + (emotion.en || '') + ")", 0, 50);
+		}
+		textSize(16);
+		fill(200, 220, 255, 200);
+		text("今日の思い出を写真に残してみませんか？", 0, 80);
+		pop();
 	
 	    pop();
 	  }
