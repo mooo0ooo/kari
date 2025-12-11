@@ -917,7 +917,7 @@ function drawPADButtons(){
                sides);
   }
 
-  drawPADLavels();
+  drawPADLabels();
   pop();
 }
 
