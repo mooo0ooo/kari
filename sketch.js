@@ -2124,6 +2124,9 @@ function touchMonthMenu(x, y) {
 
 // 一覧表示
 function drawGalleryListView() {
+  console.log("ギャラリーリストビューを描画中...");
+  console.log("星座データ数:", allConstellations.length);
+	
 　let filtered = allConstellations.filter(c => {
     let d = new Date(c.created);
     return (
@@ -2131,6 +2134,8 @@ function drawGalleryListView() {
       d.getMonth() === selectedMonth
     );
   });
+
+  console.log("フィルタリング後:", filtered.length, "件");
 	
   resetMatrix();
   camera();
@@ -2219,12 +2224,28 @@ function drawGalleryListView() {
 	  rect(x, ty, thumbSize, thumbSize, 8);
 		
 	  if (!list[i].thumbnail) {
-		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	  try {
+	    list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	  } catch (e) {
+	    console.error("サムネイル生成エラー:", e);
+	    fill(50);
+	    rect(x, ty, thumbSize, thumbSize, 4);
+	    fill(150);
+	    text("エラー", x + thumbSize/2, ty + thumbSize/2);
+	    continue;
 	  }
-		
-	  if (list[i].thumbnail) {
-		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
+	}
+
+	// サムネイルを描画
+	if (list[i].thumbnail) {
+	  try {
+	    image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
+	  } catch (e) {
+	    console.error("サムネイル描画エラー:", e);
+	    fill(255, 0, 0, 100);
+	    rect(x, ty, thumbSize, thumbSize);
 	  }
+	}
       
       // 日付を表示
       let date = new Date(list[i].created);
@@ -2254,16 +2275,19 @@ function generate2DThumbnail(cons, size) {
   if (cons.thumbnail) {
     try {
       if (cons.thumbnail.canvas) {
-        cons.thumbnail.canvas = null;
+        cons.thumbnail.canvas.width = 0;
+        cons.canvas.height = 0;
       }
+      cons.thumbnail.remove();
       cons.thumbnail = null;
     } catch (e) {
-      console.warn("Failed to clean up thumbnail:", e);
+      console.warn("サムネイルのクリーンアップに失敗しました:", e);
     }
   }
     
     // 新しいサムネイルを生成
-    let pg = createGraphics(size, size);
+  let pg = createGraphics(size, size, P2D);
+  pg.pixelDensity(1);
 
   // 枠の描画
   pg.stroke(150, 80);  
@@ -2346,6 +2370,21 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
+}
+
+function cleanupGallery() {
+  if (state === "gallery" && galleryState === "list") {
+    allConstellations.forEach(c => {
+      if (c.thumbnail) {
+        try {
+          c.thumbnail.remove();
+          c.thumbnail = null;
+        } catch (e) {
+          console.warn("サムネイルのクリーンアップエラー:", e);
+        }
+      }
+    });
+  }
 }
 
 /* =========================================================
