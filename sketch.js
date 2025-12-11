@@ -2242,65 +2242,98 @@ function drawEmotionInfo() {
   resetMatrix();
   camera();
   
-  // 半透明の背景（タッチイベントをブロック）
+  // 半透明の背景
   fill(0, 0, 30, 200);
   noStroke();
   rect(0, 0, width, height);
 
-  let popupX = width / 2;
-  let popupY = height - 150;
-  let popupWidth = 400;
-  let popupHeight = 280;
+  // 感情の種類の数を計算
+  let uniqueEmotions = {};
+  emotions.forEach(e => { uniqueEmotions[e.en] = e.ja; });
+  const emotionCount = Object.keys(uniqueEmotions).length;
+  
+  // 必要な行数を計算（1列あたりの最大行数）
+  const maxRows = 8; // 1列あたりの最大行数
+  const columns = Math.ceil(emotionCount / maxRows);
+  const actualRows = Math.ceil(emotionCount / columns);
+  
+  // ポップアップのサイズを動的に調整
+  const popupWidth = 400 + (columns - 1) * 180; // 列が増えるたびに幅を広げる
+  const rowHeight = 30;
+  const popupHeight = Math.min(600, 200 + actualRows * rowHeight); // 最大高さ600px
+  const popupX = width / 2;
+  const popupY = height / 2;
   
   // ポップアップの背景
-  fill(20, 20, 50);
+  fill(5, 5, 20);
   stroke(100, 100, 150);
   strokeWeight(2);
-  rect(width/2 - 200, height/2 - 200, 400, 400, 10);
+  rectMode(CENTER);
+  rect(popupX, popupY, popupWidth, popupHeight, 10);
+  
+  // タイトル
+  fill(255);
+  textSize(24);
+  textAlign(CENTER, CENTER);
+  text("感情の記録", popupX, popupY - popupHeight/2 + 40);
   
   // メッセージ
   textSize(16);
-  textAlign(CENTER, CENTER);
-  text("写真を撮って思い出を残してみませんか？", width/2, height/2 - 100);
+  text("写真を撮って思い出を残してみませんか？", popupX, popupY - popupHeight/2 + 80);
   
-  // 感情の種類を表示
+  // 感情リストの表示エリア
+  const listStartY = popupY - popupHeight/2 + 120;
+  const listEndY = popupY + popupHeight/2 - 80;
+  const listHeight = listEndY - listStartY;
+  
+  // スクロール可能な領域のマスク
+  drawingContext.save();
+  drawingContext.beginPath();
+  drawingContext.rect(
+    popupX - popupWidth/2 + 20, 
+    listStartY, 
+    popupWidth - 40, 
+    listHeight
+  );
+  drawingContext.clip();
+  
+  // 感情をグリッド状に表示
   textSize(14);
   textAlign(LEFT, TOP);
-  let startY = height/2 - 50;
-  let col1 = width/2 - 150;
-  let col2 = width/2 + 20;
-  let y = startY;
+  const colWidth = 180;
   
-  // 重複を除いた感情のリストを作成
-  let uniqueEmotions = {};
-  emotions.forEach(e => {
-    uniqueEmotions[e.en] = e.ja;
-  });
-  
-  // 2列で感情を表示
   let count = 0;
   for (let [en, ja] of Object.entries(uniqueEmotions)) {
-    let x = count % 2 === 0 ? col1 : col2;
-    if (count % 2 === 0) {
-      y = startY + Math.floor(count/2) * 30;
-    }
+    const col = Math.floor(count / maxRows);
+    const row = count % maxRows;
+    const x = popupX - popupWidth/2 + 30 + col * colWidth;
+    const y = listStartY + row * 30;
     
     fill(200, 220, 255);
     text(`${en} (${ja})`, x, y);
     count++;
   }
   
+  drawingContext.restore(); // クリッピングを解除
+  
   // 閉じるボタン
   fill(255, 100, 100);
-  rect(width/2 - 40, height/2 + 90, 80, 40, 5);
+  rect(popupX - 40, popupY + popupHeight/2 - 50, 80, 40, 5);
   fill(255);
   textSize(16);
   textAlign(CENTER, CENTER);
-  text("閉じる", width/2, height/2 + 90);
+  text("閉じる", popupX, popupY + popupHeight/2 - 30);
+  
+  // スクロールバーの表示（必要に応じて）
+  if (actualRows > 6) {
+    fill(100, 100, 150, 100);
+    const scrollbarHeight = (listHeight * 6) / actualRows;
+    const scrollbarY = listStartY + (listHeight - scrollbarHeight) * 0; // スクロール位置に応じて調整
+    rect(popupX + popupWidth/2 - 15, scrollbarY, 8, scrollbarHeight, 4);
+  }
   
   pop();
 }
-
 function toggleEmotionInfo() {
   showEmotionInfo = !showEmotionInfo;
   redraw();
