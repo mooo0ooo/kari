@@ -1969,39 +1969,6 @@ function generate2DThumbnail(cons, size) {
     });
   }
 
-  // 星同士を線でつなぐ
-  pg.blendMode(ADD);
-　const maxConnections = 4;
-  for (let i = 0; i < stars.length; i++) {
-    let s1 = stars[i];
-    let connections = [];
-    
-    // 他の全ての星との距離を計算
-    for (let j = 0; j < stars.length; j++) {
-        if (i === j) continue;
-        let s2 = stars[j];
-        let d = dist(s1.x, s1.y, s2.x, s2.y);
-        connections.push({index: j, distance: d});
-    }
-    
-    // 距離が近い順にソート
-    connections.sort((a, b) => a.distance - b.distance);
-    
-    // 近い順に最大maxConnections個の星と線を引く
-    for (let k = 0; k < min(maxConnections, connections.length); k++) {
-        let j = connections[k].index;
-        let s2 = stars[j];
-        let d = connections[k].distance;
-        
-        if (d < size * 0.5) {  // 最大距離を少し広げる
-            let alpha = map(d, 0, size * 0.5, 100, 20, true);
-            pg.stroke(180, 200, 255, alpha);
-            pg.strokeWeight(1.5);
-            pg.line(s1.x, s1.y, s2.x, s2.y);
-        }
-    }
-}
-
   // 星を描画
   pg.fill(255, 255, 200, 220);
   pg.noStroke();
@@ -2014,6 +1981,46 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
+}
+
+// ドロネー図を計算する関数（簡易版）
+function calculateDelaunay(stars) {
+  let points = stars.map(s => [s.x, s.y]);
+  // ドロネー三角形分割を実行
+  let triangles = Delaunator.from(points).triangles;
+  
+  let connections = new Set();
+  for (let i = 0; i < triangles.length; i += 3) {
+    let a = triangles[i];
+    let b = triangles[i+1];
+    let c = triangles[i+2];
+    // 重複を避けるためにソートしてから追加
+    [a, b].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+    [b, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+    [a, c].sort((x,y) => x-y).forEach(pair => connections.add(`${pair[0]}-${pair[1]}`));
+  }
+  
+  return Array.from(connections).map(conn => {
+    let [i, j] = conn.split('-').map(Number);
+    return {i, j, d: dist(stars[i].x, stars[i].y, stars[j].x, stars[j].y)};
+  });
+}
+
+// 星同士を線でつなぐ（ドロネー図を使用）
+pg.blendMode(ADD);
+let connections = calculateDelaunay(stars);
+
+// 接続を描画
+for (let {i, j, d} of connections) {
+  let s1 = stars[i];
+  let s2 = stars[j];
+  // 距離が大きすぎる接続は描画しない
+  if (d < size * 0.6) {  // この閾値は調整してください
+    let alpha = map(d, 0, size * 0.6, 100, 20, true);
+    pg.stroke(180, 200, 255, alpha);
+    pg.strokeWeight(1.5);
+    pg.line(s1.x, s1.y, s2.x, s2.y);
+  }
 }
 /* =========================================================
    最大スクロール量を計算
