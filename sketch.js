@@ -269,6 +269,7 @@ function setup() {
 
 	  state = "visual";
 	  updateButtonVisibility();
+	  resetVisualView();
 	  console.log("状態をvisualに設定しました。現在のstate:", state);
 	  
 	  // ビジュアルを準備
@@ -642,26 +643,16 @@ function draw() {
   }
 　else if (state === "visual") {
 	  camera();
-      orbitControl();
-
-	  if (touches.length > 0 && isTouching) {
-	    let touch = touches[0];
-	    let dx = touch.x - touchStartPos.x;
-	    let dy = touch.y - touchStartPos.y;
-	    
-	    targetRotationY += dx * 0.01;
-	    targetRotationX += dy * 0.01;
-	    
-	    touchStartPos = { x: touch.x, y: touch.y };
-	  }
-	  
+	 
 	  // 3D操作
-	  rotationX = lerp(rotationX, targetRotationX, 0.1);
-	  rotationY = lerp(rotationY, targetRotationY, 0.1);
+	  rotationX = lerp(rotationX, targetRotationX, 0.18);
+  	　rotationY = lerp(rotationY, targetRotationY, 0.18);
+
 	  rotateX(rotationX);
- 	  rotateY(rotationY);
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
-	  scale(zoomLevel);
+  	  rotateY(rotationY);
+
+	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
+  	  scale(zoomLevel);
 		  
 	  // ★ 星空の描画
 	  push(); 
@@ -795,31 +786,15 @@ function draw() {
 	    pop();
 	  }
 
-	  if (state === "visual" && !isDragging) {
-	    // 慣性を適用
-	    if (abs(velocityX) > 0.001 || abs(velocityY) > 0.001) {
-	      targetRotationY += velocityX * 2;
-	      targetRotationX += velocityY * 2;
-	      
-	      // 減衰
-	      velocityX *= 0.95;
-	      velocityY *= 0.95;
-	    } else {
-	      velocityX = 0;
-	      velocityY = 0;
-	    }
+	  if (touchFeedback && touchFeedback.alpha > 0) {
+	    push();
+	    noStroke();
+	    fill(255, 255, 255, touchFeedback.alpha);
+	    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
+	    touchFeedback.alpha -= 5;
+	    pop();
 	  }
 	} 
-	
-	// タッチフィードバックの描画
-  if (touchFeedback && touchFeedback.alpha > 0) {
-    push();
-    noStroke();
-    fill(255, 255, 255, touchFeedback.alpha);
-    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
-    touchFeedback.alpha -= 5;
-    pop();
-  }
 }
 /* =========================================================
    drawPADButtons
@@ -1016,8 +991,20 @@ function touchStarted(event) {
 
   if (state === "visual") {
     isDragging = true;
-  }
 
+	if (event && event.touches && event.touches[0]) {
+	    lastTouchX = event.touches[0].clientX;
+	    lastTouchY = event.touches[0].clientY;
+	    lastTouchTime = millis();
+	  } else {
+	    if (touches && touches.length > 0) {
+	      lastTouchX = touches[0].x;
+	      lastTouchY = touches[0].y;
+	      lastTouchTime = millis();
+	    }
+	}
+  }
+	
   return true;
 }
 
@@ -1096,26 +1083,33 @@ function touchMoved(event) {
   }
   
   // ビジュアルモードでの回転操作
-  if (state === "visual" && isDragging) {
-    const currentTime = millis();
-    const deltaX = currentX - lastTouchX;
-    const deltaY = currentY - lastTouchY;
-    
-    // 速度計算
-    if (lastTouchTime > 0) {
-      const deltaTime = currentTime - lastTouchTime;
-      if (deltaTime > 0) {
-        velocityX = deltaX / deltaTime * 0.1;
-        velocityY = deltaY / deltaTime * 0.1;
-      }
-    }
-    
-    targetRotationY += deltaX * 0.01;
-    targetRotationX += deltaY * 0.01;
-    
-    lastTouchX = currentX;
-    lastTouchY = currentY;
-    lastTouchTime = currentTime;
+  if (state === "visual") {
+	  if (!event.touches || event.touches.length === 0) return false;
+	  const touch = event.touches[0];
+	
+	  const currentX = touch.clientX;
+	  const currentY = touch.clientY;
+
+	  if (lastTouchX === undefined || lastTouchY === undefined) {
+	    lastTouchX = currentX;
+	    lastTouchY = currentY;
+	    lastTouchTime = millis();
+	    return false;
+	  }
+	
+	  const deltaX = currentX - lastTouchX;
+	  const deltaY = currentY - lastTouchY;
+	
+	  const ROTATE_SPEED = 0.005;
+	
+	  targetRotationY += deltaX * ROTATE_SPEED;
+	  targetRotationX -= deltaY * ROTATE_SPEED;
+	
+	  lastTouchX = currentX;
+	  lastTouchY = currentY;
+	  lastTouchTime = millis();
+	
+	  return false;
   }
   
   return false;
@@ -1140,7 +1134,6 @@ function touchEnded(event) {
     // ボタンタップが処理された場合はここで終了
     if (touchHandled) {
       isTouching = false;
-      isDragging = false;
       return false;
     }
   }
@@ -1178,14 +1171,18 @@ function touchEnded(event) {
         const touch = event.changedTouches[0];
         const dx = touch.clientX - lastTouchX;
         const dy = touch.clientY - lastTouchY;
-        velocityX = dx / deltaTime * 0.5;
-        velocityY = dy / deltaTime * 0.5;
+		velocityX = 0;
+  		velocityY = 0;
+		isDragging = false;
+
+		lastTouchX = undefined;
+		lastTouchY = undefined;
+		lastTouchTime = 0;
       }
     }
   }
   
   isTouching = false;
-  isDragging = false;
   
   return false;
 }
@@ -1244,8 +1241,8 @@ function groupByMonth(constellations) {
       const date = new Date(c.created);
       if (isNaN(date.getTime())) continue; // 無効な日付はスキップ
       
-      const month = date.getMonth(); // 0-11
-      if (month >= 0 && month < 12) { // 月の範囲を確認
+      const month = date.getMonth();
+      if (month >= 0 && month < 12) {
         grouped[month].push(c);
       }
     } catch (e) {
