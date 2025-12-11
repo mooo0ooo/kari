@@ -865,6 +865,7 @@ function drawPADButtons(){
   fill(255);
   let guideMaxWidth = width * 0.8 / padLayout.scl; 
   let guideText = "今の気分に合う色や形をP,A,D１つずつ選んでください";
+  text(guideText, cx - guideMaxWidth / 2, cy - 250, guideMaxWidth);
 	
 　const colors = colorPatterns[currentColorPattern];
 
