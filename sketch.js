@@ -1970,19 +1970,18 @@ function generate2DThumbnail(cons, size) {
   }
 
   // 星を描画
+  pg.fill(255, 255, 200, 220);
+　pg.noStroke();
+
+　let starSize = 8 * (size / 200);
+	
   for (let s of stars) {
-    pg.fill(255, 255, 200, 220);
-    pg.noStroke();
-	  
-	for (let s of stars) {
-		let starSize = 8 * (size / 200);
-	    pg.ellipse(s.x, s.y, 8);
-	}
+	  pg.ellipse(s.x, s.y, starSize);
+   }
 
 	cons.thumbnail = pg;
-    cons.lastAccessed = Date.now();
-    return pg;
-  }
+	cons.lastAccessed = Date.now();
+	return pg;
 }
 
 /* =========================================================
