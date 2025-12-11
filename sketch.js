@@ -894,9 +894,6 @@ function drawPADButtons(){
 	
 　const colors = colorPatterns[currentColorPattern];
 
-  textSize(24);
-  fill(255);
-
   // P 行
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
@@ -912,9 +909,6 @@ function drawPADButtons(){
                i, 
                selectedP === i,
                "rect");
-	if (i === 3) {
-      text("P", x, y);
-    }
   }
 	
   // A 行
@@ -934,9 +928,6 @@ function drawPADButtons(){
                selectedA === i,
                "polygon", 
                sides);
-	if (i === 3) {
-      text("P", x, y);
-    }
   }
 	
   // D 行
@@ -951,9 +942,6 @@ function drawPADButtons(){
                selectedD === i,
                "polygon", 
                sides);
-	if (i === 3) {
-	      text("P", x, y);
-	}
   }
   
   pop();
