@@ -135,6 +135,7 @@ let viewConstellation = null;
 let visual2StartTime = 0;
 let lastTapTime = 0;
 const TAP_DEBOUNCE = 300;  
+let touchMovedFlag = false;
 
 /* =========================================================
    preload
@@ -179,28 +180,27 @@ function createScrollButtons() {
   });
 
   // スクロール処理の関数
-  const scrollUp = (e) => {
+  const galleryScrollUp = (e) => {
     if (e) e.preventDefault();
-    targetScrollY = min(0, targetScrollY + 300);
-    redraw();
+    if (state === "gallery") {
+      targetScrollY += 300;
+    }
   };
 
-  const scrollDown = (e) => {
+  const galleryScrollDown = (e) => {
     if (e) e.preventDefault();
-    const maxScroll = -calculateMaxScroll();
-    targetScrollY = max(maxScroll, targetScrollY - 300);
-    redraw();
+    if (state === "gallery") {
+      targetScrollY -= 300;
+    }
   };
 
   // マウスイベント
-  upButton.mousePressed(scrollUp);
-  downButton.mousePressed(scrollDown);
-  
-  // タッチイベント
-  upButton.elt.addEventListener('touchend', scrollUp, { passive: false });
-  downButton.elt.addEventListener('touchend', scrollDown, { passive: false });
-  
-  // タッチハイライトを防ぐ
+  upButton.mousePressed(galleryScrollUp);
+  downButton.mousePressed(galleryScrollDown);
+
+  upButton.elt.addEventListener('touchend', galleryScrollUp, { passive: false });
+  downButton.elt.addEventListener('touchend', galleryScrollDown, { passive: false });
+
   [upButton, downButton].forEach(btn => {
     btn.elt.addEventListener('touchstart', (e) => {
       e.preventDefault();
