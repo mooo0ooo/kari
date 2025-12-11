@@ -118,6 +118,9 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 
 let showGrid = true;
 
+let showEmotionInfo = false;
+let infoButton;
+
 // gallery
 let galleryButton;
 let scrollY = 0;
@@ -271,6 +274,31 @@ function setup() {
 	resetViewButton.style('font-family', 'sans-serif');
 	resetViewButton.style('font-size', '14px');
 	resetViewButton.style('transition', 'all 0.2s');
+
+	// 虫メガネボタン
+	infoButton = createButton("🔍");
+	infoButton.position(width - 60, 20);
+	infoButton.style('position', 'absolute');
+	infoButton.style('z-index', '10');
+	infoButton.style('padding', '8px 12px');
+	infoButton.style('border-radius', '50%');
+	infoButton.style('border', '1px solid #666');
+	infoButton.style('background', 'rgba(50, 60, 90, 0.8)');
+	infoButton.style('color', '#fff');
+	infoButton.style('cursor', 'pointer');
+	infoButton.style('font-size', '16px');
+	infoButton.mousePressed(() => {
+	  if (state === "visual" && showEmotionInfo) {
+		  // 閉じるボタンがクリックされたかチェック
+		  if (mouseX > width - 120 && mouseX < width - 80 && 
+		      mouseY > 70 && mouseY < 95) {
+		    showEmotionInfo = false;
+		    return false;
+		  }
+	  }
+	  showEmotionInfo = !showEmotionInfo;
+	  redraw();
+	});
 
 　addButton.mousePressed(addPAD);
   
@@ -659,6 +687,10 @@ function draw() {
   
   // 背景をクリア
   background(5, 5, 20);
+
+  if (state === "visual" && showEmotionInfo) {
+	  drawEmotionInfo();
+  }
 
   // 状態に応じた描画
   if (state === "select") {
@@ -2176,6 +2208,69 @@ function loadConstellations() {
       console.error("Failed to clear corrupted data:", e);
     }
   }
+}
+
+
+/* =========================================================
+   visual
+   ========================================================= */
+function drawEmotionInfo() {
+  push();
+  resetMatrix();
+  camera();
+  
+  // 半透明の背景
+  fill(0, 0, 30, 200);
+  noStroke();
+  rect(50, 50, width - 100, height - 100, 10);
+  
+  // タイトル
+  fill(255);
+  textSize(24);
+  textAlign(CENTER, TOP);
+  text("感情の記録", width/2, 80);
+  
+  // メッセージ
+  textSize(16);
+  textAlign(CENTER, CENTER);
+  text("写真を撮って思い出を残してみませんか？", width/2, height/2 - 50);
+  
+  // 感情の種類を表示
+  textSize(14);
+  textAlign(LEFT, TOP);
+  let startY = height/2;
+  let col1 = width/2 - 150;
+  let col2 = width/2 + 50;
+  let y = startY;
+  
+  // 重複を除いた感情のリストを作成
+  let uniqueEmotions = {};
+  emotions.forEach(e => {
+    uniqueEmotions[e.en] = e.ja;
+  });
+  
+  // 2列で感情を表示
+  let count = 0;
+  for (let [en, ja] of Object.entries(uniqueEmotions)) {
+    let x = count % 2 === 0 ? col1 : col2;
+    if (count % 2 === 0) {
+      y = startY + Math.floor(count/2) * 30;
+    }
+    
+    fill(200, 220, 255);
+    text(`${en} (${ja})`, x, y);
+    count++;
+  }
+  
+  // 閉じるボタン
+  fill(255, 100, 100);
+  rect(width - 120, 70, 40, 25, 5);
+  fill(255);
+  textSize(14);
+  textAlign(CENTER, CENTER);
+  text("閉じる", width - 100, 82);
+  
+  pop();
 }
 
 window.setup = setup;
