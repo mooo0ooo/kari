@@ -133,6 +133,8 @@ let topOffset = 40;
 
 let selectedDiaryIndex = -1;
 let isGalleryItemTouched = false;
+let keepBackground = true;
+let fromGallery = false;
 
 /* =========================================================
    preload
@@ -369,6 +371,7 @@ function setup() {
 	    targetScrollY = 0;
 	    scrollY = 0;
 	    selectedLabel = null;
+		keepBackground = false;
 	  } else {
 	    state = "gallery";
 	    galleryStars = [];
@@ -578,41 +581,34 @@ function prepareVisual(changeState = true) {
   console.log("prepareVisualの内容:", prepareVisual.toString().substring(0, 100) + "...");
   
   try {
-    // 星の位置を計算
+    try {
     points = [];
     if (!Array.isArray(padValues)) {
       console.error("padValues is not an array");
       return false;
     }
-
-    for (let v of padValues) {
-      if (!v || typeof v !== 'object') {
-        console.warn("Invalid PAD value:", v);
-        continue;
+    if (!fromGallery) {
+      for (let v of padValues) {
+        if (!v || typeof v !== 'object') {
+          console.warn("Invalid PAD value:", v);
+          continue;
+        }
+        
+        let emo = findClosestEmotion(v.P, v.A, v.D);
+        if (!emo) {
+          console.warn("No emotion found for PAD values:", v);
+          continue;
+        }
+        let x = map(v.P, 0, 1, -100, 100);
+        let y = map(v.A, 0, 1, -100, 100);
+        let z = map(v.D, 0, 1, -100, 100);
+        emo.intensity = (v.P + v.A + v.D) / 3;
+        
+        points.push({
+          pos: createVector(x, y, z),
+          emo: emo
+        });
       }
-      
-      let emo = findClosestEmotion(v.P, v.A, v.D);
-      if (!emo) {
-        console.warn("No emotion found for PAD values:", v);
-        continue;
-      }
-
-      let x = map(v.P, 0, 1, -100, 100);
-      let y = map(v.A, 0, 1, -100, 100);
-      let z = map(v.D, 0, 1, -100, 100);
-
-      // 感情データを追加
-      emo.intensity = (v.P + v.A + v.D) / 3;
-      
-      points.push({
-        pos: createVector(x, y, z),
-        emo: emo
-      });
-    }
-
-    if (points.length === 0) {
-      console.warn("No valid points to display");
-      return false;
     }
     
     // 背景の星を生成
@@ -626,7 +622,6 @@ function prepareVisual(changeState = true) {
       });
     }
 
-    // 状態をvisualに設定
     if (changeState) {
       state = "visual";
       updateButtonVisibility();
@@ -653,17 +648,18 @@ function prepareVisual(changeState = true) {
    draw
    ========================================================= */
 function draw() {
-	
-  // フレームレートに基づいた処理
-  if (frameCount % 60 === 0) { 
-    cleanupThumbnails();
-	console.log("drawが実行中です。現在のstate:", state);
-  }
   
-  // 背景をクリア
-  background(5, 5, 20);
+  // 背景の描画）
+  if (state === "visual" && keepBackground) {
+    background(5, 5, 20);
+    drawSpaceBackground();
+  } else if (state === "gallery") {
+    background(5, 5, 20);
+    drawGalleryBackground();
+  } else {
+    background(5, 5, 20);
+  }
 
-  // 状態に応じた描画
   if (state === "select") {
     camera();
     drawPADButtons();
@@ -834,7 +830,17 @@ function draw() {
 	    touchFeedback.alpha -= 5;
 	    pop();
 	  }
+
+		 if (selectedLabel) {
+	      drawLabel(selectedLabel);
+	    }
 	} 
+
+	// フレームレートに基づいた処理
+	  if (frameCount % 60 === 0) { 
+	    cleanupThumbnails();
+		console.log("drawが実行中です。現在のstate:", state);
+	  }
 }
 /* =========================================================
    drawPADButtons
@@ -2274,6 +2280,8 @@ function generate2DThumbnail(cons, size) {
 
 function showDiaryDetail(index) {
   if (index < 0 || index >= allConstellations.length) return;
+
+  fromGallery = true;
   
   // 選択された日記のデータをセット
   let diary = allConstellations[index];
@@ -2309,8 +2317,20 @@ function showDiaryDetail(index) {
   } else {
     selectedLabel = "記録日: 不明";
   }
+
+  keepBackground = true;
+  prepareVisual(true, true);  
   
   redraw();
+}
+
+function resetVisualView() {
+  if (!fromGallery) {
+    prepareVisual();
+  } else {
+    keepBackground = true;
+    fromGallery = false;
+  }
 }
 /* =========================================================
    最大スクロール量を計算
