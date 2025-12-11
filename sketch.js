@@ -2310,6 +2310,17 @@ function drawVisual2Content() {
     textSize(24);
     fill(255);
     text(constellation.created, width/2, 20);
+	
+	textAlign(CENTER, TOP);
+	textFont(myFont);
+	fill(255);
+	let textBaseY = dateY + 40;
+	textSize(16);
+	text("写真フォルダで思い出を見返してみましょう", width / 2, textBaseY);
+	textSize(16);
+	if (currentVisualConstellation && currentVisualConstellation.emotionLabel) {
+	    text(currentVisualConstellation.emotionLabel, width / 2, textBaseY + 26);
+	}
     pop();
 }
 
