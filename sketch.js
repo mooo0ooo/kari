@@ -1926,25 +1926,37 @@ function generate2DThumbnail(cons, size) {
   // 星の位置を正規化
   let stars = [];
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  // 座標の範囲を計算
   for (let s of cons.stars) {
     if (!s || !s.pos) continue;
-    if (s.pos.x < minX) minX = s.pos.x;
-    if (s.pos.x > maxX) maxX = s.pos.x;
-    if (s.pos.y < minY) minY = s.pos.y;
-    if (s.pos.y > maxY) maxY = s.pos.y;
+    minX = min(minX, s.pos.x);
+    maxX = max(maxX, s.pos.x);
+    minY = min(minY, s.pos.y);
+    maxY = max(maxY, s.pos.y);
   }
-  if (minX === Infinity) minX = maxX = 0;
-  if (minY === Infinity) minY = maxY = 0;
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-  const maxRange = max(rangeX, rangeY) || 1;
-  const offsetX = (rangeX - maxRange) / 2;
-  const offsetY = (rangeY - maxRange) / 2;
+  // すべての星が同じ位置にある場合の処理
+  if (minX === maxX) {
+    minX -= 1;
+    maxX += 1;
+  }
+  if (minY === maxY) {
+    minY -= 1;
+    maxY += 1;
+  }
   
+  const rangeX = maxX - minX;
+  const rangeY = maxY - minY;
+  const maxRange = max(rangeX, rangeY) || 1;
+	
+  // 星の位置を正規化して保存
   for (let s of cons.stars) {
     if (!s || !s.pos) continue;
-    let nx = (s.pos.x - minX - offsetX) / maxRange;
-    let ny = (s.pos.y - minY - offsetY) / maxRange;
+    
+    // 正規化座標を計算 (0.0 〜 1.0)
+    let nx = (s.pos.x - minX) / rangeX;
+    let ny = (s.pos.y - minY) / rangeY;
+    
+    // 余白を考慮してキャンバス上の座標に変換
     stars.push({
       x: padding + nx * contentSize,
       y: padding + ny * contentSize,
@@ -1971,17 +1983,16 @@ function generate2DThumbnail(cons, size) {
 
   // 星を描画
   pg.fill(255, 255, 200, 220);
-　pg.noStroke();
-
-　let starSize = 8 * (size / 200);
-	
+  pg.noStroke();
+  let starSize = 8 * (size / 200);
+  
   for (let s of stars) {
-	  pg.ellipse(s.x, s.y, starSize);
-   }
-
-	cons.thumbnail = pg;
-	cons.lastAccessed = Date.now();
-	return pg;
+    pg.ellipse(s.x, s.y, starSize);
+  }
+	
+  cons.thumbnail = pg;
+  cons.lastAccessed = Date.now();
+  return pg;
 }
 
 /* =========================================================
