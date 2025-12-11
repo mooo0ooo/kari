@@ -131,6 +131,11 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
+let viewConstellation = null;
+let visual2StartTime = 0;
+let lastTapTime = 0;
+const TAP_DEBOUNCE = 300;  
+
 /* =========================================================
    preload
    ========================================================= */
@@ -851,7 +856,21 @@ function draw() {
 	    touchFeedback.alpha -= 5;
 	    pop();
 	  }
-	} 
+	} else if (state === "visual2") {
+	    camera();
+	
+	    // 3D操作
+	    rotationX = lerp(rotationX, targetRotationX, 0.18);
+	    rotationY = lerp(rotationY, targetRotationY, 0.18);
+	
+	    rotateX(rotationX);
+	    rotateY(rotationY);
+	
+	    zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
+	    scale(zoomLevel);
+	
+	    drawVisual2Content();  // ★ 新しく作る関数
+	}
 }
 /* =========================================================
    drawPADButtons
@@ -1902,6 +1921,18 @@ function drawGallery2D() {
       textSize(12);
       textAlign(CENTER, TOP);
       text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
+
+	　let isInside =
+	  mx >= x && mx <= x + thumbSize &&
+	  my >= ty && my <= ty + thumbSize;
+	　if (isInside && mouseIsPressed && !touchMovedFlag) {
+	  let now = millis();
+	  if (now - lastTapTime > TAP_DEBOUNCE) {
+	    lastTapTime = now;
+	    selectedConstellation = list[i];   // 選択した日記を保存
+	    visual2StartTime = millis();       // エフェクトタイミング用
+	    state = "visual2";                 // visual2 に遷移
+	  }
     }
     
     // 次の月の開始位置を計算
@@ -2198,6 +2229,86 @@ function loadConstellations() {
     }
   }
 }
+
+/* =========================================================
+   visual2 (ギャラリーから選んだ日記の3D表示)
+   ========================================================= */
+function drawVisual2Content() {
+    if (!viewConstellation) return;
+
+    // ★ 星空の描画
+	  push(); 
+	  noStroke();
+	  for (let s of stars) {
+	    if (random() < 0.02) s.on = !s.on;
+	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
+	    let blink = (s.on ? 1 : 0);
+	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
+	    let intensity = blink * pulse;
+	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
+	    let alpha = map(intensity, 0, 1, 10, 255);
+	    let r = 200 + random(-20, 20);
+	    let g = 200 + random(-20, 20);
+	    let b = 255;
+	    fill(r, g, b, alpha);
+	    push();
+	    translate(s.x, s.y, s.z);
+	    sphere(starSize);
+	    pop();
+	  }
+	  pop();
+
+    // ★ 選択した星座データ
+    let constellation = viewConstellation;
+
+    push();
+    stroke(150, 80);
+    noFill();
+    box(220);
+
+    // --- 星の描画 ---
+    for (let p of constellation.stars) {
+        push();
+        translate(p.pos.x, p.pos.y, p.pos.z);
+        let flicker = 220 + 35 * sin(frameCount * 0.1);
+        fill(255, 255, 200, flicker);
+        noStroke();
+        sphere(8);
+        pop();
+    }
+
+    // --- 線の描画 ---
+    if (millis() - visual2StartTime > 1200) {
+        push();
+        stroke(180, 200, 255, 90);
+        strokeWeight(2);
+        blendMode(ADD);
+        for (let a = 0; a < constellation.stars.length; a++) {
+            for (let b = a + 1; b < constellation.stars.length; b++) {
+                let aPos = constellation.stars[a].pos;
+                let bPos = constellation.stars[b].pos;
+                if (aPos && bPos) {
+                    line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
+                }
+            }
+        }
+        pop();
+    }
+
+    pop();
+
+    // --- 日付などの表示 ---
+    push();
+    resetMatrix();               
+    applyMatrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
+    noLights();
+    textAlign(CENTER, TOP);
+    textSize(24);
+    fill(255);
+    text(constellation.created, width/2, 20);
+    pop();
+}
+
 
 window.setup = setup;
 window.draw = draw;
