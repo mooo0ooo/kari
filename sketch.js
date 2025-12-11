@@ -1286,7 +1286,6 @@ function touchEnded(event) {
         const scale = width / rect.width;
         const x = (touch.clientX - rect.left) * scale;
         const y = (touch.clientY - rect.top) * scale;
-        handleGalleryTap(x, y);
       }
     }
   }
