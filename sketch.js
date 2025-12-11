@@ -66,8 +66,7 @@ let points = [];
 let stars = [];
 let selectedLabel = null;
 
-let state = "select";
-let previousState = null;
+let state = "select"; 
 let addButton, okButton;
 let backButton;
 
@@ -127,8 +126,6 @@ let galleryStars = [];
 
 let upButton, downButton;
 const SCROLL_AMOUNT = 150;
-
-let selectedConstellation = null;
 
 let outerPad = 20;
 let gutter = 12;
@@ -278,29 +275,16 @@ function setup() {
 　addButton.mousePressed(addPAD);
   
   backButton.mousePressed(() => {
-	  if (state === "visual") {
-		previousState = state;
-	    if (previousState === "gallery") {
-	      state = "gallery";
-	      selectedConstellation = null;
-	    } else {
-	      state = "select";
-	    }
-	    updateButtonVisibility();
-	    layoutDOMButtons();
-	    redraw();
-	  } else if (state === "gallery") {
-		previousState = state; 
-	    state = "select";
-	    updateButtonVisibility();
-	    layoutDOMButtons();
-	    selectedLabel = null;
-	    galleryStars = [];
-	    targetScrollY = 0;
-	    scrollY = 0;
-	    resetView();
-	  }
-　});
+	  state = "select";
+	  updateButtonVisibility();
+	  layoutDOMButtons();
+	  selectedLabel = null;
+	  redraw();
+	  galleryStars = [];
+	  targetScrollY = 0;
+	  scrollY = 0;
+	  resetView();
+  });
 
 　okButton.mousePressed(() => {
 	  console.log("OKボタンが押されました!");
@@ -324,7 +308,6 @@ function setup() {
 	  
 	  // ビジュアルを準備
 	  if (prepareVisual(false)) {
-		previousState = state;
 	    console.log("prepareVisualが正常に完了しました。state:", state);
 	    
 	    // 日付と星データの処理
@@ -377,7 +360,6 @@ function setup() {
 	});
 
   galleryButton.mousePressed(() => {
-	  previousState = state;
 	  if (state === "gallery") {
 	    state = "select";
 	    galleryStars = [];
@@ -595,15 +577,6 @@ function prepareVisual(changeState = true) {
   try {
     // 星の位置を計算
     points = [];
-
-	// 選択された星座がある場合
-	if (selectedConstellation) {
-      points = selectedConstellation.stars.map(star => ({
-        pos: star.pos,
-        emo: star.emo
-      }));
-    } 
-	  
     if (!Array.isArray(padValues)) {
       console.error("padValues is not an array");
       return false;
@@ -894,6 +867,9 @@ function drawPADButtons(){
 	
 　const colors = colorPatterns[currentColorPattern];
 
+  textSize(24);
+  fill(255);
+
   // P 行
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
@@ -909,6 +885,9 @@ function drawPADButtons(){
                i, 
                selectedP === i,
                "rect");
+	if (i === 3) {
+      text("P", x, y);
+    }
   }
 	
   // A 行
@@ -928,6 +907,9 @@ function drawPADButtons(){
                selectedA === i,
                "polygon", 
                sides);
+	if (i === 3) {
+      text("P", x, y);
+    }
   }
 	
   // D 行
@@ -942,6 +924,9 @@ function drawPADButtons(){
                selectedD === i,
                "polygon", 
                sides);
+	if (i === 3) {
+	      text("P", x, y);
+	}
   }
   
   pop();
@@ -2122,17 +2107,6 @@ function drawGallery2D() {
 		
 	  if (list[i].thumbnail) {
 		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
-		  
-		  let isHover = (mx > x && mx < x + thumbSize && my > ty && my < ty + thumbSize);
-		  if (isHover) {
-		    fill(255, 255, 255, 30);
-		    noStroke();
-		    rect(x, ty, thumbSize, thumbSize, 8);
-		    
-		    if (mouseIsPressed && !window.wasMousePressed) {
-		      selectConstellationForViewing(list[i]);
-		    }
-		  }
 	  }
       
       // 日付を表示
@@ -2258,33 +2232,6 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
-}
-
-function selectConstellationForViewing(constellation) {
-  previousState = state;
-  selectedConstellation = constellation;
-  
-  padValues = constellation.stars.map(star => {
-    return {
-      P: map(star.pos.x, -100, 100, 0, 1),
-      A: map(star.pos.y, -100, 100, 0, 1),
-      D: map(star.pos.z, -100, 100, 0, 1)
-    };
-  });
-  
-  prepareVisual(true);
-  resetVisualView();
-  
-  rotationX = 0;
-  rotationY = 0;
-  targetRotationX = 0;
-  targetRotationY = 0;
-  zoomLevel = 1;
-  targetZoomLevel = 1;
-  
-　state = "visual";
-  updateButtonVisibility();
-  redraw();
 }
 
 /* =========================================================
