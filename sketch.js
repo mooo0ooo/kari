@@ -2277,10 +2277,23 @@ function showDiaryDetail(index) {
   
   // 選択された日記のデータをセット
   let diary = allConstellations[index];
-  points = diary.stars.map(star => ({
-    pos: createVector(star.x, star.y, star.z || 0),
-    emo: star.emo || {P: 0, A: 0, D: 0, ja: '感情', en: 'emotion'}
-  }));
+  points = [];
+  
+  // 星データの変換
+  if (Array.isArray(diary.stars)) {
+    points = diary.stars.map(star => {
+      // データ構造を確認して適切にアクセス
+      const pos = star.pos || {x: 0, y: 0, z: 0};
+      return {
+        pos: createVector(
+          typeof pos.x === 'number' ? pos.x : 0,
+          typeof pos.y === 'number' ? pos.y : 0,
+          typeof pos.z === 'number' ? pos.z : 0
+        ),
+        emo: star.emo || {P: 0, A: 0, D: 0, ja: '感情', en: 'emotion'}
+      };
+    });
+  }
   
   // ビジュアル表示モードに切り替え
   state = "visual";
@@ -2291,9 +2304,14 @@ function showDiaryDetail(index) {
   resetView();
   
   // 選択された日付を表示
-  selectedLabel = `記録日: ${new Date(diary.created).toLocaleString()}`;
+  if (diary.created) {
+    selectedLabel = `記録日: ${new Date(diary.created).toLocaleString()}`;
+  } else {
+    selectedLabel = "記録日: 不明";
+  }
+  
+  redraw();
 }
-
 /* =========================================================
    最大スクロール量を計算
    ========================================================= */
