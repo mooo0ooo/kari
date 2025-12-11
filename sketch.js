@@ -1971,10 +1971,11 @@ function generate2DThumbnail(cons, size) {
   for (let s of stars) {
     pg.fill(255, 255, 200, 220);
     pg.noStroke();
-	
-    let starSize = 8 * (size / 200);
-
-	pg.ellipse(s.x, s.y, starSize);
+	  
+	for (let s of stars) {
+		let starSize = 8 * (size / 200);
+	    pg.ellipse(s.x, s.y, 8);
+	}
 
 	cons.thumbnail = pg;
     cons.lastAccessed = Date.now();
