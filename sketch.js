@@ -2263,22 +2263,29 @@ function calculateMaxScroll() {
    galleryメモリ管理
    ========================================================= */
 function cleanupThumbnails() {
-    const MAX_CACHED = 20;
-    if (allConstellations.length <= MAX_CACHED) return;
-    
-    // 最後にアクセスされた日時でソート
-    const sorted = [...allConstellations].sort((a, b) => {
-        return (b.lastAccessed || 0) - (a.lastAccessed || 0);
-    });
-    
-    // 古いものから削除
-    for (let i = MAX_CACHED; i < sorted.length; i++) {
-        const c = sorted[i];
-        if (c.thumbnail) {
-            c.thumbnail.remove();
-            c.thumbnail = null;
+  const MAX_CACHED = 20;
+  if (allConstellations.length <= MAX_CACHED) return;
+  
+  // 最後にアクセスされた日時でソート
+  const sorted = [...allConstellations].sort((a, b) => {
+    return (b.lastAccessed || 0) - (a.lastAccessed || 0);
+  });
+  
+  // 古いものから削除
+  for (let i = MAX_CACHED; i < sorted.length; i++) {
+    const c = sorted[i];
+    if (c.thumbnail) {
+      try {
+        if (c.thumbnail.canvas) {
+          c.thumbnail.canvas = null;
         }
+        c.thumbnail.remove();
+        c.thumbnail = null;
+      } catch (e) {
+        console.warn("Failed to clean up thumbnail:", e);
+      }
     }
+  }
 }
 
 /* =========================================================
