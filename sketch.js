@@ -689,10 +689,6 @@ function draw() {
   // 背景をクリア
   background(5, 5, 20);
 
-  if (state === "visual" && showEmotionInfo) {
-	  drawEmotionInfo();
-  }
-
   // 状態に応じた描画
   if (state === "select") {
     camera();
@@ -854,6 +850,10 @@ function draw() {
 	    textSize(20);
 	    text(selectedLabel, width/2, height-40);
 	    pop();
+	  }
+
+	 if (state === "visual" && showEmotionInfo) {
+	    drawEmotionInfo();
 	  }
 
 	  if (touchFeedback && touchFeedback.alpha > 0) {
