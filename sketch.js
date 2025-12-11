@@ -860,10 +860,10 @@ function drawPADButtons(){
   scale(padLayout.scl); 
 
   // 案内文を追加
-  textSize(20);
+  textSize(40);
   textAlign(CENTER, CENTER);
   fill(255);
-  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
+  text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 300);
 
   // PADのスタイル
   textSize(35);
