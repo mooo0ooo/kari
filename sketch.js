@@ -821,7 +821,9 @@ function drawPADButtons(){
 
   push();
   scale(padLayout.scl); 
+
   // P 行
+  text("P", cx - 150, cy - 120);
   for(let i = 0; i < 7; i++) {
     let col = lerpColor(color(255, 150, 0), color(0, 100, 255), i/6);
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
@@ -832,7 +834,9 @@ function drawPADButtons(){
                selectedP === i,
                "rect");
   }
+	
   // A 行
+  text("A", cx - 150, cy);
   for(let i = 0; i < 7; i++) {
     let col = lerpColor(color(255, 220, 0), color(0, 0, 100), i/6);
     let sides = int(map(i, 0, 6, 3, 30));
@@ -845,7 +849,9 @@ function drawPADButtons(){
                "polygon", 
                sides);
   }
+	
   // D 行
+  text("D", cx - 150, cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(200);
     let sides = int(map(i, 0, 6, 4, 30));
