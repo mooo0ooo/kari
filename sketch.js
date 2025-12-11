@@ -742,15 +742,33 @@ function draw() {
 	      translate(0, 0, 200);
 	      scale(1.5);
 		  push();
-		  translate(0, 150, 0);
+		  translate(0, 250, 0);
 		  textAlign(CENTER, CENTER);
 		  textSize(16);
 		  fill(200, 220, 255, 200);
-		  if (constellation.stars && constellation.stars[0] && constellation.stars[0].emo) {
-		      const emo = constellation.stars[0].emo;
-		      text(`選択された感情: ${emo.ja} (${emo.en})`, 0, 0);
-		      text("今日の思い出を写真に残してみませんか？", 0, 25);
-		   }
+		  if (constellation.stars && constellation.stars.length > 0) {
+		  let yOffset = 0;
+		  text("選択された感情:", 0, yOffset);
+		  yOffset += 25;
+		  
+		  // 重複を避ける
+		  const uniqueEmotions = new Set();
+		  
+		  // 重複を除いて感情を収集
+		  for (const star of constellation.stars) {
+		    if (star.emo) {
+		      const emoKey = `${star.emo.ja}-${star.emo.en}`;
+		      if (!uniqueEmotions.has(emoKey)) {
+		        uniqueEmotions.add(emoKey);
+		        text(`・${star.emo.ja} (${star.emo.en})`, 0, yOffset);
+		        yOffset += 25;
+		      }
+		    }
+		  }
+		  
+		  yOffset += 10;
+		  text("今日の思い出を写真に残してみませんか？", 0, yOffset);
+		}
 		   pop();
 	    } else {
 	      let col = i % 5;
