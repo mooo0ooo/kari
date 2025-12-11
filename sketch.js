@@ -581,13 +581,12 @@ function prepareVisual(changeState = true) {
   console.log("prepareVisualの内容:", prepareVisual.toString().substring(0, 100) + "...");
   
   try {
-    try {
-    points = [];
-    if (!Array.isArray(padValues)) {
-      console.error("padValues is not an array");
-      return false;
-    }
     if (!fromGallery) {
+      points = [];
+      if (!Array.isArray(padValues)) {
+        console.error("padValues is not an array");
+        return false;
+      }
       for (let v of padValues) {
         if (!v || typeof v !== 'object') {
           console.warn("Invalid PAD value:", v);
@@ -610,7 +609,6 @@ function prepareVisual(changeState = true) {
         });
       }
     }
-    
     // 背景の星を生成
     stars = [];
     for (let i = 0; i < 400; i++) {
@@ -621,13 +619,11 @@ function prepareVisual(changeState = true) {
         twinkle: random(1000)
       });
     }
-
     if (changeState) {
       state = "visual";
       updateButtonVisibility();
       visualStartTime = millis();
       
-      // 3Dビューのリセット
       rotationX = 0;
       rotationY = 0;
       targetRotationX = 0;
@@ -2307,6 +2303,10 @@ function showDiaryDetail(index) {
   state = "visual";
   updateButtonVisibility();
   layoutDOMButtons();
+
+  
+  keepBackground = true;
+  prepareVisual(true, true);  
   
   // 3Dビューのリセット
   resetView();
@@ -2317,20 +2317,8 @@ function showDiaryDetail(index) {
   } else {
     selectedLabel = "記録日: 不明";
   }
-
-  keepBackground = true;
-  prepareVisual(true, true);  
-  
+	
   redraw();
-}
-
-function resetVisualView() {
-  if (!fromGallery) {
-    prepareVisual();
-  } else {
-    keepBackground = true;
-    fromGallery = false;
-  }
 }
 /* =========================================================
    最大スクロール量を計算
