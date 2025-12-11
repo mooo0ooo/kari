@@ -85,11 +85,6 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
-let galleryState = "year";
-let selectedYear = null;
-let selectedMonth = null;
-let availableYears = [];
-
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -260,7 +255,7 @@ function setup() {
 　okButton.mousePressed(() => {
 	  console.log("OKボタンが押されました!");
 	  
-	  // padValuesの状態を確認
+	  // デバッグ用: padValuesの状態を確認
 	  console.log("padValuesの状態:", {
 	    isArray: Array.isArray(padValues),
 	    length: padValues?.length,
@@ -274,7 +269,6 @@ function setup() {
 
 	  state = "visual";
 	  updateButtonVisibility();
-	  resetVisualView();
 	  console.log("状態をvisualに設定しました。現在のstate:", state);
 	  
 	  // ビジュアルを準備
@@ -283,8 +277,7 @@ function setup() {
 	    
 	    // 日付と星データの処理
 	    let now = new Date();
-	    let displayTimestamp = now.toLocaleString();
-    	let isoTimestamp = now.toISOString();
+	    let timestamp = now.toLocaleString();
 	    let serialStars = points.map(s => {
 	      if (!s || !s.pos) return null;
 	      return { 
@@ -300,8 +293,7 @@ function setup() {
 	    if (serialStars.length > 0) {
 	      let newConstellation = {
 	        stars: serialStars, 
-	        createdISO: isoTimestamp,
-        	createdDisplay: displayTimestamp
+	        created: timestamp
 	      };
 	      
 	      // データを保存
@@ -332,29 +324,33 @@ function setup() {
 	  }
 	});
 
-	  galleryButton.mousePressed(() => {
+  galleryButton.mousePressed(() => {
 	  if (state === "gallery") {
 	    state = "select";
-	  } else {
-	    state = "gallery";
 	    galleryStars = [];
 	    targetScrollY = 0;
 	    scrollY = 0;
+	    selectedLabel = null;
+	  } else {
+	    state = "gallery";
+	    galleryStars = [];
+		targetScrollY = 0;
+    	scrollY = 0;
+		// スクロールボタンを再作成
 	    if (upButton) upButton.remove();
 	    if (downButton) downButton.remove();
-	
 	    createScrollButtons();
-	
-	    // ギャラリー用星リスト再生成
-	    galleryStars = Array.from({length: 400}, () => ({
-	      x: random(-2000, 2000),
-	      y: random(-2000, 2000),
-	      z: random(-2000, 2000),
-	      twinkle: random(1000),
-	      baseSize: random(1, 4)
-	    }));
-	
-	    // サムネイル再生成
+	    // ギャラリー用の星を生成
+	    for (let i = 0; i < 400; i++) {
+	      galleryStars.push({
+	        x: random(-2000, 2000),
+	        y: random(-2000, 2000),
+	        z: random(-2000, 2000),
+	        twinkle: random(1000),
+	        baseSize: random(1, 4)
+	      });
+	    }
+	    // サムネイルの再生成
 	    allConstellations.forEach(c => {
 	      if (c.thumbnail) {
 	        c.thumbnail.remove();
@@ -362,13 +358,10 @@ function setup() {
 	      }
 	    });
 	  }
-	
 	  updateButtonVisibility();
 	  layoutDOMButtons();
-	
-	  loop();
 	  redraw();
-　});
+  });
 
   resetViewButton.mousePressed(function() {
       resetView();
@@ -380,9 +373,6 @@ function setup() {
   updateButtonVisibility();
   layoutDOMButtons();
   computeBtnSize();
-
-　computeAvailableYears();
-　galleryState = "year";
 
   // タッチデバイス用の設定
   if ('ontouchstart' in window) {
@@ -647,30 +637,31 @@ function draw() {
     }
   }
   else if (state === "gallery") {
-    background(5, 5, 20);
-
-    if (galleryState === "year") {
-        drawYearTabs(availableYears);
-    }
-    else if (galleryState === "month") {
-        drawMonthConstellationMenu();
-    }
-    else if (galleryState === "list") {
-        scrollY = lerp(scrollY, targetScrollY, 0.2);
-        drawGalleryListView();
-    }
+    scrollY = lerp(scrollY, targetScrollY, 0.2);
+    drawGallery2D();
   }
 　else if (state === "visual") {
 	  camera();
+      orbitControl();
 
-	  rotationX = lerp(rotationX, targetRotationX, 0.18);
-  	　rotationY = lerp(rotationY, targetRotationY, 0.18);
-
-	 rotateX(rotationX);
-  	 rotateY(rotationY);
-
-	 zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
-  	 scale(zoomLevel);
+	  if (touches.length > 0 && isTouching) {
+	    let touch = touches[0];
+	    let dx = touch.x - touchStartPos.x;
+	    let dy = touch.y - touchStartPos.y;
+	    
+	    targetRotationY += dx * 0.01;
+	    targetRotationX += dy * 0.01;
+	    
+	    touchStartPos = { x: touch.x, y: touch.y };
+	  }
+	  
+	  // 3D操作
+	  rotationX = lerp(rotationX, targetRotationX, 0.1);
+	  rotationY = lerp(rotationY, targetRotationY, 0.1);
+	  rotateX(rotationX);
+ 	  rotateY(rotationY);
+	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.1);
+	  scale(zoomLevel);
 		  
 	  // ★ 星空の描画
 	  push(); 
@@ -802,6 +793,21 @@ function draw() {
 	    textSize(20);
 	    text(selectedLabel, width/2, height-40);
 	    pop();
+	  }
+
+	  if (state === "visual" && !isDragging) {
+	    // 慣性を適用
+	    if (abs(velocityX) > 0.001 || abs(velocityY) > 0.001) {
+	      targetRotationY += velocityX * 2;
+	      targetRotationX += velocityY * 2;
+	      
+	      // 減衰
+	      velocityX *= 0.95;
+	      velocityY *= 0.95;
+	    } else {
+	      velocityX = 0;
+	      velocityY = 0;
+	    }
 	  }
 	} 
 	
@@ -992,20 +998,8 @@ function touchStarted(event) {
     }
   }
 
-  if (state === "gallery") {
-
-    if (galleryState === "year") {
-        touchYearTabs(availableYears, mouseX, mouseY);
-    }
-    else if (galleryState === "month") {
-        touchMonthMenu(mouseX, mouseY);
-    }
-    else if (galleryState === "list") {
-        handleThumbnailTouch(mouseX, mouseY);
-    }
-
-    return false;
-}
+  // ギャラリーのタッチ処理を無効化
+  if (state === "gallery") return false;
 
   // 2本指タッチ（ピンチ操作）の初期化
   if (event.touches.length === 2) {
@@ -1022,18 +1016,6 @@ function touchStarted(event) {
 
   if (state === "visual") {
     isDragging = true;
-
-	if (event && event.touches && event.touches[0]) {
-	    lastTouchX = event.touches[0].clientX;
-	    lastTouchY = event.touches[0].clientY;
-	    lastTouchTime = millis();
-	  } else {
-	    if (touches && touches.length > 0) {
-	      lastTouchX = touches[0].x;
-	      lastTouchY = touches[0].y;
-	      lastTouchTime = millis();
-	    }
-	}
   }
 
   return true;
@@ -1114,36 +1096,26 @@ function touchMoved(event) {
   }
   
   // ビジュアルモードでの回転操作
-  if (state === "visual") {
-	  if (!event.touches || event.touches.length === 0) return false;
-	  const touch = event.touches[0];
-	
-	  const currentX = touch.clientX;
-	  const currentY = touch.clientY;
-
-	  if (lastTouchX === undefined || lastTouchY === undefined) {
-	    lastTouchX = currentX;
-	    lastTouchY = currentY;
-	    lastTouchTime = millis();
-	    return false;
-	  }
-	
-	  const deltaX = currentX - lastTouchX;
-	  const deltaY = currentY - lastTouchY;
-	
-	  // 回転速度（スマホ向けに小さめ）
-	  const ROTATE_SPEED = 0.005;
-	
-	  // 指の動きと同じ方向に回転させる
-	  targetRotationY += deltaX * ROTATE_SPEED;
-	  targetRotationX -= deltaY * ROTATE_SPEED;
-	
-	  // 更新
-	  lastTouchX = currentX;
-	  lastTouchY = currentY;
-	  lastTouchTime = millis();
-	
-	  return false;
+  if (state === "visual" && isDragging) {
+    const currentTime = millis();
+    const deltaX = currentX - lastTouchX;
+    const deltaY = currentY - lastTouchY;
+    
+    // 速度計算
+    if (lastTouchTime > 0) {
+      const deltaTime = currentTime - lastTouchTime;
+      if (deltaTime > 0) {
+        velocityX = deltaX / deltaTime * 0.1;
+        velocityY = deltaY / deltaTime * 0.1;
+      }
+    }
+    
+    targetRotationY += deltaX * 0.01;
+    targetRotationX += deltaY * 0.01;
+    
+    lastTouchX = currentX;
+    lastTouchY = currentY;
+    lastTouchTime = currentTime;
   }
   
   return false;
@@ -1168,6 +1140,7 @@ function touchEnded(event) {
     // ボタンタップが処理された場合はここで終了
     if (touchHandled) {
       isTouching = false;
+      isDragging = false;
       return false;
     }
   }
@@ -1205,18 +1178,14 @@ function touchEnded(event) {
         const touch = event.changedTouches[0];
         const dx = touch.clientX - lastTouchX;
         const dy = touch.clientY - lastTouchY;
-		velocityX = 0;
-  		velocityY = 0;
-		isDragging = false;
-
-		lastTouchX = undefined;
-		lastTouchY = undefined;
-		lastTouchTime = 0;
+        velocityX = dx / deltaTime * 0.5;
+        velocityY = dy / deltaTime * 0.5;
       }
     }
   }
   
   isTouching = false;
+  isDragging = false;
   
   return false;
 }
@@ -1374,9 +1343,6 @@ function resetView() {
   velocityY = 0;
   
   // タッチ状態をリセット
-  lastTouchX = undefined;
-  lastTouchY = undefined;
-  lastTouchTime = 0;
   isTouching = false;
   isDragging = false;
   
@@ -1981,162 +1947,9 @@ function drawAxes() {
 }
 	
 /* =========================================================
-   ギャラリーページ
+   drawGallery
    ========================================================= */
-// 年
-function drawYearTabs(years) {
-  background(5, 5, 20);
-  textAlign(CENTER, CENTER);
-  textSize(22);
-  noStroke();
-
-  if (!years || years.length === 0) {
-    fill(180);
-    textSize(18);
-    text("No entries", width/2, 40);
-    return;
-  }
-
-  let tabW = width / years.length;
-  let tabH = 60;
-
-  for (let i = 0; i < years.length; i++) {
-    let y = years[i];
-
-    // タブ背景
-    fill(y === selectedYear ? 80 : 40);
-    rect(i * tabW, 0, tabW, tabH);
-
-    // 年文字
-    fill(255);
-    text(y, i * tabW + tabW/2, tabH/2);
-  }
-}
-
-function touchYearTabs(years, x, y) {
-  let tabH = 60;
-  if (y > tabH) return;
-
-  let tabW = width / years.length;
-  let index = floor(x / tabW);
-  selectedYear = years[index];
-  galleryState = "month";
-}
-
-function computeAvailableYears() {
-  const years = {};
-  for (let c of allConstellations) {
-    if (!c) continue;
-    let d = null;
-    if (c.createdISO) {
-      d = new Date(c.createdISO);
-    } else if (c.createdDisplay) {
-      d = new Date(c.createdDisplay);
-    } else if (c.created) {
-      d = new Date(c.created);
-    }
-
-    if (!d || isNaN(d.getTime())) continue;
-    const y = d.getFullYear();
-    years[y] = true;
-  }
-
-  availableYears = Object.keys(years).map(y => int(y))
-                   .sort((a, b) => b - a);
-  // 初期選択年を設定
-  if (availableYears.length > 0) {
-    selectedYear = availableYears[0];
-  } else {
-    selectedYear = null;
-  }
-}
-
-// 月
-function drawMonthConstellationMenu() {
-  background(5, 5, 20);
-
-  let monthNames = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-
-  let cellW = width / 3;
-  let cellH = height / 4;
-
-  textAlign(CENTER, CENTER);
-  textSize(20);
-  noStroke();
-
-  for (let m = 0; m < 12; m++) {
-    let cx = (m % 3) * cellW + cellW/2;
-    let cy = floor(m / 3) * cellH + cellH/2;
-
-    // ★ 星座を描く
-    drawConstellationSymbol(cx, cy, cellW * 0.3);
-
-    // 英語月名
-    fill(255);
-    text(monthNames[m], cx, cy + cellH * 0.25);
-  }
-}
-
-function drawConstellationSymbol(cx, cy, r) {
-  stroke(200, 200, 255);
-  strokeWeight(2);
-  noFill();
-
-  // 複数星を描いてつなげる
-  let pts = [];
-  for (let i = 0; i < 6; i++) {
-    let a = random(TWO_PI);
-    let rr = r * random(0.3, 1);
-    pts.push([cx + cos(a) * rr, cy + sin(a) * rr]);
-  }
-
-  // 星
-  for (let p of pts) {
-    fill(255);
-    noStroke();
-    circle(p[0], p[1], 4);
-  }
-
-  // 線で結ぶ
-  stroke(180, 180, 255, 150);
-  noFill();
-  beginShape();
-  for (let p of pts) vertex(p[0], p[1]);
-  endShape(CLOSE);
-}
-
-function touchMonthMenu(x, y) {
-  let cellW = width / 3;
-  let cellH = height / 4;
-
-  let col = floor(x / cellW);
-  let row = floor(y / cellH);
-  let index = row * 3 + col;
-
-  if (index >= 0 && index < 12) {
-    selectedMonth = index; // 0〜11
-    galleryState = "list";
-  }
-}
-
-// 一覧表示
-function drawGalleryListView() {
-  console.log("ギャラリーリストビューを描画中...");
-  console.log("星座データ数:", allConstellations.length);
-	
-　let filtered = allConstellations.filter(c => {
-    let d = new Date(c.created);
-    return (
-      d.getFullYear() === selectedYear &&
-      d.getMonth() === selectedMonth
-    );
-  });
-
-  console.log("フィルタリング後:", filtered.length, "件");
-	
+function drawGallery2D() {
   resetMatrix();
   camera();
   background(5, 5, 20); 
@@ -2178,13 +1991,10 @@ function drawGalleryListView() {
   let grouped = {};
   for (let m = 0; m < 12; m++) grouped[m] = [];
   for (let c of allConstellations) {
-    if (!c) continue;
-    let d = null;
-    if (c.createdISO) d = new Date(c.createdISO);
-    else if (c.createdDisplay) d = new Date(c.createdDisplay);
-    else if (c.created) d = new Date(c.created);
-    if (!d || isNaN(d.getTime())) continue;
-    let monthIndex = d.getMonth();
+    if (!c.created) continue;
+    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    let monthIndex = int(m[2]) - 1;
     grouped[monthIndex].push(c);
   }
 
@@ -2224,28 +2034,12 @@ function drawGalleryListView() {
 	  rect(x, ty, thumbSize, thumbSize, 8);
 		
 	  if (!list[i].thumbnail) {
-	  try {
-	    list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
-	  } catch (e) {
-	    console.error("サムネイル生成エラー:", e);
-	    fill(50);
-	    rect(x, ty, thumbSize, thumbSize, 4);
-	    fill(150);
-	    text("エラー", x + thumbSize/2, ty + thumbSize/2);
-	    continue;
+		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
 	  }
-	}
-
-	// サムネイルを描画
-	if (list[i].thumbnail) {
-	  try {
-	    image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
-	  } catch (e) {
-	    console.error("サムネイル描画エラー:", e);
-	    fill(255, 0, 0, 100);
-	    rect(x, ty, thumbSize, thumbSize);
+		
+	  if (list[i].thumbnail) {
+		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
 	  }
-	}
       
       // 日付を表示
       let date = new Date(list[i].created);
@@ -2271,23 +2065,23 @@ function drawGalleryListView() {
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
 
+/* =========================================================
+   generate2DThumbnail
+   ========================================================= */
 function generate2DThumbnail(cons, size) {	
   if (cons.thumbnail) {
     try {
       if (cons.thumbnail.canvas) {
-        cons.thumbnail.canvas.width = 0;
-        cons.canvas.height = 0;
+        cons.thumbnail.canvas = null;
       }
-      cons.thumbnail.remove();
       cons.thumbnail = null;
     } catch (e) {
-      console.warn("サムネイルのクリーンアップに失敗しました:", e);
+      console.warn("Failed to clean up thumbnail:", e);
     }
   }
     
     // 新しいサムネイルを生成
-  let pg = createGraphics(size, size, P2D);
-  pg.pixelDensity(1);
+    let pg = createGraphics(size, size);
 
   // 枠の描画
   pg.stroke(150, 80);  
@@ -2370,21 +2164,6 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
-}
-
-function cleanupGallery() {
-  if (state === "gallery" && galleryState === "list") {
-    allConstellations.forEach(c => {
-      if (c.thumbnail) {
-        try {
-          c.thumbnail.remove();
-          c.thumbnail = null;
-        } catch (e) {
-          console.warn("サムネイルのクリーンアップエラー:", e);
-        }
-      }
-    });
-  }
 }
 
 /* =========================================================
