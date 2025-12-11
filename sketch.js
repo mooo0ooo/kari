@@ -21,6 +21,41 @@ let emotions = [
   {en: "Dominant", ja: "支配的", P: 0.1, A: 0.2, D: 0.8}
 ];
 
+// PADボタンの色
+const colorPatterns = [
+  // パターン1: 暖色系
+  {
+    P: { start: [255, 229, 0],   end: [255, 129, 0] },   // 黄色
+    A: { start: [0, 150, 255],   end: [0, 50, 200] },    // 青
+    D: [180, 180, 180]  // グレー
+  },
+  // パターン2: パステル調
+  {
+    P: { start: [255, 180, 180], end: [255, 120, 120] }, // ピンク
+    A: { start: [180, 220, 255], end: [120, 180, 255] }, // 水色
+    D: [200, 200, 200]  // ライトグレー
+  },
+  // パターン3: ビビッド
+  {
+    P: { start: [255, 100, 100], end: [255, 50, 50] },   // 赤
+    A: { start: [100, 255, 100], end: [50, 200, 50] },   // 緑
+    D: [150, 150, 150]  // ダークグレー
+  },
+  // パターン4: パープル系
+  {
+    P: { start: [255, 150, 200], end: [220, 100, 180] }, // ピンクパープル
+    A: { start: [200, 150, 255], end: [180, 100, 220] }, // パープルブルー
+    D: [170, 170, 170]  // ミディアムグレー
+  },
+  // パターン5: ゴールド系
+  {
+    P: { start: [255, 220, 100], end: [255, 180, 50] },  // ゴールド
+    A: { start: [100, 200, 255], end: [50, 150, 220] },  // スカイブルー
+    D: [192, 192, 192]  // シルバーグレー
+  }
+];
+let currentColorPattern = 0;
+
 let myFont;
 
 let centerX, centerY;
@@ -522,10 +557,13 @@ function addPAD() {
     
     padValues.push({P: p, A: a, D: d});
     console.log("Added PAD values:", p, a, d);
-
-	selectedP = null;
-	selectedA = null;
-	selectedD = null;
+    currentColorPattern = (currentColorPattern + 1) % colorPatterns.length;
+    
+    selectedP = null;
+    selectedA = null;
+    selectedD = null;
+    
+    redraw();
   }
 }
 /* =========================================================
@@ -832,14 +870,15 @@ function drawPADButtons(){
   textSize(24);
   textAlign(LEFT, CENTER);
 
+　const colors = colorPatterns[currentColorPattern];
+
   // P 行
   text("P", cx - 100, cy - 120);
   for(let i = 0; i < 7; i++) {
-    let blackAmount = map(i, 0, 6, 0, 0.7);
-    let baseColor = color(255, 237, 179);
-    let r = lerp(red(baseColor), 0, blackAmount);
-    let g = lerp(green(baseColor), 0, blackAmount);
-    let b = lerp(blue(baseColor), 0, blackAmount);
+    let amount = i / 6;
+    let r = lerp(colors.P.start[0], colors.P.end[0], amount);
+    let g = lerp(colors.P.start[1], colors.P.end[1], amount);
+    let b = lerp(colors.P.start[2], colors.P.end[2], amount);
     let col = color(r, g, b);
     
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
@@ -854,11 +893,10 @@ function drawPADButtons(){
   // A 行
   text("A", cx - 100, cy);
   for(let i = 0; i < 7; i++) {
-    let blackAmount = map(i, 0, 6, 0, 0.7);
-    let baseColor = color(0, 100, 255);
-    let r = lerp(red(baseColor), 0, blackAmount);
-    let g = lerp(green(baseColor), 0, blackAmount);
-    let b = lerp(blue(baseColor), 0, blackAmount);
+    let amount = i / 6;
+    let r = lerp(colors.A.start[0], colors.A.end[0], amount);
+    let g = lerp(colors.A.start[1], colors.A.end[1], amount);
+    let b = lerp(colors.A.start[2], colors.A.end[2], amount);
     let col = color(r, g, b);
     
     let sides = i + 3;
@@ -875,7 +913,7 @@ function drawPADButtons(){
   // D 行
   text("D", cx - 100, cy + 120);
   for(let i = 0; i < 7; i++) {
-    let col = color(200);
+    let col = color(colors.D[0], colors.D[1], colors.D[2]);
     let sides = i + 3;
     drawButton(cx + (i-3) * (padLayout.btnSize + padLayout.spacing), 
                cy + 120, 
@@ -886,6 +924,7 @@ function drawPADButtons(){
                "polygon", 
                sides);
   }
+  
   pop();
 }
 
