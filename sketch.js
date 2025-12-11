@@ -872,7 +872,7 @@ function drawPADButtons(){
 　const colors = colorPatterns[currentColorPattern];
 
   // P 行
-  text("P", cx, cy - 120);
+  text("P", cx - (padLayout.btnSize * 2 + padLayout.spacing), cy - 120);
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
     let r = lerp(colors.P.start[0], colors.P.end[0], amount);
@@ -890,7 +890,7 @@ function drawPADButtons(){
   }
 	
   // A 行
-  text("A", cx, cy);
+  text("A", cx - (padLayout.btnSize * 2 + padLayout.spacing), cy);
   for(let i = 0; i < 7; i++) {
     let amount = i / 6;
     let r = lerp(colors.A.start[0], colors.A.end[0], amount);
@@ -910,7 +910,7 @@ function drawPADButtons(){
   }
 	
   // D 行
-  text("D", cx, cy + 120);
+  text("D", cx - (padLayout.btnSize * 2 + padLayout.spacing), cy + 120);
   for(let i = 0; i < 7; i++) {
     let col = color(colors.D[0], colors.D[1], colors.D[2]);
     let sides = i + 3;
