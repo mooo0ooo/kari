@@ -1916,54 +1916,34 @@ function generate2DThumbnail(cons, size) {
 
   // 2Dで描画
   let pg = createGraphics(size, size);
-
   pg.background(10, 10, 30);
 
   // 余白
   const padding = size * 0.15;
   const contentSize = size - padding * 2;
   
-  // 星の位置を正規化
+  // 星の位置を計算
   let stars = [];
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  // 座標の範囲を計算
-  for (let s of cons.stars) {
-    if (!s || !s.pos) continue;
-    minX = min(minX, s.pos.x);
-    maxX = max(maxX, s.pos.x);
-    minY = min(minY, s.pos.y);
-    maxY = max(maxY, s.pos.y);
-  }
-  // すべての星が同じ位置にある場合の処理
-  if (minX === maxX) {
-    minX -= 1;
-    maxX += 1;
-  }
-  if (minY === maxY) {
-    minY -= 1;
-    maxY += 1;
-  }
-  
-  const rangeX = maxX - minX;
-  const rangeY = maxY - minY;
-  const maxRange = max(rangeX, rangeY) || 1;
-	
-  // 星の位置を正規化して保存
   for (let s of cons.stars) {
     if (!s || !s.pos) continue;
     
-    // 正規化座標を計算 (0.0 〜 1.0)
-    let nx = (s.pos.x - minX) / rangeX;
-    let ny = (s.pos.y - minY) / rangeY;
+    // visualモードと同じ座標系を使用
+    // x, y座標をそのまま使用し、z座標は無視
+    let x = s.pos.x;
+    let y = s.pos.y;
     
-    // 余白を考慮してキャンバス上の座標に変換
+    // 座標を正規化（-1.0 〜 1.0 の範囲を想定）
+    let nx = (x + 1) * 0.5;  // 0.0 〜 1.0 に変換
+    let ny = (y + 1) * 0.5;  // 0.0 〜 1.0 に変換
+    
+    // キャンバス上の座標に変換
     stars.push({
       x: padding + nx * contentSize,
       y: padding + ny * contentSize,
       emo: s.emo || { P: 0, A: 0, D: 0 }
     });
   }
-	
+
   // 星同士を線でつなぐ
   pg.blendMode(ADD);
   for (let i = 0; i < stars.length; i++) {
@@ -1989,7 +1969,7 @@ function generate2DThumbnail(cons, size) {
   for (let s of stars) {
     pg.ellipse(s.x, s.y, starSize);
   }
-	
+
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
