@@ -1935,6 +1935,7 @@ function drawGallery2D() {
 	    state = "visual2";
 	  }
     }
+   }
     
     // 次の月の開始位置を計算
     y += monthContentHeight;;
