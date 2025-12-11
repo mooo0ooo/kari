@@ -866,7 +866,7 @@ function drawPADButtons(){
   text("今の気分に合う色や形をP,A,D１つずつ選んでください", cx, cy - 250);
 
   // PADのスタイル
-  textSize(24);
+  textSize(35);
   textAlign(LEFT, CENTER);
 
 　const colors = colorPatterns[currentColorPattern];
