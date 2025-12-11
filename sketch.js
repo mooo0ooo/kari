@@ -1945,8 +1945,6 @@ function drawGallery2D() {
 
   pop();
 
-  pop();
-
   // スクロール範囲を制限
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
