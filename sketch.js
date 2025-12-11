@@ -886,6 +886,7 @@ function drawPADButtons(){
 	if (i === 3) {
       fill(255);
       text("P", x, y);
+	  fill(255, 0);
     }
   }
 	
@@ -910,6 +911,7 @@ function drawPADButtons(){
 	if (i === 3) {
       fill(255);
       text("A", x, y);
+	  fill(255, 0);
     }
   }
 	
@@ -929,6 +931,7 @@ function drawPADButtons(){
 	if (i === 3) {
       fill(255);
       text("D", x, y);
+	  fill(255, 0);
     }
   }
   
