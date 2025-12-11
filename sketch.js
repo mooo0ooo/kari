@@ -923,30 +923,29 @@ function drawPADButtons(){
 
 function drawPADLabels() {
   push();
+　scale(padLayout.scl);
   textAlign(CENTER, CENTER);
   textSize(btnSize * 0.4);
   fill(255);
   
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const buttonSize = btnSize * 0.8;
+  const cx = padLayout.cx;
+  const cy = padLayout.cy;
+  const buttonInterval = padLayout.btnSize + padLayout.spacing;
+
+　const centerBtnX = cx + (3 - 3) * buttonInterval;
   
   // P
-  const pX = centerX;
-  const pY = centerY - 120 * padLayout.scl;
-  
-  // A
-  const aX = centerX;
-  const aY = centerY;
-  
-  // D
-  const dX = centerX;
-  const dY = centerY + 120 * padLayout.scl;
+  const pY = cy - 120;
+  text("P", centerBtnX, pY);
 
-  text("P", pX, pY);
-  text("A", aX, aY);
-  text("D", dX, dY);
-  
+  // A
+  const aY = cy;
+  text("A", centerBtnX, aY);
+
+  // D
+  const dY = cy + 120;
+  text("D", centerBtnX, dY);
+
   pop();
 }
 
