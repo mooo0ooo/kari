@@ -651,7 +651,7 @@ function draw() {
     drawSpaceBackground();
   } else if (state === "gallery") {
     background(5, 5, 20);
-    drawGalleryBackground();
+    drawGallery2D();
   } else {
     background(5, 5, 20);
   }
