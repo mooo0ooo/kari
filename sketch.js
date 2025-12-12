@@ -131,6 +131,8 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
+let currentConstellationData = null;
+
 /* =========================================================
    preload
    ========================================================= */
@@ -1728,7 +1730,68 @@ function checkPadButtonTouch(x, y) {
   return false;
 }
 
-/* =========================================================
+function checkThumbnailClicks(mx, my, rowStartX, colCount, thumbSize) {
+  const itemsPerRow = colCount;
+  let index = 0;
+  
+  for (let i = 0; i < allConstellations.length; i++) {
+    const c = allConstellations[i];
+    const row = Math.floor(index / itemsPerRow);
+    const col = index % itemsPerRow;
+    const x = rowStartX + col * (thumbSize + gutter);
+    const y = topOffset + 35 + row * (thumbSize + gutter + 25);
+    
+    if (mx >= x && mx <= x + thumbSize && 
+        my >= y && my <= y + thumbSize) {
+      
+      // 選択された星座データを保存
+      currentConstellationData = c;
+      
+      // ビジュアル表示用にデータを準備
+      points = c.stars.map(s => ({
+        pos: createVector(s.pos.x, s.pos.y, s.pos.z || 0),
+        emo: s.emo
+      }));
+      
+      // 3Dビューに切り替え
+      state = "visual";
+      updateButtonVisibility();
+      
+      // カメラをリセットしてアニメーション開始
+      resetVisualView();
+      
+      // アニメーション用のターゲットを設定
+      targetRotationX = 0;
+      targetRotationY = 0;
+      zoomLevel = 1.5; // 少しズームイン
+      targetZoomLevel = 1.5;
+      
+      // 星座の中心を計算
+      let centerX = 0, centerY = 0, centerZ = 0;
+      for (let s of c.stars) {
+        if (s && s.pos) {
+          centerX += s.pos.x || 0;
+          centerY += s.pos.y || 0;
+          centerZ += s.pos.z || 0;
+        }
+      }
+      if (c.stars.length > 0) {
+        centerX /= c.stars.length;
+        centerY /= c.stars.length;
+        centerZ /= c.stars.length;
+      }
+      
+      // カメラの位置を設定（星座の中心を向くように）
+      cameraX = -centerX;
+      cameraY = -centerY;
+      cameraZ = -centerZ + 300; // 適切な距離
+      
+      return true;
+    }
+    index++;
+  }
+  return false;
+}====================================================
    mouseWheel
    ========================================================= */
 function mouseWheel(event) {
