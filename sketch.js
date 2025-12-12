@@ -1,3 +1,4 @@
+
 let emotions = [
   {en: "Relaxed", ja: "リラックス", P: 0.7, A: -0.6, D: 0.2},
   {en: "Contented", ja: "満足", P: 0.6, A: -0.3, D: 0.1},
@@ -130,8 +131,6 @@ const SCROLL_AMOUNT = 150;
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
-
-let currentConstellationData = null;
 
 /* =========================================================
    preload
@@ -1117,31 +1116,8 @@ function touchStarted(event) {
 	    }
 	}
   }
-
-  if (state === "gallery" && touches.length === 1) {
-    // タッチ位置を取得
-    const touch = touches[0];
-    const mx = touch.x - width/2;
-    const my = touch.y - height/2 - scrollY;
-    
-    // サムネイルのレイアウトを計算
-    const designWidth = 430;
-    const galleryScale = min(1, width / designWidth);
-    const thumbSize = 150;
-    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-    const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-    
-    // タップ位置をスケールに合わせて調整
-    const scaledMx = mx / galleryScale;
-    const scaledMy = my / galleryScale;
-    
-    // サムネイルのクリックをチェック
-    if (checkThumbnailClicks(scaledMx, scaledMy, rowStartX, colCount, thumbSize)) {
-      return;
-    }
-  }
 	
-  return false;
+  return true;
 }
 
 function checkButtonTouches(touch) {
@@ -1753,117 +1729,7 @@ function checkPadButtonTouch(x, y) {
   return false;
 }
 
-function checkThumbnailClicks(mx, my, rowStartX, colCount, thumbSize) {
-  // 月ごとに分類
-  let grouped = {};
-  for (let m = 0; m < 12; m++) grouped[m] = [];
-  for (let c of allConstellations) {
-    if (!c.created) continue;
-    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    let monthIndex = int(m[2]) - 1;
-    grouped[monthIndex].push(c);
-  }
-
-  // 月ごとにチェック
-  let y = topOffset;
-  for (let month = 0; month < 12; month++) {
-    let list = grouped[month];
-    if (list.length === 0) continue;
-
-    // 月の見出しをスキップ
-    y += 35;
-
-    // サムネイルをチェック
-    for (let i = 0; i < list.length; i++) {
-      const col = i % colCount;
-      const row = floor(i / colCount);
-      const x = rowStartX + col * (thumbSize + gutter);
-      const ty = y + row * (thumbSize + gutter + 25);
-
-      // タップされたかチェック
-      if (mx >= x && mx <= x + thumbSize && 
-          my >= ty && my <= ty + thumbSize) {
-        
-        // 選択された星座データを保存
-        currentConstellationData = list[i];
-        
-        // ビジュアル表示用にデータを準備
-        points = list[i].stars.map(s => ({
-          pos: createVector(s.pos.x, s.pos.y, s.pos.z || 0),
-          emo: s.emo
-        }));
-
-        // 3Dビューに切り替え
-        state = "visual";
-        updateButtonVisibility();
-        
-        // カメラをリセットしてアニメーション開始
-        resetVisualView();
-        
-        // アニメーション用のターゲットを設定
-        targetRotationX = 0;
-        targetRotationY = 0;
-        zoomLevel = 1.5;
-        targetZoomLevel = 1.5;
-        
-        // 星座の中心を計算
-        let centerX = 0, centerY = 0, centerZ = 0;
-        for (let s of list[i].stars) {
-          if (s && s.pos) {
-            centerX += s.pos.x || 0;
-            centerY += s.pos.y || 0;
-            centerZ += s.pos.z || 0;
-          }
-        }
-        if (list[i].stars.length > 0) {
-          centerX /= list[i].stars.length;
-          centerY /= list[i].stars.length;
-          centerZ /= list[i].stars.length;
-        }
-        
-        // カメラの位置を設定
-        cameraX = -centerX;
-        cameraY = -centerY;
-        cameraZ = -centerZ + 300;
-        
-        redraw();
-        return true;
-      }
-    }
-
-    // 次の月の開始位置を計算
-    const rows = ceil(list.length / colCount);
-    y += rows * (thumbSize + gutter + 25) + 20;
-  }
-  
-  return false;
-}
-
-function mousePressed() {
-  if (state === "gallery") {
-    // 画面中央を基準にした座標に変換
-    const mx = mouseX - width/2;
-    const my = mouseY - height/2 - scrollY;
-    
-    // サムネイルのレイアウトを計算
-    const designWidth = 430;
-    const galleryScale = min(1, width / designWidth);
-    const thumbSize = 150;
-    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-    const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-    
-    // タップ位置をスケールに合わせて調整
-    const scaledMx = mx / galleryScale;
-    const scaledMy = my / galleryScale;
-    
-    // サムネイルのクリックをチェック
-    if (checkThumbnailClicks(scaledMx, scaledMy, rowStartX, colCount, thumbSize)) {
-      return;
-    }
-  }
-}
-/* ====================================================
+/* =========================================================
    mouseWheel
    ========================================================= */
 function mouseWheel(event) {
