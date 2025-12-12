@@ -1791,7 +1791,8 @@ function checkThumbnailClicks(mx, my, rowStartX, colCount, thumbSize) {
     index++;
   }
   return false;
-}====================================================
+}
+/* ====================================================
    mouseWheel
    ========================================================= */
 function mouseWheel(event) {
