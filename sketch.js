@@ -342,41 +342,47 @@ function setup() {
 	    length: padValues?.length,
 	    values: padValues
 	  });
-	
 	  if (!padValues || padValues.length === 0) return;
+	  if (!prepareVisual(false)) {
+	    console.error("ビジュアルの準備に失敗しました");
+	    return;
+	  }
+	    let now = new Date();
+	    let timestamp = now.toLocaleString();
+	    
+	  let starData = points.map(s => {
+	    if (!s || !s.pos) return null;
+	    return {
+	      pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
+	      emo: s.emo
+	    };
+	  }).filter(Boolean);
+	
+	  if (starData.length === 0) {
+	    console.error("表示する星のデータがありません");
+	    return;
+	  }
 
-	  if (prepareVisual(false)) {
-    let now = new Date();
-    let timestamp = now.toLocaleString();
-    
-    let newConstellation = {
-      stars: points.map(s => {
-        if (!s || !s.pos) return null;
-        return {
-          pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
-          emo: s.emo
-        };
-      }).filter(Boolean),
-      created: timestamp
-    };
+	  let newConstellation = {
+	    stars: starData,
+	    created: timestamp
+	  };
+	
+	  activeConstellation = newConstellation;
 
-    if (newConstellation.stars.length === 0) return;
+	  if (!Array.isArray(allConstellations)) allConstellations = [];
+	  allConstellations.push(newConstellation);
+	  localStorage.setItem(
+	    "myConstellations",
+	    JSON.stringify(allConstellations)
+	  );
 
-    activeConstellation = newConstellation;
-    
-    if (!Array.isArray(allConstellations)) allConstellations = [];
-    allConstellations.push(newConstellation);
-    localStorage.setItem(
-      "myConstellations",
-      JSON.stringify(allConstellations)
-    );
-    
-    padValues = [];
-    selectedP = selectedA = selectedD = null;
-    
-    changeState("visual");
-  }
-});
+	  padValues = [];
+	  selectedP = selectedA = selectedD = null;
+	    
+	  changeState("visual");
+	  redraw();
+	});
 
   galleryButton.mousePressed(() => {
 	  activeConstellation = null;
@@ -732,10 +738,14 @@ function draw() {
 	      background(5, 5, 20);
 		  resetMatrix();
 		  camera();
-		
 		  drawBeautifulStars();
 	      return;
 	  }
+
+	  background(5, 5, 20);
+	  resetMatrix();
+	  camera();
+	  drawBeautifulStars();
 	
 	  // 回転・ズームの補間
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
