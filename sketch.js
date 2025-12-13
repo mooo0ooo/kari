@@ -1242,7 +1242,6 @@ function handleTap(x, y) {
 		    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
 	  }
     }
-  }
 
   if (state === "select") {
   const btnSize = padLayout.btnSize * padLayout.scl;
