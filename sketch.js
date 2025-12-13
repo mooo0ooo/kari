@@ -131,6 +131,7 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 const designWidth = 430;
+const galleryScale = min(1, width / designWidth);
 
 let activeConstellation = null;
 
@@ -1379,12 +1380,10 @@ function handleGalleryTap(x, y) {
   if (!allConstellations || allConstellations.length === 0) return;
 
 　const designWidth = 430;
-  const galleryScale = min(1, width / designWidth);
 　x = x / galleryScale;
   y = (y - scrollY) / galleryScale;
   
   // ギャラリーのレイアウトパラメータ
-  const galleryScale = min(1, width / designWidth);
   const thumbSize = 150 * galleryScale;
   const colCount = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
   const rowStartX = (width - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
@@ -1557,7 +1556,6 @@ function handleGalleryClick() {
     const CLOSE_BUTTON_RADIUS = 30;
     
     // 座標変換
-    const galleryScale = min(1, width / DESIGN_WIDTH);
     const offsetX = (width - DESIGN_WIDTH * galleryScale) / 2;
     const mx = (mouseX - offsetX) / galleryScale;
     const my = (mouseY - scrollY) / galleryScale;
