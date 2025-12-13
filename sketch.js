@@ -381,7 +381,6 @@ function setup() {
 
 
   galleryButton.mousePressed(() => {
-	  activeConstellation = null;
 	  if (state === "gallery") {
 	    state = "select";
 	    galleryStars = [];
@@ -390,7 +389,7 @@ function setup() {
 	    selectedLabel = null;
 	  } else {
 	    state = "gallery";
-		  targetScrollY = 0;
+		targetScrollY = 0;
     	scrollY = 0;
 	    galleryStars = [];
 	    // ギャラリー用の星を生成
@@ -413,6 +412,7 @@ function setup() {
 	  }
 	  updateButtonVisibility();
 	  layoutDOMButtons();
+	  redraw();
   });
 
   resetViewButton.mousePressed(function() {
@@ -1492,123 +1492,215 @@ function screenPos(x, y, z) {
    drawGallery
    ========================================================= */
 function drawGallery2D() {
-  if (frameCount % 120 === 0) {
-	  cleanupThumbnails();
+  // 定数を定義
+  const THUMBNAIL_REFRESH_RATE = 120; // サムネイル更新間隔（フレーム数）
+  const STAR_TWINKLE_RATE = 0.02;     // 星のきらめき確率
+  const STAR_ALPHA = 180;             // 星の透明度
+  const MONTH_TITLE_SIZE = 24;        // 月タイトルのフォントサイズ
+  const DATE_TEXT_SIZE = 12;          // 日付のフォントサイズ
+  const THUMBNAIL_RADIUS = 8;         // サムネイルの角丸半径
+  
+  // サムネイルのクリーンアップ（120フレームに1回）
+  if (frameCount % THUMBNAIL_REFRESH_RATE === 0) {
+    cleanupThumbnails();
   }
+  
+  // 背景をリセット
   resetMatrix();
   camera();
-  background(5, 5, 20); 
+  background(5, 5, 20);
   
   // 背景の星を描画
-  push();
-  noStroke();
-  for (let s of galleryStars) {
-    if (s.on === undefined) s.on = true;
-    if (random() < 0.02) s.on = !s.on;
-    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-    let starSize = s.baseSize + pulse * random(0.5, 2);
-    fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180);
-    push();
-    translate(s.x, s.y, s.z);
-    sphere(starSize);
-    pop();
-  }
-  pop();
-
+  drawBackgroundStars();
+  
   // 画面中央に配置
   translate(-width / 2, -height / 2);
-
-  // デザイン幅とスケールを計算
+  
+  // スケールを計算
   galleryScale = min(1, width / designWidth);
   
   push();
   scale(galleryScale);
   translate(0, scrollY);
+  
+  // サムネイルのレイアウトを計算
+  const thumbSize = 150;
+  const availableWidth = width / galleryScale - outerPad * 2;
+  const colCount = max(1, floor(availableWidth / (thumbSize + gutter)));
+  const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  
+  // レイアウト情報を更新
+  updateGalleryLayout(thumbSize, colCount, rowStartX);
+  
+  // 月ごとに分類
+  const grouped = groupByMonth(allConstellations);
+  let currentY = topOffset;
+  
+  // 月ごとに描画
+  for (let month = 0; month < 12; month++) {
+    const monthItems = grouped[month];
+    if (monthItems.length === 0) continue;
+    
+    // 月の見出しを描画
+    currentY = drawMonthHeader(month, currentY);
+    
+    // サムネイルを描画
+    currentY = drawThumbnails(monthItems, month, currentY, thumbSize, colCount, rowStartX);
+  }
+  
+  pop();
+  
+  // スクロール範囲を制限
+  updateScrollLimits();
+}
 
-  // サムネイルサイズとレイアウトを計算
-  let thumbSize = 150; 
-  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-  let y = topOffset;
+// 背景の星を描画するヘルパー関数
+function drawBackgroundStars() {
+  push();
+  noStroke();
+  for (let s of galleryStars) {
+    if (s.on === undefined) s.on = true;
+    if (random() < 0.02) s.on = !s.on;
+    
+    if (s.on) {
+      const pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
+      const starSize = s.baseSize + pulse * random(0.5, 2);
+      fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180);
+      push();
+      translate(s.x, s.y, s.z);
+      sphere(starSize);
+      pop();
+    }
+  }
+  pop();
+}
 
+// ギャラリーレイアウトを更新するヘルパー関数
+function updateGalleryLayout(thumbSize, colCount, rowStartX) {
   galleryLayout.thumbSize = thumbSize;
   galleryLayout.colCount = colCount;
   galleryLayout.rowStartX = rowStartX;
   galleryLayout.topOffset = topOffset;
+}
 
-  // 月ごとに分類
-  let grouped = {};
-  for (let m = 0; m < 12; m++) grouped[m] = [];
-  for (let c of allConstellations) {
-    if (!c.created) continue;
-    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    let monthIndex = int(m[2]) - 1;
-    grouped[monthIndex].push(c);
-  }
+// 月の見出しを描画するヘルパー関数
+function drawMonthHeader(month, yPos) {
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  
+  fill(255);
+  textSize(24);
+  textAlign(LEFT, TOP);
+  text(monthNames[month], 20, yPos);
+  
+  return yPos + 35; // 次のY位置を返す
+}
 
-  // 月ごとに描画
-  for (let month = 0; month < 12; month++) {
-    let list = grouped[month];
-    if (list.length === 0) continue;
-
-    // 月の見出し
-    fill(255);
-    textSize(24);
-    textAlign(LEFT, TOP);
-    let monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    text(monthNames[month], 20, y);  
-    y += 35;
-
-	  let monthContentHeight = ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-
-    // サムネイルをグリッド状に配置
-    for (let i = 0; i < list.length; i++) {
-	  const c = list[i];
-	  let col = i % colCount;
-	  let row = floor(i / colCount);
-	  let tx = rowStartX + col * (thumbSize + gutter);
-	  let ty2 = y + row * (thumbSize + gutter + 25);
-	
-	  c._gx = tx;
-	  c._gy = ty2;
-	  c._gw = thumbSize;
-	  c._gh = thumbSize;
+// サムネイルを描画するヘルパー関数
+function drawThumbnails(items, month, startY, thumbSize, colCount, startX) {
+  const rowHeight = thumbSize + gutter + 25; // サムネイル + 余白 + 日付の高さ
+  const rows = ceil(items.length / colCount);
+  let y = startY;
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < colCount; col++) {
+      const index = row * colCount + col;
+      if (index >= items.length) break;
       
-      // サムネイルの背景
-	  fill('rgba(5, 5, 20, 0.8)');
-      stroke('rgba(150, 150, 150, 0.5)');
-      strokeWeight(1);
-      rect(tx, ty2, thumbSize, thumbSize, 8);
-
-      if (!c.thumbnail) {
-        c.thumbnail = generate2DThumbnail(c, thumbSize);
-      }
-      if (c.thumbnail) {
-        image(c.thumbnail, tx, ty2, thumbSize, thumbSize);
-      }
-		
-      // 日付を表示
-      const date = parseDate(c.created);
-      let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-      fill(200, 220, 255);
-      textSize(12);
-      textAlign(CENTER, TOP);
-      text(formattedDate, tx + thumbSize/2, ty2 + thumbSize + 5);
+      const item = items[index];
+      const x = startX + col * (thumbSize + gutter);
+      
+      // サムネイルの位置情報を更新
+      updateThumbnailPosition(item, x, y, thumbSize);
+      
+      // サムネイルを描画
+      drawThumbnail(item, x, y, thumbSize);
     }
-    
-    // 次の月の開始位置を計算
-    y += monthContentHeight;;
+    y += rowHeight;
   }
+  
+  return y + 20; // 次の月との余白を追加して返す
+}
 
-  pop();
+// サムネイルの位置情報を更新するヘルパー関数
+function updateThumbnailPosition(item, x, y, size) {
+  if (!item) return;
+  
+  item._gx = x;
+  item._gy = y;
+  item._gw = size;
+  item._gh = size;
+}
 
-  // スクロール範囲を制限
-  let maxScroll = calculateMaxScroll();
+// サムネイルを描画するヘルパー関数
+function drawThumbnail(item, x, y, size) {
+  if (!item) return;
+  
+  // サムネイルの背景
+  fill('rgba(5, 5, 20, 0.8)');
+  stroke('rgba(150, 150, 150, 0.5)');
+  strokeWeight(1);
+  rect(x, y, size, size, 8);
+  
+  // サムネイル画像を生成または取得
+  if (!item.thumbnail) {
+    item.thumbnail = generate2DThumbnail(item, size);
+  }
+  
+  // サムネイルを描画
+  if (item.thumbnail) {
+    image(item.thumbnail, x, y, size, size);
+  }
+  
+  // 日付を表示
+  drawThumbnailDate(item, x, y, size);
+}
+
+// サムネイルの日付を描画するヘルパー関数
+function drawThumbnailDate(item, x, y, size) {
+  if (!item.created) return;
+  
+  const date = parseDate(item.created);
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekday = weekdays[date.getDay()];
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  const formattedDate = `${month}/${day}(${weekday}) ${hours}:${minutes}`;
+  
+  fill(200, 220, 255);
+  textSize(12);
+  textAlign(CENTER, TOP);
+  text(formattedDate, x + size/2, y + size + 5);
+}
+
+// 月ごとにデータをグループ化するヘルパー関数
+function groupByMonth(constellations) {
+  const grouped = {};
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  
+  for (let item of constellations) {
+    if (!item || !item.created) continue;
+    
+    const match = item.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!match) continue;
+    
+    const monthIndex = int(match[2]) - 1;
+    if (monthIndex >= 0 && monthIndex < 12) {
+      grouped[monthIndex].push(item);
+    }
+  }
+  
+  return grouped;
+}
+
+// スクロール範囲を更新するヘルパー関数
+function updateScrollLimits() {
+  const maxScroll = calculateMaxScroll();
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
