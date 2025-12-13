@@ -1227,6 +1227,9 @@ function handleTap(x, y) {
 	        x >= tx && x <= tx + thumbSize &&
 	        ty >= ty2 && ty <= ty2 + thumbSize
 	      ) {
+			if (clickSound && clickSound.isLoaded()) {
+			    clickSound.play();
+			}
 	        activeConstellation = list[i];
 	        state = "visual";
 	        visualStartTime = millis();
