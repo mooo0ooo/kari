@@ -1477,6 +1477,17 @@ function resetView() {
   
   // カメラをリセット
   camera();
+
+　if (state === "visual" && points) {
+    points.forEach(star => {
+      if (star.orbit) {
+        star.orbit.angle = random(TWO_PI);
+        star.orbit.speed = random(0.01, 0.03);
+      }
+    });
+  }
+  
+  redraw();
 }
 
 // 状態変更
@@ -1576,21 +1587,73 @@ function handleGalleryClick() {
     const mx = (mouseX - offsetX) / galleryScale;
     const my = (mouseY - scrollY) / galleryScale;
 
-    // サムネイルグリッドの計算
-    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
-    const rowStartX = (width / galleryScale - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
-    
-    // サムネイルのクリック検出
-    if (checkThumbnailClicks(mx, my, rowStartX, colCount, THUMBNAIL_SIZE)) {
-        return;
-    }
-    
     // 拡大表示中の処理
     if (selectedThumbnail) {
-        handleZoomedViewInteraction();
+        if (handleZoomedViewInteraction(mx, my)) {
+            return true; // 拡大表示の操作を処理した場合は終了
+        }
     }
     
+    // サムネイルグリッドの計算
+    const colCount = max(1, floor((DESIGN_WIDTH - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
+    const rowStartX = (DESIGN_WIDTH - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
+    
+    // 現在表示されている月のデータを取得
+    const monthData = getCurrentMonthData(); // 現在表示されている月のデータを取得する関数が必要
+    
+    // 各サムネイルのクリックをチェック
+    for (let i = 0; i < monthData.length; i++) {
+        const col = i % colCount;
+        const row = Math.floor(i / colCount);
+        const x = rowStartX + col * (THUMBNAIL_SIZE + gutter);
+        const y = topOffset + row * (THUMBNAIL_SIZE + gutter + 25);
+        
+        // クリックがサムネイルの範囲内かチェック
+        if (mx >= x && mx <= x + THUMBNAIL_SIZE && 
+            my >= y && my <= y + THUMBNAIL_SIZE) {
+            
+            // サムネイルを選択状態に
+            selectedThumbnail = monthData[i];
+            selectedThumbnail.x = x;
+            selectedThumbnail.y = y;
+            selectedThumbnail.width = THUMBNAIL_SIZE;
+            selectedThumbnail.height = THUMBNAIL_SIZE;
+            
+            // ビジュアル表示に切り替え
+            if (selectedThumbnail.constellation) {
+                loadConstellationToVisual(selectedThumbnail.constellation);
+            }
+            
+            return true; // クリックを処理した
+        }
+    }
+    
+    return false; // クリックを処理しなかった
+}
+
+// 拡大表示中のインタラクション処理
+function handleZoomedViewInteraction(mx, my) {
+    // 閉じるボタンの位置
+    const closeX = selectedThumbnail.x + selectedThumbnail.width - 20;
+    const closeY = selectedThumbnail.y + 20;
+    
+    // 閉じるボタンがクリックされたかチェック
+    if (dist(mx, my, closeX, closeY) < 15) {
+        selectedThumbnail = null;
+        return true;
+    }
+    
+    // その他の拡大表示中のインタラクション処理...
+    
     return false;
+}
+
+// 現在表示されている月のデータを取得
+function getCurrentMonthData() {
+    // 現在のスクロール位置に基づいて表示されている月を判定
+    // 例: 月ごとのデータを返すロジック
+    // 実際の実装では、現在のスクロール位置に応じた月のデータを返す
+    return currentMonthItems;
 }
 
 function setupButtonInteractions() {
@@ -1933,6 +1996,19 @@ function drawGallery2D() {
 
   pop();
 
+　// ギャラリーアイテムの描画部分（drawGallery2D関数内）
+let isHovered = (mx > x && mx < x + thumbSize && my > ty && my < ty + thumbSize);
+
+// ホバー時のスタイル変更
+fill(isHovered ? 'rgba(30, 30, 60, 0.9)' : 'rgba(5, 5, 20, 0.8)');
+stroke(isHovered ? 'rgba(200, 200, 255, 0.7)' : 'rgba(150, 150, 150, 0.5)');
+strokeWeight(isHovered ? 2 : 1);
+
+// タップ/クリック処理
+if (isHovered && (mouseIsPressed || isTouching)) {
+  handleGalleryItemTap(list[i]);
+}
+
   // スクロール範囲を制限
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
@@ -2071,23 +2147,49 @@ function generate2DThumbnail(cons, size) {
 }
 
 function loadConstellationToVisual(constellation) {
-  points = [];
-  
-  // 保存されていた星のデータをポイントに変換
-  constellation.stars.forEach(star => {
-    if (star && star.pos) {
-      points.push({
-        pos: createVector(star.pos.x, star.pos.y, star.pos.z || 0),
-        emo: star.emo || { en: "Unknown", ja: "不明", P: 0, A: 0, D: 0 }
-      });
-    }
-  });
-  
-  // ビジュアルモードに切り替え
-  state = "visual";
-  updateButtonVisibility();
-  resetVisualView();
-  redraw();
+  if (!constellation || !constellation.stars) {
+    console.error("無効なデータです:", constellation);
+    return false;
+  }
+
+  try {
+    // アニメーションパラメータをリセット
+    rotationX = 0;
+    rotationY = 0;
+    targetRotationX = 0;
+    targetRotationY = 0;
+    zoomLevel = 1;
+    targetZoomLevel = 1;
+    
+    // 星のデータを変換
+    points = constellation.stars.map(star => {
+      if (!star || !star.pos) return null;
+      
+      const emo = star.emo || { en: "Unknown", ja: "不明", P: 0, A: 0, D: 0 };
+      const x = map(star.pos.x || 0, -100, 100, -100, 100);
+      const y = map(star.pos.y || 0, -100, 100, -100, 100);
+      const z = map(star.pos.z || 0, -100, 100, -100, 100);
+      
+      return {
+        pos: createVector(x, y, z),
+        emo: emo,
+        selected: false
+      };
+    }).filter(Boolean);
+    
+    // ビジュアルモードに切り替え
+    state = "visual";
+    updateButtonVisibility();
+    resetVisualView();
+    visualStartTime = millis();
+    redraw();
+    
+    return true;
+    
+  } catch (error) {
+    console.error("エラーが発生しました:", error);
+    return false;
+  }
 }
 /* =========================================================
    最大スクロール量を計算
