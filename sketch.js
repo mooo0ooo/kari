@@ -156,9 +156,6 @@ let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
 
-let breath;
-let breathPhase;
-
 /* =========================================================
    preload
    ========================================================= */
@@ -772,20 +769,17 @@ function draw() {
 	  stroke(150, 80);
 	  noFill();
 	  box(220);
-
-	  breathPhase += 0.008;
-	  breath = 0.92 + 0.08 * sin(breathPhase);
 	  
 	  // 星
 	  for (let p of main.stars) {
-		let px = p.pos.x * breath;
-		let py = p.pos.y * breath;
-		let pz = p.pos.z * breath;
+		let px = p.pos.x;
+		let py = p.pos.y;
+		let pz = p.pos.z;
 		push();
 		translate(px, py, pz);
 		fill(255, 255, 200);
 		noStroke();
-		sphere(8 * breath);
+		sphere(8);
 		pop();
 	  }
 	  pop();
@@ -793,7 +787,7 @@ function draw() {
 	  // 線
 	  if (millis() - visualStartTime > 1200) {
 	    push();
-	    stroke(180, 200, 255, map(breath, 0.84, 1.0, 50, 130));
+	    stroke(180, 200, 255, 120);
 	    strokeWeight(2);
 	    blendMode(ADD);
 	
