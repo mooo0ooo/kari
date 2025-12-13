@@ -288,6 +288,8 @@ function setup() {
 	        stars: serialStars, 
 	        created: timestamp
 	      };
+
+		　activeConstellation = newConstellation;
 	      
 	      // データを保存
 	      if (!Array.isArray(allConstellations)) {
@@ -1085,73 +1087,57 @@ function handleTap(x, y) {
   if (state === "gallery") {
     if (!allConstellations || allConstellations.length === 0) return;
 
-    // === 描画と逆の座標変換 ===
-    const designWidth = 430;
-    galleryScale = min(1, width / designWidth);
+    const {
+	    thumbSize,
+	    colCount,
+	    rowStartX,
+	    topOffset,
+	    scale
+　　 } = galleryLayout;
+	  
+    x = (x - width / 2) / scale;
+  y = (y - height / 2 - scrollY) / scale;
 
-    // drawGallery2D と完全一致
-    x = (x - width / 2) / galleryScale;
-    y = (y - height / 2 - scrollY) / galleryScale;
-
-    const thumbSize = 150;
-    const colCount = max(
-      1,
-      floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter))
-    );
-    const rowStartX =
-      (width / galleryScale -
-        (thumbSize * colCount + gutter * (colCount - 1))) /
-      2;
-
-    let currentY = topOffset;
+  let currentY = topOffset;
 
     // 月ごとに分類
     let grouped = {};
-    for (let m = 0; m < 12; m++) grouped[m] = [];
-
-    for (let c of allConstellations) {
-      if (!c.created) continue;
-      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (!m) continue;
-      let monthIndex = int(m[2]) - 1;
-      grouped[monthIndex].push(c);
-    }
-
-    // === ヒットテスト ===
-    for (let month = 0; month < 12; month++) {
-      let list = grouped[month];
-      if (list.length === 0) continue;
-
-      currentY += 35;
-
-      for (let i = 0; i < list.length; i++) {
-        const c = list[i];
-
-        let col = i % colCount;
-        let row = floor(i / colCount);
-        let thumbX = rowStartX + col * (thumbSize + gutter);
-        let thumbY = currentY + row * (thumbSize + gutter + 25);
-
-        if (
-          x >= thumbX &&
-          x <= thumbX + thumbSize &&
-          y >= thumbY &&
-          y <= thumbY + thumbSize
-        ) {
-          activeConstellation = c;
-          state = "visual";
-          updateButtonVisibility();
-          layoutDOMButtons();
-          resetView();
-          visualStartTime = millis();
-          return;
-        }
-      }
-
-      currentY +=
-        ceil(list.length / colCount) *
-          (thumbSize + gutter + 25) +
-        20;
+	  for (let m = 0; m < 12; m++) grouped[m] = [];
+	
+	  for (let c of allConstellations) {
+	    if (!c.created) continue;
+	    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	    if (!m) continue;
+	    grouped[int(m[2]) - 1].push(c);
+	  }
+	
+	  for (let month = 0; month < 12; month++) {
+	    let list = grouped[month];
+	    if (!list.length) continue;
+		  
+	      currentY += 35;
+	
+	      for (let i = 0; i < list.length; i++) {
+		      let col = i % colCount;
+		      let row = floor(i / colCount);
+		
+		      let tx = rowStartX + col * (thumbSize + gutter);
+		      let ty = currentY + row * (thumbSize + gutter + 25);
+		
+		      if (
+		        x >= tx && x <= tx + thumbSize &&
+		        y >= ty && y <= ty + thumbSize
+		      ) {
+		        activeConstellation = list[i];
+		        state = "visual";
+		        visualStartTime = millis();
+		        resetView();
+		        return;
+		      }
+		    }
+		
+		    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+	  }
     }
   }
 
