@@ -155,7 +155,6 @@ let gutter = 12;
 let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
-let ShootingStar = [];
 class ShootingStar {
   constructor() {
     this.x = random(-800, 800);
