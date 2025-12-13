@@ -1210,51 +1210,25 @@ function handleTap(x, y) {
   if (state === "gallery") {
     if (!allConstellations || allConstellations.length === 0) return;
 
-      const thumbSize = 150;
-	  const colCount = max(
-	    1,
-	    floor((width - outerPad * 2) / (thumbSize + gutter))
-	  );
-	  const rowStartX =
-	    (width - (colCount * thumbSize + (colCount - 1) * gutter)) / 2;
-	
-	  let ty = y + scrollY;
-	
-	  let currentY = topOffset;
-	  const grouped = groupByMonth(allConstellations);
-	
-	  for (let month = 0; month < 12; month++) {
-	    const list = grouped[month];
-	    if (!list.length) continue;
-	
-	    currentY += 35;
-	
-	    for (let i = 0; i < list.length; i++) {
-	      const col = i % colCount;
-	      const row = floor(i / colCount);
-	
-	      const tx = rowStartX + col * (thumbSize + gutter);
-	      const ty2 = currentY + row * (thumbSize + gutter + 25);
-	
-	      if (
-	        x >= tx && x <= tx + thumbSize &&
-	        ty >= ty2 && ty <= ty2 + thumbSize
-	      ) {
-			if (clickSound && clickSound.isLoaded()) {
-			    clickSound.play();
-			}
-	        activeConstellation = list[i];
-	        state = "visual";
-	        visualStartTime = millis();
-	        resetView();
-	        return;
-	      }
-	    }
-	
-	    currentY +=
-	      ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-	  }
-	  return;
+      let gx = (x - width / 2) / galleryScale;
+      let gy = (y - height / 2 - scrollY) / galleryScale;
+
+      for (let c of allConstellations) {
+          if (!c._gx || !c._gy) continue;
+          if (
+              gx >= c._gx && gx <= c._gx + c._gw &&
+        　    gy >= c._gy && gy <= c._gy + c._gh
+          ) {
+          if (clickSound && clickSound.isLoaded()) clickSound.play();
+          activeConstellation = c;
+          state = "visual";
+          visualStartTime = millis();
+          resetView();
+          return;
+          }
+        }
+
+        return;
     }
 
   if (state === "select") {
@@ -1595,15 +1569,15 @@ function drawGallery2D() {
 
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
-	　const c = list[i]; 
+	　const c = list[i];
       let col = i % colCount;
       let row = floor(i / colCount);
-      let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25);
-		
-      // タップ/ホバー判定
-      let mx = (mouseX - width/2) / galleryScale;
-      let my = (mouseY - height/2 - scrollY) / galleryScale;
+      let tx = rowStartX + col * (thumbSize + gutter);
+      let ty2 = y + row * (thumbSize + gutter + 25);
+	  c._gx = tx;
+      c._gy = ty2;
+      c._gw = thumbSize;
+      c._gh = thumbSize;
       
       // サムネイルの背景
 	  fill('rgba(5, 5, 20, 0.8)');
@@ -1612,13 +1586,12 @@ function drawGallery2D() {
 	  rect(x, ty, thumbSize, thumbSize, 8);
 		
 	  if (!c.thumbnail) {
-		  c.thumbnail = generate2DThumbnail(c, thumbSize);
-	  }
+        c.thumbnail = generate2DThumbnail(c, thumbSize);
+      }
+      if (c.thumbnail) {
+        image(c.thumbnail, tx, ty2, thumbSize, thumbSize);
+      }
 		
-	  if (c.thumbnail) {
-		  image(c.thumbnail, x, ty, thumbSize, thumbSize);
-	  }
-      
       // 日付を表示
       const date = parseDate(c.created);
       let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
