@@ -336,53 +336,59 @@ function setup() {
   });
 
 　okButton.mousePressed(() => {
-	  // デバッグ用: padValuesの状態を確認
-	  console.log("padValuesの状態:", {
-	    isArray: Array.isArray(padValues),
-	    length: padValues?.length,
-	    values: padValues
-	  });
-	  if (!padValues || padValues.length === 0) return;
-	  if (!prepareVisual(false)) {
-	    console.error("ビジュアルの準備に失敗しました");
-	    return;
-	  }
-	    let now = new Date();
-	    let timestamp = now.toLocaleString();
-	    
-	  let starData = points.map(s => {
-	    if (!s || !s.pos) return null;
-	    return {
-	      pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
-	      emo: s.emo
-	    };
-	  }).filter(Boolean);
-	
-	  if (starData.length === 0) {
-	    console.error("表示する星のデータがありません");
-	    return;
-	  }
+  if (!padValues || padValues.length === 0) {
+    console.log("追加するPAD値がありません");
+    return;
+  }
 
-	  let newConstellation = {
-	    stars: starData,
-	    created: timestamp
-	  };
-	
-	  activeConstellation = newConstellation;
+  console.log("OKボタンが押されました。PAD値:", JSON.parse(JSON.stringify(padValues)));  // ディープコピーでログ出力
+  
+  // ビジュアルの準備
+  if (prepareVisual(true)) {
+    console.log("prepareVisual succeeded, points:", points);  // デバッグ用
+    
+    // 新しい日記データを作成
+    let now = new Date();
+    let timestamp = now.toLocaleString();
+    
+    // 星のデータを準備（pointsを直接使用）
+    if (!points || points.length === 0) {
+      console.error("表示する星のデータがありません");
+      return;
+    }
 
-	  if (!Array.isArray(allConstellations)) allConstellations = [];
-	  allConstellations.push(newConstellation);
-	  localStorage.setItem(
-	    "myConstellations",
-	    JSON.stringify(allConstellations)
-	  );
+	// 新しい星座を作成
+    let newConstellation = {
+      stars: points.map(p => ({
+        pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
+        emo: p.emo
+      })),
+      created: timestamp
+    };
 
-	  padValues = [];
-	  selectedP = selectedA = selectedD = null;
-	    
-	  changeState("visual");
-	  redraw();
-	});
+    console.log("New constellation:", newConstellation);  // デバッグ用
+
+    // アクティブな星座を設定
+    activeConstellation = newConstellation;
+
+    // 保存
+    if (!Array.isArray(allConstellations)) allConstellations = [];
+    allConstellations.push(newConstellation);
+    localStorage.setItem(
+      "myConstellations",
+      JSON.stringify(allConstellations)
+    );
+
+    // 選択状態をリセット
+    padValues = [];
+    selectedP = selectedA = selectedD = null;
+    
+    // 明示的に再描画
+    redraw();
+  } else {
+    console.error("prepareVisual failed");
+  }
+});
 
   galleryButton.mousePressed(() => {
 	  activeConstellation = null;
@@ -584,18 +590,30 @@ function prepareVisual(changeState = true) {
   console.log("prepareVisualが呼ばれました。changeState =", changeState);
   
   try {
-    // 星の位置を計算
-    points = [];
+    // 星の位置を格納する一時的な配列
+    let tempPoints = [];
+    
     if (!Array.isArray(padValues)) {
       console.error("padValues is not an array");
       return false;
     }
 
+    console.log("Processing padValues:", padValues);  // デバッグ用
+
+    // 選択されたPAD値から星の位置を計算
     for (let v of padValues) {
-      if (!v || typeof v !== 'object') continue;
+      if (!v || typeof v !== 'object') {
+        console.log("Skipping invalid PAD value:", v);
+        continue;
+      }
+      
+      console.log("Processing PAD value:", v);  // デバッグ用
       
       let emo = findClosestEmotion(v.P, v.A, v.D);
-      if (!emo) continue;
+      if (!emo) {
+        console.log("No emotion found for PAD:", v);
+        continue;
+      }
 
       let x = map(v.P, 0, 1, -100, 100);
       let y = map(v.A, 0, 1, -100, 100);
@@ -603,47 +621,42 @@ function prepareVisual(changeState = true) {
 
       emo.intensity = (v.P + v.A + v.D) / 3;
       
-      points.push({
+      tempPoints.push({
         pos: createVector(x, y, z),
         emo: emo
       });
+      
+      console.log("Created point:", {x, y, z, emo});  // デバッグ用
     }
 
-    if (points.length === 0) {
-      console.warn("No valid points to display");
+    if (tempPoints.length === 0) {
+      console.warn("表示する星のデータが作成できませんでした");
       return false;
     }
     
-    // 背景の星を生成
+    // バックグラウンドの星を生成
     stars = [];
     for (let i = 0; i < 400; i++) {
       stars.push({
         x: random(-2000, 2000),
         y: random(-2000, 2000),
         z: random(-2000, 2000),
-        twinkle: random(1000)
+        twinkle: random(1000),
+        baseSize: random(1, 4)
       });
     }
 
+    // グローバルの points を更新
+    points = tempPoints;
+    console.log("Created", points.length, "points for visualization");  // デバッグ用
+
     // 状態をvisualに設定
     if (changeState) {
-      state = "visual";
+      changeState("visual");
       updateButtonVisibility();
       visualStartTime = millis();
-      
-      // 3Dビューのリセット
-      rotationX = 0;
-      rotationY = 0;
-      targetRotationX = 0;
-      targetRotationY = 0;
-      zoomLevel = 1;
-      targetZoomLevel = 1;
-      
-      // 明示的に再描画
-      redraw();
     }
     
-    console.log("prepareVisual completed successfully");
     return true;
   } catch (error) {
     console.error("Error in prepareVisual:", error);
