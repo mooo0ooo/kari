@@ -858,7 +858,7 @@ function draw() {
    drawPADButtons
    ========================================================= */
 function drawPADButtons() {
-　if (state !== "visual") return;
+　if (state === "visual") return;
   let cx = 0;
   let cy = 0;
 
