@@ -277,6 +277,7 @@ function setup() {
 　addButton.mousePressed(addPAD);
   
   backButton.mousePressed(() => {
+	  activeConstellation = null;
 	  state = "select";
 	  updateButtonVisibility();
 	  layoutDOMButtons();
@@ -362,6 +363,7 @@ function setup() {
 	});
 
   galleryButton.mousePressed(() => {
+	  activeConstellation = null;
 	  if (state === "gallery") {
 	    state = "select";
 	    galleryStars = [];
@@ -657,12 +659,10 @@ function draw() {
     cleanupThumbnails();
 	console.log("drawが実行中です。現在のstate:", state);
   }
-  
-  // 背景をクリア
-  background(5, 5, 20);
 
   // 状態に応じた描画
   if (state === "select") {
+	background(5, 5, 20);
     camera();
     drawPADButtons();
     // タッチフィードバック
@@ -680,6 +680,8 @@ function draw() {
     drawGallery2D();
   }
 　else if (state === "visual") {
+	  resetMatrix();
+	  background(5, 5, 20);
 	  camera();
 	 
 	  // 3D操作
@@ -715,8 +717,7 @@ function draw() {
 	  pop();
 	
 	  if (allConstellations.length === 0) return;
-	  let latest = activeConstellation 
-          || allConstellations[allConstellations.length - 1];
+	  let latest = activeConstellation || allConstellations[allConstellations.length - 1];
 	  let latestMonth = -1;
 	
 	  if (latest?.created) {
@@ -828,8 +829,8 @@ function draw() {
 	  }
 	
 	  if (allConstellations.length > 0) {
-	   latest = allConstellations[allConstellations.length - 1];
-	   let m = latest?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	   let ref = activeConstellation || allConstellations[allConstellations.length - 1];
+	   let m = ref?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
 	   let monthIndex = m ? int(m[2]) - 1 : 0;
 	   let monthNames = [
 	     "January","February","March","April","May","June",
@@ -1375,6 +1376,11 @@ function touchCanceled(event) {
 // ギャラリーのタップ処理
 function handleGalleryTap(x, y) {
   if (!allConstellations || allConstellations.length === 0) return;
+
+　const designWidth = 430;
+  const galleryScale = min(1, width / designWidth);
+　x = x / galleryScale;
+  y = (y - scrollY) / galleryScale;
   
   // ギャラリーのレイアウトパラメータ
   const designWidth = 430;
@@ -1425,22 +1431,10 @@ function handleGalleryTap(x, y) {
 		　state = "visual";
 		  updateButtonVisibility();
 		  layoutDOMButtons();
-
 		  resetView();
   		  visualStartTime = millis();
 		  
-        // 既に選択されているサムネイルをタップした場合は閉じる
-        if (selectedThumbnail === list[i]) {
-          targetZoom = 0;
-          setTimeout(() => {
-            if (targetZoom === 0) selectedThumbnail = null;
-          }, 300);
-        } else {
-          // 新しいサムネイルを選択
-          selectedThumbnail = list[i];
-          targetZoom = 1;
-        }
-        return;
+          return;
       }
     }
     
