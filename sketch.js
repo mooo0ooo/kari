@@ -1346,15 +1346,14 @@ function handleTap(x, y) {
   if (state === "gallery") {
   if (!allConstellations || allConstellations.length === 0) return;
 
-  // 座標変換
+  const thumbSize = 150;
+	  
   const designWidth = 430;
   galleryScale = min(1, width / designWidth);
-  let tx = (x - width / 2) / galleryScale;
-  let ty = (y - height / 2) / galleryScale;
 
-  ty -= scrollY;
-
-  const thumbSize = 150;
+  const tx = (x - width / 2) / galleryScale;
+  const ty = (y - height / 2) / galleryScale - scrollY;
+	  
   const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
   const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
 
@@ -1362,11 +1361,11 @@ function handleTap(x, y) {
 
   // 月ごとに分類（parseDateベース）
   let grouped = groupByMonth(allConstellations);
-	  
-  // ヒットテスト
+
+	// ヒットテスト
     for (let month = 0; month < 12; month++) {
       const list = grouped[month];
-      if (list.length === 0) continue;
+      if (!list || list.length === 0) continue;
 
       currentY += 35; // 月タイトル分
 
@@ -1377,9 +1376,12 @@ function handleTap(x, y) {
         const thumbX = rowStartX + col * (thumbSize + gutter);
         const thumbY = currentY + row * (thumbSize + gutter + 25);
 
+        // ヒット判定
         if (tx >= thumbX && tx <= thumbX + thumbSize &&
             ty >= thumbY && ty <= thumbY + thumbSize) {
+
           if (clickSound.isLoaded()) clickSound.play();
+
           activeConstellation = c;
           state = "visual";
           updateButtonVisibility();
@@ -1390,11 +1392,11 @@ function handleTap(x, y) {
         }
       }
 
-    // 月コンテンツの高さを drawGallery2D と同じ計算で加算
-    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+      // 月コンテンツの高さを描画と同じ計算で加算
+      currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+    }
   }
-}
-
+	
   if (state === "select") {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
