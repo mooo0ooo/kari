@@ -1594,14 +1594,6 @@ function drawGallery2D() {
   updateScrollLimits();
 }
 
-// ギャラリーレイアウトを更新するヘルパー関数
-function updateGalleryLayout(thumbSize, colCount, rowStartX) {
-  galleryLayout.thumbSize = thumbSize;
-  galleryLayout.colCount = colCount;
-  galleryLayout.rowStartX = rowStartX;
-  galleryLayout.topOffset = topOffset;
-}
-
 // 月の見出しを描画するヘルパー関数
 function drawMonthHeader(month, yPos) {
   const monthNames = [
