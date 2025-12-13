@@ -336,7 +336,6 @@ function setup() {
   });
 
 　okButton.mousePressed(() => {
-	  
 	  // デバッグ用: padValuesの状態を確認
 	  console.log("padValuesの状態:", {
 	    isArray: Array.isArray(padValues),
@@ -346,43 +345,38 @@ function setup() {
 	
 	  if (!padValues || padValues.length === 0) return;
 
-	  let now = new Date();
-	  let timestamp = now.toLocaleString();
-	
-	  let serialStars = points.map(s => {
-	    if (!s || !s.pos) return null;
-	    return {
-	      pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
-	      emo: s.emo
-	    };
-	  }).filter(Boolean);
-	
-	  if (serialStars.length === 0) return;
-	
-	  let newConstellation = {
-	    stars: serialStars,
-	    created: timestamp
-	  };
-	
-	  activeConstellation = newConstellation;
-	
-	  // 保存
-	  if (!Array.isArray(allConstellations)) allConstellations = [];
-	  allConstellations.push(newConstellation);
-	  localStorage.setItem(
-	    "myConstellations",
-	    JSON.stringify(allConstellations)
-	  );
-	 
-	　changeState("visual");
-	  updateButtonVisibility();
-	
-	  // リセット
-	  padValues = [];
-	  selectedP = selectedA = selectedD = null;
-	
-	  redraw();
-  });
+	  if (prepareVisual(false)) {
+    let now = new Date();
+    let timestamp = now.toLocaleString();
+    
+    let newConstellation = {
+      stars: points.map(s => {
+        if (!s || !s.pos) return null;
+        return {
+          pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
+          emo: s.emo
+        };
+      }).filter(Boolean),
+      created: timestamp
+    };
+
+    if (newConstellation.stars.length === 0) return;
+
+    activeConstellation = newConstellation;
+    
+    if (!Array.isArray(allConstellations)) allConstellations = [];
+    allConstellations.push(newConstellation);
+    localStorage.setItem(
+      "myConstellations",
+      JSON.stringify(allConstellations)
+    );
+    
+    padValues = [];
+    selectedP = selectedA = selectedD = null;
+    
+    changeState("visual");
+  }
+});
 
   galleryButton.mousePressed(() => {
 	  activeConstellation = null;
@@ -717,6 +711,7 @@ function draw() {
   // 状態に応じた描画
   if (state === "select") {
 	background(5, 5, 20);
+	camera();
     drawPADButtons();
     // タッチフィードバック
     if (touchFeedback && touchFeedback.alpha > 0) {
@@ -734,15 +729,13 @@ function draw() {
   }
   else if (state === "visual") {
 	  if (!activeConstellation || !activeConstellation.stars) {
-	    return;
+	      background(5, 5, 20);
+		  resetMatrix();
+		  camera();
+		
+		  drawBeautifulStars();
+	      return;
 	  }
-	  
-	  background(5, 5, 20);
-
-	  resetMatrix();
-	  camera();
-	
-	  drawBeautifulStars();
 	
 	  // 回転・ズームの補間
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
@@ -1190,9 +1183,13 @@ function resetView() {
   targetRotationY = 0;
   zoomLevel = 1;
   targetZoomLevel = 1;
+
+  if (state === "visual") {
+    camera();
+    perspective(PI / 3, width / height, 0.1, 10000);
+  }
   
-  // カメラをリセット
-  camera();
+  redraw();
 }
 
 function handleTap(x, y) {
