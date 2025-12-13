@@ -1547,6 +1547,8 @@ function drawGallery2D() {
     grouped[monthIndex].push(c);
   }
 
+  let idx = 0;
+
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
@@ -1572,10 +1574,11 @@ function drawGallery2D() {
       let row = floor(i / colCount);
       let tx = rowStartX + col * (thumbSize + gutter);
       let ty2 = y + row * (thumbSize + gutter + 25);
-	    c._gx = tx;
-	    c._gy = ty2;
-	    c._gw = thumbSize;
-	    c._gh = thumbSize;
+	  allConstellations[idx]._gx = tx;
+      allConstellations[idx]._gy = ty2;
+      allConstellations[idx]._gw = thumbSize;
+      allConstellations[idx]._gh = thumbSize;
+	  idx++;
       
       // サムネイルの背景
 	    fill('rgba(5, 5, 20, 0.8)');
