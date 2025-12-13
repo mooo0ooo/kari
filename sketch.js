@@ -771,7 +771,6 @@ function draw() {
 	
 	  // ===== メインの日記 =====
 	  let main = activeConstellation;
-	  if (!main) return;
 	
 	  push();
 	  translate(0, 0, 200);
@@ -797,6 +796,7 @@ function draw() {
 	  sphere(8 * breath);
 	  pop();
 	}
+	pop();
 
 	  // 線
 	  if (millis() - visualStartTime > 1200) {
@@ -858,7 +858,6 @@ function draw() {
 	    pop();
 	  }
 	}
-	pop();
 }
 /* =========================================================
    drawPADButtons
