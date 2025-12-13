@@ -458,7 +458,6 @@ function updateButtonVisibility() {
     resetViewButton.position(20, 20);
     galleryButton.position(20, 100);
     resetViewButton.html("↻ リセット");
-    backButton.html("← 戻る");
     galleryButton.html("日記一覧");
   } 
 }
