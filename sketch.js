@@ -1598,6 +1598,7 @@ function drawGallery2D() {
 
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
+	　const c = list[i]; 
       let col = i % colCount;
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
@@ -1613,12 +1614,12 @@ function drawGallery2D() {
 	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
 		
-	  if (!list[i].thumbnail) {
-		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
+	  if (!c.thumbnail) {
+		  c.thumbnail = generate2DThumbnail(c, thumbSize);
 	  }
 		
-	  if (list[i].thumbnail) {
-		  image(list[i].thumbnail, x, ty, thumbSize, thumbSize);
+	  if (c.thumbnail) {
+		  image(c.thumbnail, x, ty, thumbSize, thumbSize);
 	  }
       
       // 日付を表示
