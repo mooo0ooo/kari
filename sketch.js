@@ -155,15 +155,17 @@ let gutter = 12;
 let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
+
+
 class ShootingStar {
   constructor() {
     this.x = random(-800, 800);
     this.y = random(-400, 400);
     this.z = -200;
 
-    this.vx = random(-4, -2);
-    this.vy = random(-1, 1);
-    this.vz = random(-4, -2);
+    this.vx = random(-1.5, -0.8); // ← 速度をかなり落としてる
+    this.vy = random(-0.4, 0.4);
+    this.vz = random(-2, -1);
 
     this.life = 0;
     this.maxLife = int(random(80, 120));
@@ -177,15 +179,15 @@ class ShootingStar {
   }
 
   draw() {
-    let a = map(this.life, 0, this.maxLife, 180, 0);
+    let a = map(this.life, 0, this.maxLife, 160, 0);
     stroke(255, 220, 180, a);
-    strokeWeight(2);
+    strokeWeight(1.5);
 
     line(
       this.x, this.y, this.z,
-      this.x - this.vx * 10,
-      this.y - this.vy * 10,
-      this.z - this.vz * 10
+      this.x - this.vx * 12,
+      this.y - this.vy * 12,
+      this.z - this.vz * 12
     );
   }
 
@@ -687,17 +689,25 @@ function drawBeautifulStars() {
     pop();
   }
 
-  // ===== 流れ星（軽量）=====
-  if (state === "visual" && random() < 0.006) {
-    shootingStars.push(new ShootingStar());
+  // ===== 流れ星=====
+  if (!drawBeautifulStars.shootingStars) {
+    drawBeautifulStars.shootingStars = [];
+    drawBeautifulStars.timer = 0;
   }
 
-  for (let i = shootingStars.length - 1; i >= 0; i--) {
-    shootingStars[i].update();
-    shootingStars[i].draw();
-    if (shootingStars[i].isDead()) {
-      shootingStars.splice(i, 1);
-    }
+  let stars = drawBeautifulStars.shootingStars;
+  drawBeautifulStars.timer++;
+
+  // 出現頻度
+  if (drawBeautifulStars.timer > 180) {
+    drawBeautifulStars.timer = 0;
+    stars.push(new ShootingStar());
+  }
+
+  for (let i = stars.length - 1; i >= 0; i--) {
+    stars[i].update();
+    stars[i].draw();
+    if (stars[i].isDead()) stars.splice(i, 1);
   }
 
   pop();
@@ -1918,3 +1928,4 @@ function loadConstellations() {
     }
   }
 }
+
