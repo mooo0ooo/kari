@@ -70,7 +70,7 @@ let stars = [];
 let selectedLabel = null;
 
 let state = "select"; 
-activeConstellation = null;
+let activeConstellation = null;
 let addButton, okButton;
 let backButton;
 
