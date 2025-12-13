@@ -1280,9 +1280,31 @@ function touchCanceled(event) {
   return touchEnded(event);
 }
 
-// ギャラリーのタップ処理
-function handleGalleryTap(x, y) {
-  if (!allConstellations || allConstellations.length === 0) return;
+// リセット
+function resetView() {
+  // 回転とズームをリセット
+  rotationX = 0;
+  rotationY = 0;
+  targetRotationX = 0;
+  targetRotationY = 0;
+  zoomLevel = 1;
+  targetZoomLevel = 1;
+  
+  // 慣性をリセット
+  velocityX = 0;
+  velocityY = 0;
+  
+  // タッチ状態をリセット
+  isTouching = false;
+  isDragging = false;
+  
+  // カメラをリセット
+  camera();
+}
+
+function handleTap(x, y) {
+  if (state === "gallery") {
+    if (!allConstellations || allConstellations.length === 0) return;
 
 　const designWidth = 430;
   galleryScale = min(1, width / designWidth);
@@ -1346,34 +1368,6 @@ function handleGalleryTap(x, y) {
     // 次の月の開始位置に移動
     currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
   }
-}
-
-// リセット
-function resetView() {
-  // 回転とズームをリセット
-  rotationX = 0;
-  rotationY = 0;
-  targetRotationX = 0;
-  targetRotationY = 0;
-  zoomLevel = 1;
-  targetZoomLevel = 1;
-  
-  // 慣性をリセット
-  velocityX = 0;
-  velocityY = 0;
-  
-  // タッチ状態をリセット
-  isTouching = false;
-  isDragging = false;
-  
-  // カメラをリセット
-  camera();
-}
-
-function handleTap(x, y) {
-  if (state === "gallery") {
-    // サムネタップ判定
-    // → ギャラリー座標に変換して判定
   }
 
   if (state === "select") {
