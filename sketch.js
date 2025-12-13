@@ -91,6 +91,7 @@ let bgStarsNear = [];
 let starDrift = 0;
 let shootingStarTimer = 0;
 let shootingStarInterval = 240;
+let breathPhase = 0;
 
 // タッチイベント
 // 3D操作
@@ -780,25 +781,27 @@ function draw() {
 	  stroke(150, 80);
 	  noFill();
 	  box(220);
-	
+
+	  breathPhase += 0.008;
+	  let breath = 0.92 + 0.08 * sin(breathPhase);
 	  // 星
 	  for (let p of main.stars) {
-	    let px = p.pos?.x ?? 0;
-	    let py = p.pos?.y ?? 0;
-	    let pz = p.pos?.z ?? 0;
+	  let px = p.pos.x * breath;
+	  let py = p.pos.y * breath;
+	  let pz = p.pos.z * breath;
 	
-	    push();
-	    translate(px, py, pz);
-	    fill(255, 255, 200);
-	    noStroke();
-	    sphere(8);
-	    pop();
-	  }
-	
+	  push();
+	  translate(px, py, pz);
+	  fill(255, 255, 200);
+	  noStroke();
+	  sphere(8 * breath);
+	  pop();
+	}
+
 	  // 線
 	  if (millis() - visualStartTime > 1200) {
 	    push();
-	    stroke(180, 200, 255, 90);
+	    stroke(180, 200, 255, map(breath, 0.84, 1.0, 50, 130));
 	    strokeWeight(2);
 	    blendMode(ADD);
 	
