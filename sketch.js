@@ -1293,9 +1293,28 @@ function touchEnded(event) {
       }
     }
   }
+
+　if (state === "gallery" && touches.length === 1) {
+    const touch = touches[0];
+    const galleryScale = min(1, width / 430);
+    const mx = (touch.x - width/2) / galleryScale;
+    const my = (touch.y - height/2 - scrollY) / galleryScale;
+    
+    const thumbSize = 150;
+    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+    const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+    
+    const col = floor((mx - rowStartX) / (thumbSize + gutter));
+    const row = floor((my - topOffset) / (thumbSize + gutter + 25));
+    const index = row * colCount + col;
+    
+    if (index >= 0 && index < allConstellations.length) {
+      loadConstellationToVisual(allConstellations[index]);
+    }
+  }
   
   isTouching = false;
-  
+  touches = [];
   return false;
 }
 
@@ -1446,6 +1465,7 @@ function resetView() {
   targetRotationY = 0;
   zoomLevel = 1;
   targetZoomLevel = 1;
+　visualStartTime = millis();
   
   // 慣性をリセット
   velocityX = 0;
@@ -2048,6 +2068,26 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
+}
+
+function loadConstellationToVisual(constellation) {
+  points = [];
+  
+  // 保存されていた星のデータをポイントに変換
+  constellation.stars.forEach(star => {
+    if (star && star.pos) {
+      points.push({
+        pos: createVector(star.pos.x, star.pos.y, star.pos.z || 0),
+        emo: star.emo || { en: "Unknown", ja: "不明", P: 0, A: 0, D: 0 }
+      });
+    }
+  });
+  
+  // ビジュアルモードに切り替え
+  state = "visual";
+  updateButtonVisibility();
+  resetVisualView();
+  redraw();
 }
 /* =========================================================
    最大スクロール量を計算
