@@ -868,6 +868,7 @@ function draw() {
    drawPADButtons
    ========================================================= */
 function drawPADButtons() {
+　if (state !== "select") return;
   let cx = 0;
   let cy = 0;
 
