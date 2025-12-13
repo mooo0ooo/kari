@@ -84,6 +84,12 @@ let padLayout = {
   scl: 1
 };
 
+// visual
+let bgStarsFar = [];
+let bgStarsMid = [];
+let bgStarsNear = [];
+let starDrift = 0;
+
 // タッチイベント
 // 3D操作
 let touchMode = null; 
@@ -161,6 +167,43 @@ function handleButtonTouchEnd(e) {
   this.click();
 }
 
+
+/* =========================================================
+   setupStars
+   ========================================================= */
+function setupStars() {
+  // 遠景
+  for (let i = 0; i < 800; i++) {
+    bgStarsFar.push({
+      x: random(-3000, 3000),
+      y: random(-3000, 3000),
+      z: random(-3000, -1000)
+    });
+  }
+
+  // 中景
+  for (let i = 0; i < 300; i++) {
+    bgStarsMid.push({
+      x: random(-2000, 2000),
+      y: random(-2000, 2000),
+      z: random(-1500, -400),
+      phase: random(TWO_PI),
+      size: random(1.5, 3)
+    });
+  }
+
+  // 近景（ごく少数）
+  for (let i = 0; i < 40; i++) {
+    bgStarsNear.push({
+      x: random(-1200, 1200),
+      y: random(-1200, 1200),
+      z: random(-800, -200),
+      phase: random(TWO_PI),
+      size: random(4, 7)
+    });
+  }
+}
+
 /* =========================================================
    setup
    ========================================================= */
@@ -172,6 +215,8 @@ function setup() {
   textSize(16);
 
   lastTouchTime = millis();
+
+  setupStars();
 
 　let touches = [];
 
@@ -596,6 +641,63 @@ function prepareVisual(changeState = true) {
 }
 
 /* =========================================================
+   drawBeautifulStars
+   ========================================================= */
+function drawBeautifulStars() {
+  push();
+  noStroke();
+
+  starDrift += 0.02;
+
+  // === 遠景 ===
+  fill(180, 200, 255, 70);
+  for (let s of bgStarsFar) {
+    push();
+    translate(s.x + starDrift * 0.2, s.y, s.z);
+    sphere(1.1);
+    pop();
+  }
+
+  // === 中景 ===
+  for (let s of bgStarsMid) {
+    let tw = 0.5 + 0.5 * sin(frameCount * 0.02 + s.phase);
+    let alpha = map(tw, 0, 1, 60, 170);
+    fill(200, 220, 255, alpha);
+
+    push();
+    translate(s.x + starDrift * 0.5, s.y, s.z);
+    sphere(s.size * tw);
+    pop();
+  }
+
+  // === 近景 ===
+  for (let s of bgStarsNear) {
+    let tw = pow(0.5 + 0.5 * sin(frameCount * 0.015 + s.phase), 3);
+    let alpha = map(tw, 0, 1, 120, 255);
+    fill(255, 255, 220, alpha);
+
+    push();
+    translate(s.x + starDrift, s.y, s.z);
+    sphere(s.size * (1 + tw * 0.8));
+    pop();
+  }
+
+  // === 流れ星===
+  shootingStarTimer--;
+  if (shootingStarTimer <= 0 && random() < 0.002) {
+    shootingStarTimer = 120;
+
+    push();
+    stroke(255, 230, 200, 180);
+    strokeWeight(2);
+    let y = random(-300, 300);
+    line(-900, y, -200, -1200, y - 200, -700);
+    pop();
+  }
+
+  pop();
+}
+/* =========================================================
    draw
    ========================================================= */
 function draw() {
@@ -628,6 +730,7 @@ function draw() {
 	　else if (state === "visual") {
 	  resetMatrix();
 	  background(5, 5, 20);
+	  drawBeautifulStars();
 	  camera();
 	
 	  // 回転・ズームの補間
@@ -1389,7 +1492,7 @@ function screenPos(x, y, z) {
 
   return createVector(sx, sy);
 }
-	
+
 /* =========================================================
    drawGallery
    ========================================================= */
