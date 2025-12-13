@@ -130,6 +130,7 @@ const SCROLL_AMOUNT = 150;
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
+const designWidth = 430;
 
 let activeConstellation = null;
 
@@ -1354,7 +1355,7 @@ function groupByMonth(constellations) {
     
     try {
       const date = new Date(c.created);
-      if (isNaN(date.getTime())) continue; // 無効な日付はスキップ
+      if (isNaN(date.getTime())) continue;
       
       const month = date.getMonth();
       if (month >= 0 && month < 12) {
@@ -1383,7 +1384,6 @@ function handleGalleryTap(x, y) {
   y = (y - scrollY) / galleryScale;
   
   // ギャラリーのレイアウトパラメータ
-  const designWidth = 430;
   const galleryScale = min(1, width / designWidth);
   const thumbSize = 150 * galleryScale;
   const colCount = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
@@ -1834,7 +1834,6 @@ function drawGallery2D() {
   translate(-width / 2, -height / 2);
 
   // デザイン幅とスケールを計算
-  let designWidth = 430;
   let galleryScale = min(1, width / designWidth);
   
   push();
