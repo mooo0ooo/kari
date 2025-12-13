@@ -1517,12 +1517,14 @@ function setupButtonInteractions() {
   // 追加ボタン
   addButtonInteraction(addButton, function() {
     console.log("追加ボタンが押されました");
+	if (clickSound.isLoaded()) clickSound.play();
     addPAD();
   });
 
   // OKボタン
   addButtonInteraction(okButton, function() {
     console.log("OKボタンが押されました");
+	if (clickSound.isLoaded()) clickSound.play();
     if (padValues.length > 0) {
       prepareVisual();
       let now = new Date();
@@ -1552,6 +1554,7 @@ function setupButtonInteractions() {
   // 戻るボタン
   addButtonInteraction(backButton, function() {
     console.log("戻るボタンが押されました");
+	if (clickSound.isLoaded()) clickSound.play();
     state = "select";
     updateButtonVisibility();
     layoutDOMButtons();
@@ -1566,6 +1569,7 @@ function setupButtonInteractions() {
   // ギャラリーボタン
   addButtonInteraction(galleryButton, function() {
     console.log("ギャラリーボタンが押されました");
+	if (clickSound.isLoaded()) clickSound.play();
     if (state === "gallery") {
       state = "select";
       galleryStars = [];
@@ -1593,6 +1597,7 @@ function setupButtonInteractions() {
   // リセットビューボタン
   addButtonInteraction(resetViewButton, function() {
     console.log("リセットボタンが押されました");
+	if (clickSound.isLoaded()) clickSound.play();
     resetView();
   });
 }
