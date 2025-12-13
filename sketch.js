@@ -130,7 +130,6 @@ let velocityY = 0;
 let lastTouchX = 0;
 let lastTouchY = 0;
 let lastTouchTime = 0;
-let touchMode = null;
 
 let touchFeedback = { x: 0, y: 0, alpha: 0 };
 
