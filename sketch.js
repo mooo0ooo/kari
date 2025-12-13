@@ -257,13 +257,14 @@ console.log("prepareVisual関数が定義されていますか？", typeof prepa
 function setup() {
   console.log("setup() が呼ばれました");
   canvas = createCanvas(windowWidth, windowHeight, WEBGL);
-  textFont(myFont);
+  setAttributes('antialias', true);
+  smooth();
+  if (myFont) {
+    textFont(myFont);
+  }
   textSize(16);
-
   lastTouchTime = millis();
-
   setupStars();
-
 　let touches = [];
 
   let saved = localStorage.getItem("myConstellations");
@@ -751,16 +752,8 @@ function draw() {
     drawGallery2D();
   }
   else if (state === "visual") {
-	  if (!activeConstellation || !activeConstellation.stars) {
-	      background(5, 5, 20);
-		  resetMatrix();
-		  camera();
-		  drawBeautifulStars();
-	      return;
-	  }
-
-	  background(5, 5, 20);
 	  resetMatrix();
+	  background(5, 5, 20);
 	  camera();
 	  drawBeautifulStars();
 	
@@ -768,7 +761,6 @@ function draw() {
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
 	  rotationY = lerp(rotationY, targetRotationY, 0.18);
 	  zoomLevel  = lerp(zoomLevel, targetZoomLevel, 0.12);
-	
 	  rotateX(rotationX);
 	  rotateY(rotationY);
 	  scale(zoomLevel);
