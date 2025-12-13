@@ -155,6 +155,44 @@ let gutter = 12;
 let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
+class ShootingStar {
+  constructor() {
+    this.x = random(-800, 800);
+    this.y = random(-400, 400);
+    this.z = -200;
+
+    this.vx = random(-4, -2);
+    this.vy = random(-1, 1);
+    this.vz = random(-4, -2);
+
+    this.life = 0;
+    this.maxLife = int(random(80, 120));
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.z += this.vz;
+    this.life++;
+  }
+
+  draw() {
+    let a = map(this.life, 0, this.maxLife, 180, 0);
+    stroke(255, 220, 180, a);
+    strokeWeight(2);
+
+    line(
+      this.x, this.y, this.z,
+      this.x - this.vx * 10,
+      this.y - this.vy * 10,
+      this.z - this.vz * 10
+    );
+  }
+
+  isDead() {
+    return this.life > this.maxLife;
+  }
+}
 
 /* =========================================================
    preload
@@ -649,31 +687,17 @@ function drawBeautifulStars() {
     pop();
   }
 
-  // ===== 近景 =====
-  for (let s of bgStarsNear) {
-    let tw = pow(0.5 + 0.5 * sin(frameCount * 0.015 + s.phase), 3);
-    let alpha = map(tw, 0, 1, 120, 255);
-    fill(255, 255, 220, alpha);
-
-    push();
-    translate(s.x, s.y, s.z);
-    sphere(s.size * (1 + tw * 0.8));
-    pop();
+  // ===== 流れ星（軽量）=====
+  if (state === "visual" && random() < 0.006) {
+    shootingStars.push(new ShootingStar());
   }
 
-  // ===== 流れ星（軽量）=====
-  shootingStarTimer++;
-  if (shootingStarTimer > shootingStarInterval) {
-    shootingStarTimer = 0;
-
-    push();
-    stroke(255, 220, 180, 180);
-    strokeWeight(2);
-    line(
-      random(-800, 800), random(-400, 400), -200,
-      random(-1200, -800), random(-400, 400), -600
-    );
-    pop();
+  for (let i = shootingStars.length - 1; i >= 0; i--) {
+    shootingStars[i].update();
+    shootingStars[i].draw();
+    if (shootingStars[i].isDead()) {
+      shootingStars.splice(i, 1);
+    }
   }
 
   pop();
@@ -1286,6 +1310,8 @@ function changeState(newState) {
   
   if (state === "visual") {
     resetView();
+	resetViewButton.show();
+    galleryButton.show();
     visualStartTime = millis();
   } else if (state === "select") {
     resetView();
