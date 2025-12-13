@@ -1799,13 +1799,6 @@ function drawGallery2D() {
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
-
-function getGalleryPointer() {
-  return {
-    x: (mouseX - width / 2) / galleryScale,
-    y: (mouseY - height / 2 - scrollY) / galleryScale
-  };
-}
 /* =========================================================
    generate2DThumbnail
    ========================================================= */
