@@ -164,8 +164,8 @@ let activeConstellation = null;
    ========================================================= */
 function preload() {
   myFont = loadFont("nicomoji-plus_v2-5.ttf");
-  clickSound = loadSound("決定ボタンを押す7");
-  padClickSound = loadSound("カーソル移動2");
+  clickSound = loadSound("決定ボタンを押す7.mp3");
+  padClickSound = loadSound("カーソル移動2.mp3");
 }
 
 /* =========================================================
