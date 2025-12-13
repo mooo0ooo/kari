@@ -1349,8 +1349,10 @@ function handleTap(x, y) {
   // 座標変換
   const designWidth = 430;
   galleryScale = min(1, width / designWidth);
-  const tx = (x - width / 2) / galleryScale;
-  const ty = (y - height / 2 - scrollY) / galleryScale;
+  let tx = (x - width / 2) / galleryScale;
+  let ty = (y - height / 2) / galleryScale;
+
+  ty -= scrollY;
 
   const thumbSize = 150;
   const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
@@ -1359,41 +1361,34 @@ function handleTap(x, y) {
   let currentY = topOffset;
 
   // 月ごとに分類（parseDateベース）
-  let grouped = {};
-  for (let m = 0; m < 12; m++) grouped[m] = [];
-  for (let c of allConstellations) {
-    if (!c.created) continue;
-    const date = parseDate(c.created);
-    const monthIndex = date.getMonth();
-    grouped[monthIndex].push(c);
-  }
-
+  let grouped = groupByMonth(allConstellations);
+	  
   // ヒットテスト
-  for (let month = 0; month < 12; month++) {
-    const list = grouped[month];
-    if (list.length === 0) continue;
+    for (let month = 0; month < 12; month++) {
+      const list = grouped[month];
+      if (list.length === 0) continue;
 
-    currentY += 35; // 月見出し分
+      currentY += 35; // 月タイトル分
 
-    for (let i = 0; i < list.length; i++) {
-      const c = list[i];
-      const col = i % colCount;
-      const row = floor(i / colCount);
-      const thumbX = rowStartX + col * (thumbSize + gutter);
-      const thumbY = currentY + row * (thumbSize + gutter + 25);
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+        const col = i % colCount;
+        const row = floor(i / colCount);
+        const thumbX = rowStartX + col * (thumbSize + gutter);
+        const thumbY = currentY + row * (thumbSize + gutter + 25);
 
-      if (tx >= thumbX && tx <= thumbX + thumbSize &&
-          ty >= thumbY && ty <= thumbY + thumbSize) {
-        if (clickSound.isLoaded()) clickSound.play();
-        activeConstellation = c;
-        state = "visual";
-        updateButtonVisibility();
-        layoutDOMButtons();
-        resetView();
-        visualStartTime = millis();
-        return;
+        if (tx >= thumbX && tx <= thumbX + thumbSize &&
+            ty >= thumbY && ty <= thumbY + thumbSize) {
+          if (clickSound.isLoaded()) clickSound.play();
+          activeConstellation = c;
+          state = "visual";
+          updateButtonVisibility();
+          layoutDOMButtons();
+          resetView();
+          visualStartTime = millis();
+          return;
+        }
       }
-    }
 
     // 月コンテンツの高さを drawGallery2D と同じ計算で加算
     currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
