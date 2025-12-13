@@ -89,6 +89,8 @@ let bgStarsFar = [];
 let bgStarsMid = [];
 let bgStarsNear = [];
 let starDrift = 0;
+let shootingStarTimer = 0;
+let shootingStarInterval = 240;
 
 // タッチイベント
 // 3D操作
@@ -647,56 +649,57 @@ function drawBeautifulStars() {
   push();
   noStroke();
 
-  starDrift += 0.02;
-
-  // === 遠景 ===
-  fill(180, 200, 255, 70);
+  // ===== 遠景 =====
+  fill(180, 200, 255, 80);
   for (let s of bgStarsFar) {
     push();
-    translate(s.x + starDrift * 0.2, s.y, s.z);
-    sphere(1.1);
+    translate(s.x, s.y, s.z);
+    sphere(1.2);
     pop();
   }
 
-  // === 中景 ===
+  // ===== 中景 =====
   for (let s of bgStarsMid) {
     let tw = 0.5 + 0.5 * sin(frameCount * 0.02 + s.phase);
-    let alpha = map(tw, 0, 1, 60, 170);
+    let alpha = map(tw, 0, 1, 60, 180);
     fill(200, 220, 255, alpha);
 
     push();
-    translate(s.x + starDrift * 0.5, s.y, s.z);
+    translate(s.x, s.y, s.z);
     sphere(s.size * tw);
     pop();
   }
 
-  // === 近景 ===
+  // ===== 近景 =====
   for (let s of bgStarsNear) {
     let tw = pow(0.5 + 0.5 * sin(frameCount * 0.015 + s.phase), 3);
     let alpha = map(tw, 0, 1, 120, 255);
     fill(255, 255, 220, alpha);
 
     push();
-    translate(s.x + starDrift, s.y, s.z);
+    translate(s.x, s.y, s.z);
     sphere(s.size * (1 + tw * 0.8));
     pop();
   }
 
-  // === 流れ星===
-  shootingStarTimer--;
-  if (shootingStarTimer <= 0 && random() < 0.002) {
-    shootingStarTimer = 120;
+  // ===== 流れ星（軽量）=====
+  shootingStarTimer++;
+  if (shootingStarTimer > shootingStarInterval) {
+    shootingStarTimer = 0;
 
     push();
-    stroke(255, 230, 200, 180);
+    stroke(255, 220, 180, 180);
     strokeWeight(2);
-    let y = random(-300, 300);
-    line(-900, y, -200, -1200, y - 200, -700);
+    line(
+      random(-800, 800), random(-400, 400), -200,
+      random(-1200, -800), random(-400, 400), -600
+    );
     pop();
   }
 
   pop();
 }
+
 /* =========================================================
    draw
    ========================================================= */
@@ -730,8 +733,8 @@ function draw() {
 	　else if (state === "visual") {
 	  resetMatrix();
 	  background(5, 5, 20);
-	  drawBeautifulStars();
 	  camera();
+	　drawBeautifulStars();
 	
 	  // 回転・ズームの補間
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
