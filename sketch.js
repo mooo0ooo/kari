@@ -1755,6 +1755,18 @@ function mouseWheel(event) {
 }
 
 /* =========================================================
+   polygon
+   ========================================================= */
+function polygon(x,y,r,n){
+  beginShape();
+  for(let i=0;i<n;i++){
+    let angle = TWO_PI*i/n;
+    vertex(x+cos(angle)*r,y+sin(angle)*r);
+  }
+  endShape(CLOSE);
+}
+
+/* =========================================================
    findClosestEmotion
    ========================================================= */
 function findClosestEmotion(p,a,d){
