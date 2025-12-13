@@ -1685,25 +1685,26 @@ function drawGallery2D() {
   translate(-width / 2, -height / 2);
 
   // デザイン幅とスケールを計算
+  const designWidth = 430;
   galleryScale = min(1, width / designWidth);
-  
+
   push();
   scale(galleryScale);
   translate(0, scrollY);
 
   // サムネイルサイズとレイアウトを計算
-  let thumbSize = 150; 
-  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  const thumbSize = 150;
+  const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+  const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
 
-　galleryLayout.thumbSize = thumbSize;
+  galleryLayout.thumbSize = thumbSize;
   galleryLayout.colCount = colCount;
   galleryLayout.rowStartX = rowStartX;
   galleryLayout.topOffset = topOffset;
 
   // 月ごとに分類
-  let grouped = {};
+  const grouped = groupByMonth(allConstellations);
   for (let m = 0; m < 12; m++) grouped[m] = [];
   for (let c of allConstellations) {
     if (!c.created) continue;
@@ -1715,68 +1716,63 @@ function drawGallery2D() {
 
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
-    let list = grouped[month];
-    if (list.length === 0) continue;
+    const list = grouped[month];
+    if (!list || list.length === 0) continue;
 
-    // 月の見出し
+    // 月見出し
     fill(255);
     textSize(24);
     textAlign(LEFT, TOP);
-    let monthNames = [
+    const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
-    text(monthNames[month], 20, y);  
+    text(monthNames[month], 20, y);
     y += 35;
 
-	let monthContentHeight = ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+    const rows = ceil(list.length / colCount);
+    const monthContentHeight = rows * (thumbSize + gutter + 25) + 20;
 
-    // サムネイルをグリッド状に配置
+    // サムネイル描画
     for (let i = 0; i < list.length; i++) {
-	　const c = list[i]; 
-      let col = i % colCount;
-      let row = floor(i / colCount);
-      let x = rowStartX + col * (thumbSize + gutter);
-      let ty = y + row * (thumbSize + gutter + 25);
-		
-      // タップ/ホバー判定
-      let mx = (mouseX - width/2) / galleryScale;
-      let my = (mouseY - height/2 - scrollY) / galleryScale;
-      
-      // サムネイルの背景
-	  fill('rgba(5, 5, 20, 0.8)');
-	  stroke('rgba(150, 150, 150, 0.5)');
-	  strokeWeight(1);
-	  rect(x, ty, thumbSize, thumbSize, 8);
-		
-	  if (!c.thumbnail) {
-		  c.thumbnail = generate2DThumbnail(c, thumbSize);
-	  }
-		
-	  if (c.thumbnail) {
-		  image(c.thumbnail, x, ty, thumbSize, thumbSize);
-	  }
-      
-      // 日付を表示
+      const c = list[i];
+      const col = i % colCount;
+      const row = floor(i / colCount);
+      const x = rowStartX + col * (thumbSize + gutter);
+      const ty = y + row * (thumbSize + gutter + 25);
+
+      // サムネイル背景
+      fill('rgba(5, 5, 20, 0.8)');
+      stroke('rgba(150, 150, 150, 0.5)');
+      strokeWeight(1);
+      rect(x, ty, thumbSize, thumbSize, 8);
+
+      // サムネイル生成
+      if (!c.thumbnail) {
+        c.thumbnail = generate2DThumbnail(c, thumbSize);
+      }
+      if (c.thumbnail) {
+        image(c.thumbnail, x, ty, thumbSize, thumbSize);
+      }
+
+      // 日付表示
       const date = parseDate(c.created);
-      let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
       fill(200, 220, 255);
       textSize(12);
       textAlign(CENTER, TOP);
-      text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
+      text(formattedDate, x + thumbSize / 2, ty + thumbSize + 5);
     }
-    
-    // 次の月の開始位置を計算
-    y += monthContentHeight;;
-  }
 
-  let contentHeight = y + 20;
+    // 月の高さを加算
+    y += monthContentHeight;
+  }
 
   pop();
 
-  // スクロール範囲を制限
-  let maxScroll = calculateMaxScroll();
+  // スクロール範囲制限
+  const maxScroll = calculateMaxScroll();
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
