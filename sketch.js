@@ -157,6 +157,11 @@ let galleryScale = 1;
 
 let activeConstellation = null;
 
+let currentTouchX = 0;
+let currentTouchY = 0;
+let lastProcessedTouchX = 0;
+let lastProcessedTouchY = 0;
+
 class ShootingStar {
   constructor() {
     this.x = random(-800, 800);
@@ -1201,18 +1206,23 @@ function touchStarted() {
       touches[1].x, touches[1].y
     );
     pinchStartZoom = targetZoomLevel;
-    return;
+    initialpinchDistance = pinchStartDist; // 初期化を追加
+    initialZoom = targetZoomLevel; // 初期化を追加
+    return false;
   }
-
+	
   // ---------- single touch ----------
   if (touches.length === 1) {
-    touchStartX = touches[0].x;
-    touchStartY = touches[0].y;
-	lastTouchX = touchStartX;
-    lastTouchY = touchStartY;
-	touchStartTime = millis();
+    currentTouchX = touches[0].x;
+    currentTouchY = touches[0].y;
+    lastProcessedTouchX = currentTouchX;
+    lastProcessedTouchY = currentTouchY;
+    touchStartX = currentTouchX; // 追加
+    touchStartY = currentTouchY; // 追加
+    touchStartTime = millis();
     touchMode = 'potentialTap';
-	if (state === 'gallery') {
+    
+    if (state === 'gallery') {
       touchStartScrollY = targetScrollY;
     }
     return false;
@@ -1221,15 +1231,15 @@ function touchStarted() {
 }
 
 function touchMoved() {
-  if (!touchMode || touches.length !== 1) return false;
+  if (!touchMode) return false;
 
-  const touch = touches[0];
-  lastTouchX = touch.x;
-  lastTouchY = touch.y;
-  const dx = touch.x - touchStartX;
-  const dy = touch.y - touchStartY;
-  const moveDist = Math.sqrt(dx * dx + dy * dy);
+  currentTouchX = touches[0].x;
+  currentTouchY = touches[0].y;
 
+  const moveX = currentTouchX - lastProcessedTouchX;
+  const moveY = currentTouchY - lastProcessedTouchY;
+  const moveDist = Math.sqrt(moveX * moveX + moveY * moveY);
+	
   // タップ判定用のしきい値（ピクセル）
   const TAP_THRESHOLD = 8;
   
@@ -1241,15 +1251,11 @@ function touchMoved() {
   }
 
   // ピンチジェスチャー（2本指）
-  if (touches.length === 2) {
+  if (touches.length === 2 && touchMode === "pinch" && state === "visual") {
     const d = dist(
       touches[0].x, touches[0].y,
       touches[1].x, touches[1].y
     );
-    if (!initialpinchDistance) {
-      initialpinchDistance = d;
-      initialZoom = targetZoomLevel;
-    }
     const scale = d / initialpinchDistance;
     targetZoomLevel = constrain(
       initialZoom * scale,
@@ -1259,30 +1265,36 @@ function touchMoved() {
     return false;
   }
 
-  // ---------- スクロール処理（ギャラリーモード） ----------
-  if (touchMode === "scroll" && state === "gallery") {
-    const dy = touch.y - touchStartY;
-    targetScrollY = touchStartScrollY + dy;
-    velocityY = dy * 0.5;
-    
-    // スクロール範囲を制限
-    const maxScroll = -calculateMaxScroll();
-    targetScrollY = constrain(targetScrollY, maxScroll, 0);
-    
-    return false;
-  }
+  // シングルタッチ
+  if (touches.length === 1) {
+    currentTouchX = touches[0].x;
+    currentTouchY = touches[0].y;
 
-  // ---------- 回転処理（ビジュアルモード） ----------
-  if (touchMode === "rotate" && state === "visual") {
-    targetRotationY += dx * 0.004;
-    targetRotationX -= dy * 0.004;
-    targetRotationX = constrain(targetRotationX, -PI/2, PI/2);  // 回転制限
-    return false;  // デフォルトの動作を防ぐ
-  }
+    const moveX = currentTouchX - lastProcessedTouchX;
+    const moveY = currentTouchY - lastProcessedTouchY;
+    const moveDist = Math.sqrt(moveX * moveX + moveY * moveY);
 
-  lastTouchX = x;
-  lastTouchY = y;
-  
+    // モードの確定
+    if (touchMode === 'potentialTap' && moveDist > TAP_THRESHOLD) {
+      touchMode = state === 'gallery' ? 'scroll' : 'rotate';
+    }
+
+    // スクロール処理（ギャラリーモード）
+    if (touchMode === 'scroll' && state === 'gallery') {
+      const scrollDelta = currentTouchY - touchStartY; // touchStartYを使用
+      targetScrollY = touchStartScrollY + scrollDelta;
+      velocityY = moveY * 0.5;
+    }
+    // 回転処理（ビジュアルモード）
+    else if (touchMode === 'rotate' && state === 'visual') {
+      targetRotationY += moveX * 0.004;
+      targetRotationX -= moveY * 0.004;
+      targetRotationX = constrain(targetRotationX, -PI/2, PI/2);
+    }
+
+    lastProcessedTouchX = currentTouchX;
+    lastProcessedTouchY = currentTouchY;
+  }
   return false;
 }
 
@@ -1297,18 +1309,24 @@ function touchEnded() {
 
   // ---------- tap ----------
   if (touches.length === 0) {
-    if (touchMode === 'potentialTap' || touchMode === null) {
-      if (dist(touchStartX, touchStartY, touchX, touchY) < TAP_THRESHOLD) {
-        handleTap(lastTouchX, lastTouchY);
+    if (touchMode === 'potentialTap') {
+      const elapsed = millis() - touchStartTime;
+      const moved = dist(
+        currentTouchX, currentTouchY,
+        touchStartX, touchStartY
+      );
+      
+      if (elapsed < TAP_MAX_DURATION && moved < TAP_THRESHOLD) {
+        if (state === 'gallery') {
+          handleTap(currentTouchX, currentTouchY);
+        }
       }
     }
+    
+    // リセット
     touchMode = null;
+    initialpinchDistance = 0;
   }
-  return false;
-}
-
-function touchCanceled() {
-  touchMode = null;
   return false;
 }
 
