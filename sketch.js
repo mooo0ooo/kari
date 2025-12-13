@@ -156,7 +156,6 @@ let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
 
-
 class ShootingStar {
   constructor() {
     this.x = random(-800, 800);
@@ -1551,7 +1550,7 @@ function drawGallery2D() {
   background(5, 5, 20);
   
   // 背景の星を描画
-  drawBackgroundStars();
+  drawBeautifulStars();
   
   // 画面中央に配置
   translate(-width / 2, -height / 2);
