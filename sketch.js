@@ -1569,7 +1569,13 @@ function drawGallery2D() {
   const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   
   // レイアウト情報を更新
-  updateGalleryLayout(thumbSize, colCount, rowStartX);
+  if (!galleryLayout) {
+	  galleryLayout = {};
+  }
+  galleryLayout.thumbSize = thumbSize;
+  galleryLayout.colCount = colCount;
+  galleryLayout.rowStartX = rowStartX;
+  galleryLayout.topOffset = topOffset || 20;
   
   // 月ごとに分類
   const grouped = groupByMonth(allConstellations);
