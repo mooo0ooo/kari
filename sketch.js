@@ -191,7 +191,6 @@ function setup() {
   okButton = createButton("OK");
   backButton = createButton("← 記録ページ");
   galleryButton = createButton("日記一覧");
-  createScrollButtons();
 
   // ボタンスタイルの設定
   [addButton, okButton, backButton, galleryButton].forEach(btn => {
@@ -396,9 +395,6 @@ function setup() {
 	    btn.addEventListener('touchend', handleButtonTouchEnd, { passive: false });
 	});
   }
-	if (state === "gallery") {
-	  createScrollButtons();
-	}
 }
 
 /* =========================================================
