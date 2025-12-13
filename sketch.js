@@ -131,7 +131,7 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 const designWidth = 430;
-const galleryScale = min(1, width / designWidth);
+let galleryScale = 1;
 
 let activeConstellation = null;
 
@@ -1380,6 +1380,7 @@ function handleGalleryTap(x, y) {
   if (!allConstellations || allConstellations.length === 0) return;
 
 　const designWidth = 430;
+  galleryScale = min(1, width / designWidth);
 　x = x / galleryScale;
   y = (y - scrollY) / galleryScale;
   
@@ -1556,6 +1557,7 @@ function handleGalleryClick() {
     const CLOSE_BUTTON_RADIUS = 30;
     
     // 座標変換
+	galleryScale = min(1, width / designWidth);
     const offsetX = (width - DESIGN_WIDTH * galleryScale) / 2;
     const mx = (mouseX - offsetX) / galleryScale;
     const my = (mouseY - scrollY) / galleryScale;
