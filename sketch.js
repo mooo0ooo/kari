@@ -345,19 +345,19 @@ function setup() {
   
   // ビジュアルの準備
   if (prepareVisual(true)) {
-    console.log("prepareVisual succeeded, points:", points);  // デバッグ用
+    console.log("prepareVisual succeeded, points:", points);
     
     // 新しい日記データを作成
     let now = new Date();
     let timestamp = now.toLocaleString();
     
-    // 星のデータを準備（pointsを直接使用）
+    // 星のデータを準備
     if (!points || points.length === 0) {
       console.error("表示する星のデータがありません");
       return;
     }
 
-	// 新しい星座を作成
+    // 新しい星座を作成
     let newConstellation = {
       stars: points.map(p => ({
         pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
@@ -366,7 +366,7 @@ function setup() {
       created: timestamp
     };
 
-    console.log("New constellation:", newConstellation);  // デバッグ用
+    console.log("New constellation:", newConstellation);
 
     // アクティブな星座を設定
     activeConstellation = newConstellation;
@@ -382,6 +382,9 @@ function setup() {
     // 選択状態をリセット
     padValues = [];
     selectedP = selectedA = selectedD = null;
+    
+    // 状態を更新
+    updateButtonVisibility();
     
     // 明示的に再描画
     redraw();
@@ -598,7 +601,7 @@ function prepareVisual(changeState = true) {
       return false;
     }
 
-    console.log("Processing padValues:", padValues);  // デバッグ用
+    console.log("Processing padValues:", padValues);
 
     // 選択されたPAD値から星の位置を計算
     for (let v of padValues) {
@@ -607,7 +610,7 @@ function prepareVisual(changeState = true) {
         continue;
       }
       
-      console.log("Processing PAD value:", v);  // デバッグ用
+      console.log("Processing PAD value:", v);
       
       let emo = findClosestEmotion(v.P, v.A, v.D);
       if (!emo) {
@@ -626,7 +629,7 @@ function prepareVisual(changeState = true) {
         emo: emo
       });
       
-      console.log("Created point:", {x, y, z, emo});  // デバッグ用
+      console.log("Created point:", {x, y, z, emo});
     }
 
     if (tempPoints.length === 0) {
@@ -648,13 +651,14 @@ function prepareVisual(changeState = true) {
 
     // グローバルの points を更新
     points = tempPoints;
-    console.log("Created", points.length, "points for visualization");  // デバッグ用
+    console.log("Created", points.length, "points for visualization");
 
     // 状態をvisualに設定
     if (changeState) {
-      changeState("visual");
+      state  = "visual";
       updateButtonVisibility();
       visualStartTime = millis();
+	  redraw();
     }
     
     return true;
