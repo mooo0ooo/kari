@@ -67,6 +67,7 @@ let stars = [];
 let selectedLabel = null;
 
 let state = "select"; 
+activeConstellation = null;
 let addButton, okButton;
 let backButton;
 
@@ -714,6 +715,10 @@ function draw() {
     drawGallery2D();
   }
   else if (state === "visual") {
+	  if (!activeConstellation || !activeConstellation.stars) {
+	    return;
+	  }
+	  
 	  background(5, 5, 20);
 
 	  resetMatrix();
@@ -765,6 +770,7 @@ function draw() {
 
 	  breathPhase += 0.008;
 	  let breath = 0.92 + 0.08 * sin(breathPhase);
+	  
 	  // 星
 	  for (let p of main.stars) {
 	  let px = p.pos.x * breath;
