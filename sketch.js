@@ -341,58 +341,42 @@ function setup() {
     console.log("追加するPAD値がありません");
     return;
   }
-
-  console.log("OKボタンが押されました。PAD値:", JSON.parse(JSON.stringify(padValues)));  // ディープコピーでログ出力
-  
+	 
   // ビジュアルの準備
-  if (prepareVisual(true)) {
-    console.log("prepareVisual succeeded, points:", points);
-    
-    // 新しい日記データを作成
-    let now = new Date();
-    let timestamp = now.toLocaleString();
-    
-    // 星のデータを準備
+  if (padValues.length > 0) {
+    prepareVisual();
+
     if (!points || points.length === 0) {
-      console.error("表示する星のデータがありません");
+      console.warn("points が空です");
       return;
     }
 
-    // 新しい星座を作成
+    let now = new Date();
+    let timestamp = now.toLocaleString();
+    let serialStars = points.map(s => ({
+      pos: { 
+        x: (s.pos && s.pos.x) || 0, 
+        y: (s.pos && s.pos.y) || 0, 
+        z: (s.pos && s.pos.z) || 0 
+      }, 
+      emo: s.emo || { P:0, A:0, D:0 } 
+    }));
+
     let newConstellation = {
-      stars: points.map(p => ({
-        pos: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
-        emo: p.emo
-      })),
+      stars: serialStars, 
       created: timestamp
     };
-
-    console.log("New constellation:", newConstellation);
-
-    // アクティブな星座を設定
-    activeConstellation = newConstellation;
-
-    // 保存
-    if (!Array.isArray(allConstellations)) allConstellations = [];
     allConstellations.push(newConstellation);
-    localStorage.setItem(
-      "myConstellations",
-      JSON.stringify(allConstellations)
-    );
+    localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
 
-    // 選択状態をリセット
-    padValues = [];
-    selectedP = selectedA = selectedD = null;
-    
-    // 状態を更新
+    state = "visual";
+    resetView();
     updateButtonVisibility();
-    
-    // 明示的に再描画
+    visualStartTime = millis();
     redraw();
-  } else {
-    console.error("prepareVisual failed");
   }
 });
+
 
   galleryButton.mousePressed(() => {
 	  activeConstellation = null;
