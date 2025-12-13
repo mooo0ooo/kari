@@ -163,9 +163,9 @@ class ShootingStar {
     this.y = random(-400, 400);
     this.z = -200;
 
-    this.vx = random(-1.5, -0.8); // ← 速度をかなり落としてる
-    this.vy = random(-0.4, 0.4);
-    this.vz = random(-2, -1);
+    this.vx = random(1, 1.7);
+    this.vy = random(0.4, 1.4);
+    this.vz = random(1, 0);
 
     this.life = 0;
     this.maxLife = int(random(80, 120));
@@ -181,13 +181,13 @@ class ShootingStar {
   draw() {
     let a = map(this.life, 0, this.maxLife, 160, 0);
     stroke(255, 220, 180, a);
-    strokeWeight(1.5);
+    strokeWeight(0.7);
 
     line(
       this.x, this.y, this.z,
-      this.x - this.vx * 12,
-      this.y - this.vy * 12,
-      this.z - this.vz * 12
+      this.x - this.vx * 30,
+      this.y - this.vy * 30,
+      this.z - this.vz * 30
     );
   }
 
