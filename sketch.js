@@ -1,4 +1,3 @@
-
 let emotions = [
   {en: "Relaxed", ja: "リラックス", P: 0.7, A: -0.6, D: 0.2},
   {en: "Contented", ja: "満足", P: 0.6, A: -0.3, D: 0.1},
@@ -1293,28 +1292,9 @@ function touchEnded(event) {
       }
     }
   }
-
-　if (state === "gallery" && touches.length === 1) {
-    const touch = touches[0];
-    const galleryScale = min(1, width / 430);
-    const mx = (touch.x - width/2) / galleryScale;
-    const my = (touch.y - height/2 - scrollY) / galleryScale;
-    
-    const thumbSize = 150;
-    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
-    const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-    
-    const col = floor((mx - rowStartX) / (thumbSize + gutter));
-    const row = floor((my - topOffset) / (thumbSize + gutter + 25));
-    const index = row * colCount + col;
-    
-    if (index >= 0 && index < allConstellations.length) {
-      loadConstellationToVisual(allConstellations[index]);
-    }
-  }
   
   isTouching = false;
-  touches = [];
+  
   return false;
 }
 
@@ -1465,7 +1445,6 @@ function resetView() {
   targetRotationY = 0;
   zoomLevel = 1;
   targetZoomLevel = 1;
-　visualStartTime = millis();
   
   // 慣性をリセット
   velocityX = 0;
@@ -1477,17 +1456,6 @@ function resetView() {
   
   // カメラをリセット
   camera();
-
-　if (state === "visual" && points) {
-    points.forEach(star => {
-      if (star.orbit) {
-        star.orbit.angle = random(TWO_PI);
-        star.orbit.speed = random(0.01, 0.03);
-      }
-    });
-  }
-  
-  redraw();
 }
 
 // 状態変更
@@ -1587,73 +1555,21 @@ function handleGalleryClick() {
     const mx = (mouseX - offsetX) / galleryScale;
     const my = (mouseY - scrollY) / galleryScale;
 
+    // サムネイルグリッドの計算
+    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
+    const rowStartX = (width / galleryScale - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
+    
+    // サムネイルのクリック検出
+    if (checkThumbnailClicks(mx, my, rowStartX, colCount, THUMBNAIL_SIZE)) {
+        return;
+    }
+    
     // 拡大表示中の処理
     if (selectedThumbnail) {
-        if (handleZoomedViewInteraction(mx, my)) {
-            return true; // 拡大表示の操作を処理した場合は終了
-        }
+        handleZoomedViewInteraction();
     }
-    
-    // サムネイルグリッドの計算
-    const colCount = max(1, floor((DESIGN_WIDTH - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
-    const rowStartX = (DESIGN_WIDTH - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
-    
-    // 現在表示されている月のデータを取得
-    const monthData = getCurrentMonthData(); // 現在表示されている月のデータを取得する関数が必要
-    
-    // 各サムネイルのクリックをチェック
-    for (let i = 0; i < monthData.length; i++) {
-        const col = i % colCount;
-        const row = Math.floor(i / colCount);
-        const x = rowStartX + col * (THUMBNAIL_SIZE + gutter);
-        const y = topOffset + row * (THUMBNAIL_SIZE + gutter + 25);
-        
-        // クリックがサムネイルの範囲内かチェック
-        if (mx >= x && mx <= x + THUMBNAIL_SIZE && 
-            my >= y && my <= y + THUMBNAIL_SIZE) {
-            
-            // サムネイルを選択状態に
-            selectedThumbnail = monthData[i];
-            selectedThumbnail.x = x;
-            selectedThumbnail.y = y;
-            selectedThumbnail.width = THUMBNAIL_SIZE;
-            selectedThumbnail.height = THUMBNAIL_SIZE;
-            
-            // ビジュアル表示に切り替え
-            if (selectedThumbnail.constellation) {
-                loadConstellationToVisual(selectedThumbnail.constellation);
-            }
-            
-            return true; // クリックを処理した
-        }
-    }
-    
-    return false; // クリックを処理しなかった
-}
-
-// 拡大表示中のインタラクション処理
-function handleZoomedViewInteraction(mx, my) {
-    // 閉じるボタンの位置
-    const closeX = selectedThumbnail.x + selectedThumbnail.width - 20;
-    const closeY = selectedThumbnail.y + 20;
-    
-    // 閉じるボタンがクリックされたかチェック
-    if (dist(mx, my, closeX, closeY) < 15) {
-        selectedThumbnail = null;
-        return true;
-    }
-    
-    // その他の拡大表示中のインタラクション処理...
     
     return false;
-}
-
-// 現在表示されている月のデータを取得
-function getCurrentMonthData() {
-    // 現在のスクロール位置に基づいて表示されている月を判定
-    // 例: 月ごとのデータを返すロジック
-    // 実際の実装では、現在のスクロール位置に応じた月のデータを返す
-    return currentMonthItems;
 }
 
 function setupButtonInteractions() {
@@ -1963,19 +1879,12 @@ function drawGallery2D() {
       // タップ/ホバー判定
       let mx = (mouseX - width/2) / galleryScale;
       let my = (mouseY - height/2 - scrollY) / galleryScale;
-
-　　  let isHovered = (mx > x && mx < x + thumbSize && my > ty && my < ty + thumbSize);
-		
+      
       // サムネイルの背景
 	  fill('rgba(5, 5, 20, 0.8)');
 	  stroke('rgba(150, 150, 150, 0.5)');
 	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
-
-	  // クリック処理
-	  if (isHovered && (mouseIsPressed || isTouching)) {
-	    handleGalleryItemTap(list[i]);
-	  }
 		
 	  if (!list[i].thumbnail) {
 		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
@@ -2138,52 +2047,6 @@ function generate2DThumbnail(cons, size) {
   cons.thumbnail = pg;
   cons.lastAccessed = Date.now();
   return pg;
-}
-
-function loadConstellationToVisual(constellation) {
-  if (!constellation || !constellation.stars) {
-    console.error("無効なデータです:", constellation);
-    return false;
-  }
-
-  try {
-    // アニメーションパラメータをリセット
-    rotationX = 0;
-    rotationY = 0;
-    targetRotationX = 0;
-    targetRotationY = 0;
-    zoomLevel = 1;
-    targetZoomLevel = 1;
-    
-    // 星のデータを変換
-    points = constellation.stars.map(star => {
-      if (!star || !star.pos) return null;
-      
-      const emo = star.emo || { en: "Unknown", ja: "不明", P: 0, A: 0, D: 0 };
-      const x = map(star.pos.x || 0, -100, 100, -100, 100);
-      const y = map(star.pos.y || 0, -100, 100, -100, 100);
-      const z = map(star.pos.z || 0, -100, 100, -100, 100);
-      
-      return {
-        pos: createVector(x, y, z),
-        emo: emo,
-        selected: false
-      };
-    }).filter(Boolean);
-    
-    // ビジュアルモードに切り替え
-    state = "visual";
-    updateButtonVisibility();
-    resetVisualView();
-    visualStartTime = millis();
-    redraw();
-    
-    return true;
-    
-  } catch (error) {
-    console.error("エラーが発生しました:", error);
-    return false;
-  }
 }
 /* =========================================================
    最大スクロール量を計算
