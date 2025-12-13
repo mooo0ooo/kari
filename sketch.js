@@ -135,13 +135,7 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
-let galleryLayout = {
-  colCount: 1,
-  thumbSize: 150,
-  gutter: 20,
-  rowStartX: 0,
-  topOffset: 0
-};
+let galleryLayout = {};
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -153,7 +147,7 @@ const SCROLL_AMOUNT = 150;
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
-const designWidth = 430;
+const designWidth = 1200;
 let galleryScale = 1;
 
 class ShootingStar {
@@ -1615,29 +1609,49 @@ function drawMonthHeader(month, yPos) {
 }
 
 // サムネイルを描画するヘルパー関数
-function drawThumbnails(items, month, startY, thumbSize, colCount, startX) {
-  const rowHeight = thumbSize + gutter + 25; // サムネイル + 余白 + 日付の高さ
-  const rows = ceil(items.length / colCount);
-  let y = startY;
+function drawThumbnail(item, x, y, size) {
+  if (!item) return;
   
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < colCount; col++) {
-      const index = row * colCount + col;
-      if (index >= items.length) break;
-      
-      const item = items[index];
-      const x = startX + col * (thumbSize + gutter);
-      
-      // サムネイルの位置情報を更新
-      updateThumbnailPosition(item, x, y, thumbSize);
-      
-      // サムネイルを描画
-      drawThumbnail(item, x, y, thumbSize);
-    }
-    y += rowHeight;
+  // サムネイルの背景
+  fill('rgba(5, 5, 20, 0.8)');
+  stroke('rgba(150, 150, 150, 0.5)');
+  strokeWeight(1);
+  rect(x, y, size, size, 8);
+  
+  // サムネイル画像を生成または取得
+  if (!item.thumbnail) {
+    item.thumbnail = generate2DThumbnail(item, size);
   }
   
-  return y + 20; // 次の月との余白を追加して返す
+  // サムネイルを描画
+  if (item.thumbnail) {
+    image(item.thumbnail, x, y, size, size);
+  }
+  
+  // 日付を表示
+  drawThumbnailDate(item, x, y, size);
+}
+
+/**
+ * サムネイルの日付を描画
+ */
+function drawThumbnailDate(item, x, y, size) {
+  if (!item.created) return;
+  
+  const date = parseDate(item.created);
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekday = weekdays[date.getDay()];
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  const formattedDate = `${month}/${day}(${weekday}) ${hours}:${minutes}`;
+  
+  fill(200, 220, 255);
+  textSize(12);
+  textAlign(CENTER, TOP);
+  text(formattedDate, x + size/2, y + size + 5);
 }
 
 // サムネイルの位置情報を更新するヘルパー関数
@@ -1648,32 +1662,6 @@ function updateThumbnailPosition(item, x, y, size) {
   item._gy = y;
   item._gw = size;
   item._gh = size;
-}
-
-// サムネイルを描画するヘルパー関数
-function drawThumbnails(items, startY, thumbSize, colCount, startX) {
-  const rowHeight = thumbSize + gutter + 25; // サムネイル + 余白 + 日付の高さ
-  const rows = ceil(items.length / colCount);
-  let y = startY;
-  
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < colCount; col++) {
-      const index = row * colCount + col;
-      if (index >= items.length) break;
-      
-      const item = items[index];
-      const x = startX + col * (thumbSize + gutter);
-      
-      // サムネイルの位置情報を更新
-      updateThumbnailPosition(item, x, y, thumbSize);
-      
-      // サムネイルを描画
-      drawThumbnail(item, x, y, thumbSize);
-    }
-    y += rowHeight;
-  }
-  
-  return y + 20; // 次の月との余白を追加して返す
 }
 
 // スクロール範囲を更新するヘルパー関数
@@ -1833,7 +1821,7 @@ function calculateMaxScroll() {
     totalHeight += rows * (thumbSize + gutter + 25) + 20;
   }
   
-  return max(0, totalHeight - height + 100);
+  return max(0, (document.body.scrollHeight - window.innerHeight) / galleryScale);
 }
 
 /* =========================================================
