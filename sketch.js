@@ -336,7 +336,7 @@ function setup() {
 	        created: timestamp
 	      };
 
-		　activeConstellation = newConstellation;
+		  acteiveConstellation = newConstellation;
 	      
 	      // データを保存
 	      if (!Array.isArray(allConstellations)) {
@@ -730,11 +730,13 @@ function draw() {
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
   }
-	　else if (state === "visual") {
-	  resetMatrix();
+  else if (state === "visual") {
 	  background(5, 5, 20);
+
+	  resetMatrix();
 	  camera();
-	　drawBeautifulStars();
+	
+	  drawBeautifulStars();
 	
 	  // 回転・ズームの補間
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
@@ -793,7 +795,7 @@ function draw() {
 	    pop();
 	  }
 	
-	  // 線（少し待ってから）
+	  // 線
 	  if (millis() - visualStartTime > 1200) {
 	    push();
 	    stroke(180, 200, 255, 90);
@@ -822,8 +824,6 @@ function draw() {
 	  textAlign(CENTER, CENTER);
 	  textSize(14);
 	  text(main.created, 0, 0);
-	  pop();
-	
 	  pop();
 	
 	  // 月タイトル（画面固定）
@@ -855,7 +855,7 @@ function draw() {
 	    pop();
 	  }
 	}
-
+	pop();
 }
 /* =========================================================
    drawPADButtons
