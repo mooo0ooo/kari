@@ -1574,7 +1574,7 @@ function drawGallery2D() {
   
   // 月ごとに分類
   const grouped = groupByMonth(allConstellations);
-  let currentY = topOffset;
+  currentY = drawThumbnails(monthItems, currentY, thumbSize, colCount, rowStartX);
   
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
@@ -1646,32 +1646,8 @@ function updateThumbnailPosition(item, x, y, size) {
 }
 
 // サムネイルを描画するヘルパー関数
-function drawThumbnail(item, x, y, size) {
-  if (!item) return;
-  
-  // サムネイルの背景
-  fill('rgba(5, 5, 20, 0.8)');
-  stroke('rgba(150, 150, 150, 0.5)');
-  strokeWeight(1);
-  rect(x, y, size, size, 8);
-  
-  // サムネイル画像を生成または取得
-  if (!item.thumbnail) {
-    item.thumbnail = generate2DThumbnail(item, size);
-  }
-  
-  // サムネイルを描画
-  if (item.thumbnail) {
-    image(item.thumbnail, x, y, size, size);
-  }
-  
-  // 日付を表示
-  drawThumbnailDate(item, x, y, size);
-}
-
-// サムネイルの日付を描画するヘルパー関数
 function drawThumbnails(items, startY, thumbSize, colCount, startX) {
-  const rowHeight = thumbSize + gutter + 25;
+  const rowHeight = thumbSize + gutter + 25; // サムネイル + 余白 + 日付の高さ
   const rows = ceil(items.length / colCount);
   let y = startY;
   
@@ -1683,7 +1659,7 @@ function drawThumbnails(items, startY, thumbSize, colCount, startX) {
       const item = items[index];
       const x = startX + col * (thumbSize + gutter);
       
-      // 位置情報を更新（必ず行う）
+      // サムネイルの位置情報を更新
       updateThumbnailPosition(item, x, y, thumbSize);
       
       // サムネイルを描画
@@ -1692,7 +1668,7 @@ function drawThumbnails(items, startY, thumbSize, colCount, startX) {
     y += rowHeight;
   }
   
-  return y + 20;
+  return y + 20; // 次の月との余白を追加して返す
 }
 
 // スクロール範囲を更新するヘルパー関数
