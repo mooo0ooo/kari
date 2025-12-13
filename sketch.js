@@ -476,9 +476,8 @@ function updateButtonVisibility() {
   backButton.hide();
   galleryButton.hide();
   resetViewButton.hide();
-
+	
   if (state === "select") {
-    console.log("selectモードのボタンを表示");
     addButton.show();
     galleryButton.show();
     okButton.show();
@@ -487,12 +486,10 @@ function updateButtonVisibility() {
     okButton.html("OK");
   } 
   else if (state === "gallery") {
-    console.log("galleryモードのボタンを表示");
     backButton.show();
     backButton.html("← 戻る");
   }
   else if (state === "visual") {
-    console.log("visualモードのボタンを表示します");
     resetViewButton.show();
     galleryButton.show();
     resetViewButton.position(20, 20);
@@ -585,9 +582,6 @@ function addPAD() {
    ========================================================= */
 function prepareVisual(changeState = true) {
   console.log("prepareVisualが呼ばれました。changeState =", changeState);
-  console.trace("prepareVisualの呼び出し元をトレース");
-  console.log("prepareVisualの型:", typeof prepareVisual);
-  console.log("prepareVisualの内容:", prepareVisual.toString().substring(0, 100) + "...");
   
   try {
     // 星の位置を計算
@@ -598,22 +592,15 @@ function prepareVisual(changeState = true) {
     }
 
     for (let v of padValues) {
-      if (!v || typeof v !== 'object') {
-        console.warn("Invalid PAD value:", v);
-        continue;
-      }
+      if (!v || typeof v !== 'object') continue;
       
       let emo = findClosestEmotion(v.P, v.A, v.D);
-      if (!emo) {
-        console.warn("No emotion found for PAD values:", v);
-        continue;
-      }
+      if (!emo) continue;
 
       let x = map(v.P, 0, 1, -100, 100);
       let y = map(v.A, 0, 1, -100, 100);
       let z = map(v.D, 0, 1, -100, 100);
 
-      // 感情データを追加
       emo.intensity = (v.P + v.A + v.D) / 3;
       
       points.push({
@@ -651,6 +638,9 @@ function prepareVisual(changeState = true) {
       targetRotationY = 0;
       zoomLevel = 1;
       targetZoomLevel = 1;
+      
+      // 明示的に再描画
+      redraw();
     }
     
     console.log("prepareVisual completed successfully");
@@ -868,7 +858,7 @@ function draw() {
    drawPADButtons
    ========================================================= */
 function drawPADButtons() {
-　if (state !== "select") return;
+　if (state !== "visual") return;
   let cx = 0;
   let cy = 0;
 
