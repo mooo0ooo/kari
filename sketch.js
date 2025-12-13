@@ -1073,7 +1073,6 @@ function touchStarted() {
     lastTouchY = touchStartY;
     touchStartTime = millis();
 
-    // 仮で tap にしておく（動いたら後で切り替える）
     touchMode = "tap";
   }
 
@@ -1178,8 +1177,8 @@ function touchMoved() {
   // rotate（visual）
   // -------------------------
   if (touchMode === "rotate" && state === "visual") {
-    targetRotationY += dx * 0.01;
-    targetRotationX += dy * 0.01;
+    targetRotationY += dx * 0.008;
+    targetRotationX -= dy * 0.008;
   }
 
   lastTouchX = x;
