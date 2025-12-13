@@ -717,7 +717,6 @@ function draw() {
   // 状態に応じた描画
   if (state === "select") {
 	background(5, 5, 20);
-    camera();
     drawPADButtons();
     // タッチフィードバック
     if (touchFeedback && touchFeedback.alpha > 0) {
@@ -858,7 +857,7 @@ function draw() {
    drawPADButtons
    ========================================================= */
 function drawPADButtons() {
-　if (state === "visual") return;
+　if (state === "visual" || state === "gallery") return;
   let cx = 0;
   let cy = 0;
 
@@ -1288,9 +1287,20 @@ function changeState(newState) {
 	resetViewButton.show();
     galleryButton.show();
     visualStartTime = millis();
+	// 3Dビューのリセット
+    rotationX = 0;
+    rotationY = 0;
+    targetRotationX = 0;
+    targetRotationY = 0;
+    zoomLevel = 1;
+    targetZoomLevel = 1;
+	  
+    redraw();
   } else if (state === "select") {
     resetView();
+	selectedP = selectedA = selectedD = null;
     selectedLabel = null;
+	redraw();
   } else if (state === "gallery" && galleryStars.length === 0) {
     resetView();
     // ギャラリー用の星を生成
@@ -1302,7 +1312,8 @@ function changeState(newState) {
         twinkle: random(1000),
         baseSize: random(1, 4)
       });
-    }
+	}
+    redraw();
   }
 }
 
