@@ -162,63 +162,6 @@ function handleButtonTouchEnd(e) {
 }
 
 /* =========================================================
-   ギャラリーページのスクロールボタン
-   ========================================================= */
-function createScrollButtons() {
-  // 上スクロールボタン
-  upButton = createButton('↑');
-  upButton.position(width - 50, height - 100);
-  
-  // 下スクロールボタン
-  downButton = createButton('↓');
-  downButton.position(width - 50, height - 50);
-  
-  // ボタンのスタイル設定
-  [upButton, downButton].forEach(btn => {
-    btn.size(40, 40);
-    btn.style('background', 'rgba(50, 60, 90, 0.8)');
-    btn.style('color', 'white');
-    btn.style('border', 'none');
-    btn.style('border-radius', '50%');
-    btn.style('cursor', 'pointer');
-    btn.style('font-size', '20px');
-    btn.style('z-index', '1000');
-    // タッチデバイス用のスタイル
-    btn.elt.style.touchAction = 'manipulation';
-    btn.elt.style.webkitTapHighlightColor = 'transparent';
-  });
-
-  // スクロール処理の関数
-  const scrollUp = (e) => {
-    if (e) e.preventDefault();
-    targetScrollY = min(0, targetScrollY + 300);
-    redraw();
-  };
-
-  const scrollDown = (e) => {
-    if (e) e.preventDefault();
-    const maxScroll = -calculateMaxScroll();
-    targetScrollY = max(maxScroll, targetScrollY - 300);
-    redraw();
-  };
-
-  // マウスイベント
-  upButton.mousePressed(scrollUp);
-  downButton.mousePressed(scrollDown);
-  
-  // タッチイベント
-  upButton.elt.addEventListener('touchend', scrollUp, { passive: false });
-  downButton.elt.addEventListener('touchend', scrollDown, { passive: false });
-  
-  // タッチハイライトを防ぐ
-  [upButton, downButton].forEach(btn => {
-    btn.elt.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-    }, { passive: false });
-  });
-}
-
-/* =========================================================
    setup
    ========================================================= */
 console.log("prepareVisual関数が定義されていますか？", typeof prepareVisual);
@@ -388,10 +331,6 @@ function setup() {
 	    galleryStars = [];
 		targetScrollY = 0;
     	scrollY = 0;
-		// スクロールボタンを再作成
-	    if (upButton) upButton.remove();
-	    if (downButton) downButton.remove();
-	    createScrollButtons();
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
@@ -475,8 +414,6 @@ function updateButtonVisibility() {
   backButton.hide();
   galleryButton.hide();
   resetViewButton.hide();
-  if (upButton) upButton.hide();
-  if (downButton) downButton.hide();
 
   if (state === "select") {
     console.log("selectモードのボタンを表示");
@@ -490,8 +427,6 @@ function updateButtonVisibility() {
   else if (state === "gallery") {
     console.log("galleryモードのボタンを表示");
     backButton.show();
-    if (upButton) upButton.show();
-    if (downButton) downButton.show();
     backButton.html("← 戻る");
   }
   else if (state === "visual") {
@@ -692,36 +627,34 @@ function draw() {
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
   }
-　else if (state === "visual") {
+	　else if (state === "visual") {
 	  resetMatrix();
 	  background(5, 5, 20);
 	  camera();
-	 
-	  // 3D操作
+	
+	  // 回転・ズームの補間
 	  rotationX = lerp(rotationX, targetRotationX, 0.18);
-  	　rotationY = lerp(rotationY, targetRotationY, 0.18);
-
+	  rotationY = lerp(rotationY, targetRotationY, 0.18);
+	  zoomLevel  = lerp(zoomLevel, targetZoomLevel, 0.12);
+	
 	  rotateX(rotationX);
-  	  rotateY(rotationY);
-
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
-  	  scale(zoomLevel);
-		  
-	  // ★ 星空の描画
-	  push(); 
+	  rotateY(rotationY);
+	  scale(zoomLevel);
+	
+	  // 背景の星
+	  push();
 	  noStroke();
 	  for (let s of stars) {
 	    if (random() < 0.02) s.on = !s.on;
 	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-	    let blink = (s.on ? 1 : 0);
+	
+	    let blink = s.on ? 1 : 0;
 	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
 	    let intensity = blink * pulse;
 	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
 	    let alpha = map(intensity, 0, 1, 10, 255);
-	    let r = 200 + random(-20, 20);
-	    let g = 200 + random(-20, 20);
-	    let b = 255;
-	    fill(r, g, b, alpha);
+	
+	    fill(200 + random(-20,20), 200 + random(-20,20), 255, alpha);
 	    push();
 	    translate(s.x, s.y, s.z);
 	    sphere(starSize);
@@ -729,137 +662,86 @@ function draw() {
 	  }
 	  pop();
 	
-	  if (allConstellations.length === 0) return;
-	  let latest = activeConstellation || allConstellations[allConstellations.length - 1];
-	  let latestMonth = -1;
+	  // ===== メインの日記 =====
+	  let main = activeConstellation;
+	  if (!main) return;
 	
-	  if (latest?.created) {
-	    let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (m) latestMonth = int(m[2]);
-	  }
+	  push();
+	  translate(0, 0, 200);
+	  scale(1.5);
 	
-	  let sameMonthConstellations = [];
-	  for (let c of allConstellations) {
-	    if (!c.created) continue;
-	    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	    if (!m) continue;
-	    if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
-	  }
+	  // 枠
+	  stroke(150, 80);
+	  noFill();
+	  box(220);
 	
-	  let displayList = [...sameMonthConstellations];
-	  let idx = displayList.indexOf(latest);
-	  if (idx !== -1) displayList.splice(idx, 1);
-	  displayList.push(latest);
-	
-	  for (let i = 0; i < displayList.length; i++) {
-	    let constellation = displayList[i];
-	    push();
-	    if (i === displayList.length - 1) {
-	      translate(0, 0, 200);
-	      scale(1.5);
-
-		// テキスト表示部分を修正
-		push();
-		translate(0, 150, 0);
-		textAlign(CENTER, TOP);
-		textSize(16);
-		fill(200, 220, 255, 200);
-		
-		// テキストのY座標
-		let textY = 0;
-		// 重複を除いて感情を収集
-		const uniqueEmotions = new Map();
-		for (const star of constellation.stars) {
-		  if (star.emo) {
-		    const emoKey = `${star.emo.ja}-${star.emo.en}`;
-		    if (!uniqueEmotions.has(emoKey)) {
-		      uniqueEmotions.set(emoKey, star.emo);
-		    }
-		  }
-		}
-		// 感情を表示
-		text("選択された感情:", 0, textY);
-		textY += 25;
-		// 各感情を表示
-		for (const emo of uniqueEmotions.values()) {
-		  text(`・${emo.ja} (${emo.en})`, 0, textY);
-		  textY += 20;
-		}
-		textY += 15;
-		text("今日の思い出を写真に残してみませんか？", 0, textY);
-		pop();
-	    } else {
-	      let col = i % 5;
-	      let arow = floor(i / 5);
-	      translate(-600 + col * 250, -300 + arow * 250, -800);
-	      scale(0.6);
-	    }
-	
-	    stroke(150, 80);
-	    noFill();
-	    box(220);
-	
-	    for (let p of constellation.stars) {
-	      let px = p.pos?.x ?? 0;
-	      let py = p.pos?.y ?? 0;
-	      let pz = p.pos?.z ?? 0;
-	
-	      push();
-	      translate(px, py, pz);
-	      let flicker = 220 + 35 * sin(frameCount*0.1 + i*37);
-	      fill(255, 255, 200, flicker);
-	      noStroke();
-	      sphere(8);
-	      pop();
-	    }
-	
-	    if (millis() - visualStartTime > 1200) {
-	      push();
-	      stroke(180, 200, 255, 90);
-	      strokeWeight(2);
-	      blendMode(ADD);
-	      for (let a = 0; a < constellation.stars.length; a++) {
-	        for (let b = a+1; b < constellation.stars.length; b++) {
-	          let aPos = constellation.stars[a].pos;
-	          let bPos = constellation.stars[b].pos;
-	          if (aPos && bPos) {
-	            line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-	          }
-	        }
-	      }
-	      pop();
-	    }
+	  // 星
+	  for (let p of main.stars) {
+	    let px = p.pos?.x ?? 0;
+	    let py = p.pos?.y ?? 0;
+	    let pz = p.pos?.z ?? 0;
 	
 	    push();
-		translate(0, 120, 0);
-		fill(255);
-		textAlign(CENTER, CENTER);
-		textSize(14);
-		text(constellation.created, 0, 0);
-		pop();
-	
+	    translate(px, py, pz);
+	    fill(255, 255, 200);
+	    noStroke();
+	    sphere(8);
 	    pop();
 	  }
 	
-	  if (allConstellations.length > 0) {
-	   let ref = activeConstellation || allConstellations[allConstellations.length - 1];
-	   let m = ref?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	   let monthIndex = m ? int(m[2]) - 1 : 0;
-	   let monthNames = [
-	     "January","February","March","April","May","June",
-	     "July","August","September","October","November","December"
-	   ];
-	   push();
-	   resetMatrix();               
-	   applyMatrix(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
-	   noLights();
-	   textAlign(CENTER, TOP);
-	   textSize(32);
-	   fill(255);
-	   text(monthNames[monthIndex], width/2, 20);
-	   pop();
-	 }
-
+	  // 線（少し待ってから）
+	  if (millis() - visualStartTime > 1200) {
+	    push();
+	    stroke(180, 200, 255, 90);
+	    strokeWeight(2);
+	    blendMode(ADD);
+	
+	    for (let a = 0; a < main.stars.length; a++) {
+	      for (let b = a + 1; b < main.stars.length; b++) {
+	        let aPos = main.stars[a].pos;
+	        let bPos = main.stars[b].pos;
+	        if (aPos && bPos) {
+	          line(
+	            aPos.x, aPos.y, aPos.z,
+	            bPos.x, bPos.y, bPos.z
+	          );
+	        }
+	      }
+	    }
+	    pop();
+	  }
+	
+	  // 日付
+	  push();
+	  translate(0, 120, 0);
+	  fill(255);
+	  textAlign(CENTER, CENTER);
+	  textSize(14);
+	  text(main.created, 0, 0);
+	  pop();
+	
+	  pop();
+	
+	  // 月タイトル（画面固定）
+	  if (main.created) {
+	    let m = main.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	    let monthIndex = m ? int(m[2]) - 1 : 0;
+	    let monthNames = [
+	      "January","February","March","April","May","June",
+	      "July","August","September","October","November","December"
+	    ];
+	
+	    push();
+	    resetMatrix();
+	    noLights();
+	    textAlign(CENTER, TOP);
+	    textSize(32);
+	    fill(255);
+	    text(monthNames[monthIndex], width / 2, 20);
+	    pop();
+	  }
+	
+	  // タッチフィードバック
 	  if (touchFeedback && touchFeedback.alpha > 0) {
 	    push();
 	    noStroke();
@@ -868,7 +750,8 @@ function draw() {
 	    touchFeedback.alpha -= 5;
 	    pop();
 	  }
-	} 
+	}
+
 }
 /* =========================================================
    drawPADButtons
