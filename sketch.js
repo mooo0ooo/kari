@@ -61,6 +61,9 @@ let centerX, centerY;
 
 let canvas;
 
+let clickSound;
+let padClickSound;
+
 let padValues = [];
 let points = [];
 let stars = [];
@@ -122,6 +125,14 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 
 let showGrid = true;
 
+// visual
+let bgStarsFar = [];
+let bgStarsMid = [];
+let bgStarsNear = [];
+let starDrift = 0;
+let shootingStarTimer = 0;
+let shootingStarInterval = 240;
+
 // gallery
 let galleryLayout = {
   colCount: 1,
@@ -146,11 +157,52 @@ let galleryScale = 1;
 
 let activeConstellation = null;
 
+class ShootingStar {
+  constructor() {
+    this.x = random(-800, 800);
+    this.y = random(-400, 400);
+    this.z = -200;
+
+    this.vx = random(1, 1.7);
+    this.vy = random(0.4, 1.4);
+    this.vz = random(1, 0);
+
+    this.life = 0;
+    this.maxLife = int(random(80, 120));
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.z += this.vz;
+    this.life++;
+  }
+
+  draw() {
+    let a = map(this.life, 0, this.maxLife, 160, 0);
+    stroke(255, 220, 180, a);
+    strokeWeight(0.7);
+
+    line(
+      this.x, this.y, this.z,
+      this.x - this.vx * 30,
+      this.y - this.vy * 30,
+      this.z - this.vz * 30
+    );
+  }
+
+  isDead() {
+    return this.life > this.maxLife;
+  }
+}
+
 /* =========================================================
    preload
    ========================================================= */
 function preload() {
   myFont = loadFont("nicomoji-plus_v2-5.ttf");
+  clickSound = loadSound("決定ボタンを押す7.mp3");
+  padClickSound = loadSound("カーソル移動2.mp3");
 }
 
 /* =========================================================
@@ -159,6 +211,42 @@ function preload() {
 function handleButtonTouchEnd(e) {
   e.preventDefault();
   this.click();
+}
+
+/* =========================================================
+   setupStars
+   ========================================================= */
+function setupStars() {
+  // 遠景
+  for (let i = 0; i < 800; i++) {
+    bgStarsFar.push({
+      x: random(-3000, 3000),
+      y: random(-3000, 3000),
+      z: random(-3000, -1000)
+    });
+  }
+
+  // 中景
+  for (let i = 0; i < 300; i++) {
+    bgStarsMid.push({
+      x: random(-2000, 2000),
+      y: random(-2000, 2000),
+      z: random(-1500, -400),
+      phase: random(TWO_PI),
+      size: random(1.5, 3)
+    });
+  }
+
+  // 近景
+  for (let i = 0; i < 40; i++) {
+    bgStarsNear.push({
+      x: random(-1200, 1200),
+      y: random(-1200, 1200),
+      z: random(-800, -200),
+      phase: random(TWO_PI),
+      size: random(4, 7)
+    });
+  }
 }
 
 /* =========================================================
@@ -229,7 +317,7 @@ function setup() {
   textSize(16);
 
   lastTouchTime = millis();
-
+  setupStars();
 　let touches = [];
 
   let saved = localStorage.getItem("myConstellations");
@@ -248,7 +336,6 @@ function setup() {
   okButton = createButton("OK");
   backButton = createButton("← 記録ページ");
   galleryButton = createButton("日記一覧");
-  createScrollButtons();
 
   // ボタンスタイルの設定
   [addButton, okButton, backButton, galleryButton].forEach(btn => {
@@ -663,6 +750,58 @@ function prepareVisual(changeState = true) {
 }
 
 /* =========================================================
+   drawBeautifulStars
+   ========================================================= */
+function drawBeautifulStars() {
+  push();
+  noStroke();
+
+  // ===== 遠景 =====
+  fill(180, 200, 255, 80);
+  for (let s of bgStarsFar) {
+    push();
+    translate(s.x, s.y, s.z);
+    sphere(1.2);
+    pop();
+  }
+
+  // ===== 中景 =====
+  for (let s of bgStarsMid) {
+    let tw = 0.5 + 0.5 * sin(frameCount * 0.02 + s.phase);
+    let alpha = map(tw, 0, 1, 60, 180);
+    fill(200, 220, 255, alpha);
+
+    push();
+    translate(s.x, s.y, s.z);
+    sphere(s.size * tw);
+    pop();
+  }
+
+  // ===== 流れ星=====
+  if (!drawBeautifulStars.shootingStars) {
+    drawBeautifulStars.shootingStars = [];
+    drawBeautifulStars.timer = 0;
+  }
+
+  let stars = drawBeautifulStars.shootingStars;
+  drawBeautifulStars.timer++;
+
+  // 出現頻度
+  if (drawBeautifulStars.timer > 180) {
+    drawBeautifulStars.timer = 0;
+    stars.push(new ShootingStar());
+  }
+
+  for (let i = stars.length - 1; i >= 0; i--) {
+    stars[i].update();
+    stars[i].draw();
+    if (stars[i].isDead()) stars.splice(i, 1);
+  }
+
+  pop();
+}
+
+/* =========================================================
    draw
    ========================================================= */
 function draw() {
@@ -695,6 +834,7 @@ function draw() {
 　else if (state === "visual") {
 	  resetMatrix();
 	  background(5, 5, 20);
+	  drawBeautifulStars();
 	  camera();
 	 
 	  // 3D操作
@@ -1291,6 +1431,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+	  if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`P${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
@@ -1305,6 +1446,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+	  if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`A${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
@@ -1319,6 +1461,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+	  if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`D${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
