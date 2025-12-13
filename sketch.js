@@ -302,70 +302,49 @@ function setup() {
 	    values: padValues
 	  });
 	
-	  if (!padValues || padValues.length === 0) {
-	    console.log("PAD値がありません");
-	    return;
-	  }
+	  if (!padValues || padValues.length === 0) return;
 
+	  // ★ 星データを先に作る
+	  let now = new Date();
+	  let timestamp = now.toLocaleString();
+	
+	  let serialStars = points.map(s => {
+	    if (!s || !s.pos) return null;
+	    return {
+	      pos: { x: s.pos.x, y: s.pos.y, z: s.pos.z },
+	      emo: s.emo
+	    };
+	  }).filter(Boolean);
+	
+	  if (serialStars.length === 0) return;
+	
+	  let newConstellation = {
+	    stars: serialStars,
+	    created: timestamp
+	  };
+	
+	  activeConstellation = newConstellation;
+	
+	  // 保存
+	  if (!Array.isArray(allConstellations)) allConstellations = [];
+	  allConstellations.push(newConstellation);
+	  localStorage.setItem(
+	    "myConstellations",
+	    JSON.stringify(allConstellations)
+	  );
+	
+	  // visual
 	  state = "visual";
+	  visualStartTime = millis();
+	  resetView();
 	  updateButtonVisibility();
-	  resetVisualView();
-	  console.log("状態をvisualに設定しました。現在のstate:", state);
-	  
-	  // ビジュアルを準備
-	  if (prepareVisual(false)) {
-	    console.log("prepareVisualが正常に完了しました。state:", state);
-	    
-	    // 日付と星データの処理
-	    let now = new Date();
-	    let timestamp = now.toLocaleString();
-	    let serialStars = points.map(s => {
-	      if (!s || !s.pos) return null;
-	      return { 
-	        pos: { 
-	          x: s.pos.x || 0, 
-	          y: s.pos.y || 0, 
-	          z: s.pos.z || 0 
-	        }, 
-	        emo: s.emo 
-	      };
-	    }).filter(Boolean);
 	
-	    if (serialStars.length > 0) {
-	      let newConstellation = {
-	        stars: serialStars, 
-	        created: timestamp
-	      };
-
-		  acteiveConstellation = newConstellation;
-	      
-	      // データを保存
-	      if (!Array.isArray(allConstellations)) {
-	        allConstellations = [];
-	      }
-	      allConstellations.push(newConstellation);
-	      
-	      try {
-	        localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
-	        console.log("データを保存しました");
-	      } catch (e) {
-	        console.error("データの保存に失敗しました:", e);
-	      }
-	    }
+	  // リセット
+	  padValues = [];
+	  selectedP = selectedA = selectedD = null;
 	
-	    // 状態をリセット
-	    padValues = [];
-	    selectedP = selectedA = selectedD = null;
-	    
-	    // 強制的に再描画
-	    redraw();
-	    console.log("再描画を要求しました。現在のstate:", state);
-	  } else {
-	    state = "select";
-	    updateButtonVisibility();
-	    redraw();
-	  }
-	});
+	  redraw();
+  });
 
   galleryButton.mousePressed(() => {
 	  activeConstellation = null;
@@ -516,6 +495,9 @@ function layoutDOMButtons() {
    ========================================================= */
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  if (state === "visual" && !activeConstellation) {
+    state = "select";
+  }
   centerX = width / 2;
   centerY = height / 2;
   computeBtnSize();
