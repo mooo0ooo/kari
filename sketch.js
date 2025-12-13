@@ -84,9 +84,15 @@ let padLayout = {
   scl: 1
 };
 
-// 3D操作
 // タッチイベント
+// 3D操作
+let touchMode = null; 
 let touchStartX, touchStartY;
+let pinchStartDist = 0;
+let pinchStartZoom = 1;
+const TAP_DIST = 10;
+const TAP_TIME = 300;
+
 let rotationX = 0, rotationY = 0;
 let targetRotationX = 0, targetRotationY = 0;
 let isDragging = false;
@@ -1048,88 +1054,30 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
 /* =========================================================
    タッチイベント
    ========================================================= */
-function touchStarted(event) {
-  if (!event) return false;
-  event.preventDefault();
-
-  if (event.touches && event.touches[0]) {
-    const touch = event.touches[0];
-    if (checkButtonTouches(touch)) {
-      return false;
-    }
-  }
-
-  isTouching = true;
-  isScrolling = false;
-  isDragging = false;
-  touchStartTime = millis();
-  
-  // タッチ位置の更新
-  if (!event.touches || !event.touches[0]) return false;
-  
-  const touch = event.touches[0];
-  const rect = canvas.elt.getBoundingClientRect();
-  const pixelDensity = window.devicePixelRatio || 1;
-  
-  touchStartX = (touch.clientX - rect.left) * (canvas.width / rect.width);
-  touchStartY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-  touchStartPos = { x: touch.clientX, y: touch.clientY };
-  
-  mouseX = touchStartX;
-  mouseY = touchStartY;
-
-  // ボタンのタッチ判定
-  if (checkButtonTouches(touch)) {
-    return false;
-  }
-  
-  // PADボタンのタップ処理
-  if (state === "select") {
-
-	const canvasX = touchStartX;
-	const canvasY = touchStartY;
-	  
-    console.log(`Touch at: ${touchStartX}, ${touchStartY}`);
-    console.log(`Canvas coords: ${canvasX}, ${canvasY}`);
-    
-    if (handlePadButtonTap(canvasX, canvasY)) {
-      return false;
-    }
-  }
-
-  // ギャラリーのタッチ処理を無効化
-  if (state === "gallery") return false;
-
-  // 2本指タッチ（ピンチ操作）の初期化
-  if (event.touches.length === 2) {
-    if (state === "gallery") return false;
-    
-    if (state === "visual") {
-      const dx = event.touches[0].clientX - event.touches[1].clientX;
-      const dy = event.touches[0].clientY - event.touches[1].clientY;
-      initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
-      initialZoom = zoomLevel;
-    }
+function touchStarted() {
+  if (touches.length === 2 && state === "visual") {
+    // ピンチ開始
+    touchMode = "pinch";
+    pinchStartDist = dist(
+      touches[0].x, touches[0].y,
+      touches[1].x, touches[1].y
+    );
+    pinchStartZoom = targetZoomLevel;
     return false;
   }
 
-  if (state === "visual") {
-    isDragging = true;
+  if (touches.length === 1) {
+    touchStartX = touches[0].x;
+    touchStartY = touches[0].y;
+    lastTouchX = touchStartX;
+    lastTouchY = touchStartY;
+    touchStartTime = millis();
 
-	if (event && event.touches && event.touches[0]) {
-	    lastTouchX = event.touches[0].clientX;
-	    lastTouchY = event.touches[0].clientY;
-	    lastTouchTime = millis();
-	  } else {
-	    if (touches && touches.length > 0) {
-	      lastTouchX = touches[0].x;
-	      lastTouchY = touches[0].y;
-	      lastTouchTime = millis();
-	    }
-	}
+    // 仮で tap にしておく（動いたら後で切り替える）
+    touchMode = "tap";
   }
-	
-  return true;
+
+  return false;
 }
 
 function checkButtonTouches(touch) {
@@ -1177,137 +1125,87 @@ function checkButtonTouches(touch) {
   return false;
 }  
 
-function touchMoved(event) {
-  if (!event.touches || event.touches.length === 0) return false;
-  if (event) event.preventDefault();
-  
-  if (state === "gallery") {
+function touchMoved() {
+  if (!touchMode) return false;
+
+  // -------------------------
+  // pinch（ズーム）
+  // -------------------------
+  if (touchMode === "pinch" && touches.length === 2) {
+    let d = dist(
+      touches[0].x, touches[0].y,
+      touches[1].x, touches[1].y
+    );
+
+    let scale = d / pinchStartDist;
+    targetZoomLevel = constrain(pinchStartZoom * scale, 0.5, 3);
     return false;
   }
 
-  const touch = event.touches[0];
-  const currentX = touch.clientX;
-  const currentY = touch.clientY;
-  const deltaX = currentX - touchStartPos.x;
-  const deltaY = currentY - touchStartPos.y;
-  
-  // 2本指タッチ（ピンチ操作）
-  if (event.touches.length === 2) {
-    if (state === "visual") {
-      const dx = event.touches[0].clientX - event.touches[1].clientX;
-      const dy = event.touches[0].clientY - event.touches[1].clientY;
-      const currentDistance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (initialPinchDistance > 0) {
-        const scale = currentDistance / initialPinchDistance;
-        targetZoomLevel = constrain(initialZoom * scale, MIN_ZOOM, MAX_ZOOM);
-      }
+  // -------------------------
+  // single touch
+  // -------------------------
+  if (touches.length !== 1) return false;
+
+  let x = touches[0].x;
+  let y = touches[0].y;
+
+  let dx = x - lastTouchX;
+  let dy = y - lastTouchY;
+
+  let totalDx = x - touchStartX;
+  let totalDy = y - touchStartY;
+
+  // tap → scroll / rotate に確定
+  if (touchMode === "tap" && dist(0, 0, totalDx, totalDy) > TAP_DIST) {
+    if (state === "gallery") {
+      touchMode = "scroll";
+    } else if (state === "visual") {
+      touchMode = "rotate";
+    } else {
+      touchMode = null;
     }
-    return false;
   }
-  
-  // ビジュアルモードでの回転操作
-  if (state === "visual") {
-	  if (!event.touches || event.touches.length === 0) return false;
-	  const touch = event.touches[0];
-	
-	  const currentX = touch.clientX;
-	  const currentY = touch.clientY;
 
-	  if (lastTouchX === undefined || lastTouchY === undefined) {
-	    lastTouchX = currentX;
-	    lastTouchY = currentY;
-	    lastTouchTime = millis();
-	    return false;
-	  }
-	
-	  const deltaX = currentX - lastTouchX;
-	  const deltaY = currentY - lastTouchY;
-	
-	  const ROTATE_SPEED = 0.005;
-	
-	  targetRotationY += deltaX * ROTATE_SPEED;
-	  targetRotationX -= deltaY * ROTATE_SPEED;
-	
-	  lastTouchX = currentX;
-	  lastTouchY = currentY;
-	  lastTouchTime = millis();
-	
-	  return false;
+  // -------------------------
+  // scroll（gallery）
+  // -------------------------
+  if (touchMode === "scroll" && state === "gallery") {
+    targetScrollY += dy;
   }
-  
+
+  // -------------------------
+  // rotate（visual）
+  // -------------------------
+  if (touchMode === "rotate" && state === "visual") {
+    targetRotationY += dx * 0.01;
+    targetRotationX += dy * 0.01;
+  }
+
+  lastTouchX = x;
+  lastTouchY = y;
+
   return false;
 }
 
-function touchEnded(event) {
-  if (!event) return true;
-  if (event.cancelable) event.preventDefault();
 
-  const currentTime = millis();
-  const tapDuration = currentTime - touchStartTime;
-  let isTap = false;
-  let touchHandled = false;
-  
-  // ボタンタップの処理を最優先
-  if (event.changedTouches && event.changedTouches.length > 0) {
-    const touch = event.changedTouches[0];
-    
-    // ボタンタップのチェック
-    touchHandled = checkButtonTouches(touch);
-    
-    // ボタンタップが処理された場合はここで終了
-    if (touchHandled) {
-      isTouching = false;
-      return false;
-    }
+function touchEnded() {
+  if (!touchMode) return false;
+
+  let elapsed = millis() - touchStartTime;
+  let moved = dist(
+    lastTouchX, lastTouchY,
+    touchStartX, touchStartY
+  );
+
+  // -------------------------
+  // tap 判定
+  // -------------------------
+  if (touchMode === "tap" && elapsed < TAP_TIME && moved < TAP_DIST) {
+    handleTap(touchStartX, touchStartY);
   }
 
-  // タップ判定（短いタッチ）
-  if (state === "gallery" && !touchHandled) {
-    if (event.changedTouches && event.changedTouches.length > 0) {
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - touchStartPos.x;
-      const dy = touch.clientY - touchStartPos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      const isShortTap = tapDuration < 300;
-      const isSmallMovement = distance < 15;
-      
-      isTap = isShortTap && isSmallMovement && !isScrolling;
-      
-      if (isTap) {
-        const rect = canvas.elt.getBoundingClientRect();
-        const scale = width / rect.width;
-        const x = (touch.clientX - rect.left) * scale;
-        const y = (touch.clientY - rect.top) * scale;
-        handleGalleryTap(x, y);
-      }
-    }
-  }
-  
-  // ビジュアルモードの慣性処理
-  if (state === "visual" && !touchHandled) {
-    const now = millis();
-    const deltaTime = now - lastTouchTime;
-    
-    if (deltaTime > 0 && lastTouchX !== undefined && lastTouchY !== undefined) {
-      if (event.changedTouches && event.changedTouches.length > 0) {
-        const touch = event.changedTouches[0];
-        const dx = touch.clientX - lastTouchX;
-        const dy = touch.clientY - lastTouchY;
-		velocityX = 0;
-  		velocityY = 0;
-		isDragging = false;
-
-		lastTouchX = undefined;
-		lastTouchY = undefined;
-		lastTouchTime = 0;
-      }
-    }
-  }
-  
-  isTouching = false;
-  
+  touchMode = null;
   return false;
 }
 
@@ -1472,40 +1370,14 @@ function resetView() {
   camera();
 }
 
-// 状態変更
-function changeState(newState) {
-  state = newState;
-  updateButtonVisibility();
-  layoutDOMButtons();
-  
-  if (state === "visual") {
-    resetView();
-    visualStartTime = millis();
-  } else if (state === "select") {
-    resetView();
-    selectedLabel = null;
-  } else if (state === "gallery" && galleryStars.length === 0) {
-    resetView();
-    // ギャラリー用の星を生成
-    for (let i = 0; i < 400; i++) {
-      galleryStars.push({
-        x: random(-2000, 2000),
-        y: random(-2000, 2000),
-        z: random(-2000, 2000),
-        twinkle: random(1000),
-        baseSize: random(1, 4)
-      });
-    }
+function handleTap(x, y) {
+  if (state === "gallery") {
+    // サムネタップ判定
+    // → ギャラリー座標に変換して判定
   }
-}
 
-function touchCanceled(e) {
-  e.preventDefault();
-  return false;
-}
-
-function handlePadButtonTap(x, y) {
-  const btnSize = padLayout.btnSize * padLayout.scl;
+  if (state === "select") {
+    const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
   const centerY = height / 2;
@@ -1554,35 +1426,39 @@ function handlePadButtonTap(x, y) {
   }
   
   return false;
+  }
 }
 
-// ギャラリー
-function handleGalleryClick() {
-    const DESIGN_WIDTH = 430;
-    const THUMBNAIL_SIZE = 150;
-    const CLOSE_BUTTON_RADIUS = 30;
-    
-    // 座標変換
-	galleryScale = min(1, width / designWidth);
-    const offsetX = (width - DESIGN_WIDTH * galleryScale) / 2;
-    const mx = (mouseX - offsetX) / galleryScale;
-    const my = (mouseY - scrollY) / galleryScale;
+// 状態変更
+function changeState(newState) {
+  state = newState;
+  updateButtonVisibility();
+  layoutDOMButtons();
+  
+  if (state === "visual") {
+    resetView();
+    visualStartTime = millis();
+  } else if (state === "select") {
+    resetView();
+    selectedLabel = null;
+  } else if (state === "gallery" && galleryStars.length === 0) {
+    resetView();
+    // ギャラリー用の星を生成
+    for (let i = 0; i < 400; i++) {
+      galleryStars.push({
+        x: random(-2000, 2000),
+        y: random(-2000, 2000),
+        z: random(-2000, 2000),
+        twinkle: random(1000),
+        baseSize: random(1, 4)
+      });
+    }
+  }
+}
 
-    // サムネイルグリッドの計算
-    const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (THUMBNAIL_SIZE + gutter)));
-    const rowStartX = (width / galleryScale - (THUMBNAIL_SIZE * colCount + gutter * (colCount - 1))) / 2;
-    
-    // サムネイルのクリック検出
-    if (checkThumbnailClicks(mx, my, rowStartX, colCount, THUMBNAIL_SIZE)) {
-        return;
-    }
-    
-    // 拡大表示中の処理
-    if (selectedThumbnail) {
-        handleZoomedViewInteraction();
-    }
-    
-    return false;
+function touchCanceled(e) {
+  e.preventDefault();
+  return false;
 }
 
 function setupButtonInteractions() {
