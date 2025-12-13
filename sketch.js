@@ -1212,7 +1212,7 @@ function handleTap(x, y) {
 	          state = "visual";
 	          visualStartTime = millis();
 	          resetView();
-	          return;
+	          return true;
           }
     }
   }
