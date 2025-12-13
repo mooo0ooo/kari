@@ -1200,26 +1200,22 @@ function resetView() {
 function handleTap(x, y) {
   if (state === "gallery") {
     if (!allConstellations || allConstellations.length === 0) return;
-
-      let gx = (x - width / 2) / galleryScale;
-      let gy = (y - height / 2 - scrollY) / galleryScale;
+	  let gx = (x - width / 2) / galleryScale;
+	  let gy = (y - height / 2 - scrollY) / galleryScale;
 
       for (let c of allConstellations) {
-          if (!c._gx || !c._gy) continue;
-          if (
-              gx >= c._gx && gx <= c._gx + c._gw &&
-        　    gy >= c._gy && gy <= c._gy + c._gh
-          ) {
-          if (clickSound && clickSound.isLoaded()) clickSound.play();
-          activeConstellation = c;
-          state = "visual";
-          visualStartTime = millis();
-          resetView();
-          return;
+	      if (!c._gx || !c._gy) continue;
+	
+	      if (gx >= c._gx && gx <= c._gx + c._gw &&
+	          gy >= c._gy && gy <= c._gy + c._gh) {
+	        if (clickSound && clickSound.isLoaded()) clickSound.play();
+	        activeConstellation = c;
+	        state = "visual";
+	        visualStartTime = millis();
+	        resetView();
+	        return;
           }
         }
-
-        return;
     }
 
   if (state === "select") {
@@ -1578,9 +1574,9 @@ function drawGallery2D() {
       let tx = rowStartX + col * (thumbSize + gutter);
       let ty2 = y + row * (thumbSize + gutter + 25);
 	  c._gx = tx;
-      c._gy = ty2;
-      c._gw = thumbSize;
-      c._gh = thumbSize;
+	  c._gy = ty2;
+	  c._gw = thumbSize;
+	  c._gh = thumbSize;
       
       // サムネイルの背景
 	  fill('rgba(5, 5, 20, 0.8)');
