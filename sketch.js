@@ -1123,8 +1123,8 @@ function touchMoved() {
 
   // ---------- rotate ----------
   if (touchMode === "rotate" && state === "visual") {
-    targetRotationY += dx * 0.008;
-    targetRotationX -= dy * 0.008;
+    targetRotationY += dx * 0.001;
+    targetRotationX -= dy * 0.001;
   }
 
   lastTouchX = x;
