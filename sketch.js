@@ -1254,7 +1254,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedP = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	　if (PADClickSound.isLoaded()) PADClickSound.play();
+	　if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`P${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
@@ -1269,7 +1269,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedA = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	  if (PADClickSound.isLoaded()) PADClickSound.play();
+	  if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`A${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
@@ -1284,7 +1284,7 @@ function handleTap(x, y) {
     if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
       selectedD = i;
       touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	  if (PADClickSound.isLoaded()) PADClickSound.play();
+	  if (padClickSound.isLoaded()) padClickSound.play();
       console.log(`D${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
       redraw();
       return true;
