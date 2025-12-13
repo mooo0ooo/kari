@@ -1583,7 +1583,7 @@ function drawGallery2D() {
 	  fill('rgba(5, 5, 20, 0.8)');
 	  stroke('rgba(150, 150, 150, 0.5)');
 	  strokeWeight(1);
-	  rect(x, ty, thumbSize, thumbSize, 8);
+	  rect(tx, ty2, thumbSize, thumbSize, 8);
 		
 	  if (!c.thumbnail) {
         c.thumbnail = generate2DThumbnail(c, thumbSize);
@@ -1599,7 +1599,7 @@ function drawGallery2D() {
       fill(200, 220, 255);
       textSize(12);
       textAlign(CENTER, TOP);
-      text(formattedDate, x + thumbSize/2, ty + thumbSize + 5);
+      text(formattedDate, tx + thumbSize/2, ty2 + thumbSize + 5);
     }
     
     // 次の月の開始位置を計算
