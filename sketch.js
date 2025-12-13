@@ -1227,6 +1227,7 @@ function handleTap(x, y) {
 	    currentY +=
 	      ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
 	  }
+	  return;
     }
 
   if (state === "select") {
