@@ -369,6 +369,8 @@ function setup() {
     allConstellations.push(newConstellation);
     localStorage.setItem("myConstellations", JSON.stringify(allConstellations));
 
+	activeConstellation = newConstellation;
+	  
     state = "visual";
     resetView();
     updateButtonVisibility();
