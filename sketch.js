@@ -299,7 +299,7 @@ function setup() {
 	  console.log("padValuesの状態:", {
 	    isArray: Array.isArray(padValues),
 	    length: padValues?.length,
-	    values: JSON.stringify(padValues)
+	    values: padValues
 	  });
 	
 	  if (!padValues || padValues.length === 0) {
