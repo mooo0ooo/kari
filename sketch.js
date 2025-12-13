@@ -1208,68 +1208,78 @@ function touchStarted() {
   if (touches.length === 1) {
     touchStartX = touches[0].x;
     touchStartY = touches[0].y;
-    lastTouchX = touchStartX;
-    lastTouchY = touchStartY;
-    touchStartTime = millis();
-    touchMode = "tap";
+    touchMode = 'potentialTap';
+    return false; // Prevent default
   }
-
-  return;
+  return true;
 }
 
 function touchMoved() {
-  if (!touchMode) return false;
+  if (!touchMode || touches.length !== 1) return false;
 
-  // ---------- pinch ----------
-  if (touchMode === "pinch" && touches.length === 2) {
+  const touch = touches[0];
+  const x = touch.x;
+  const y = touch.y;
+  const dx = x - lastTouchX;
+  const dy = y - lastTouchY;
+  const totalDx = x - touchStartX;
+  const totalDy = y - touchStartY;
+  const moveDist = dist(0, 0, totalDx, totalDy);
+
+  // タップ判定用のしきい値（ピクセル）
+  const TAP_THRESHOLD = 8;
+  
+  // モードの確定
+  if (moveDist > TAP_THRESHOLD) {
+    if (touchMode === "tap") {
+      // しきい値を超えた時点でモードを確定
+      touchMode = state === "gallery" ? "scroll" : "rotate";
+    }
+  }
+
+  // ピンチジェスチャー（2本指）
+  if (touches.length === 2) {
     const d = dist(
       touches[0].x, touches[0].y,
       touches[1].x, touches[1].y
     );
-    const scale = d / pinchStartDist;
+    if (!initialpinchDistance) {
+      initialpinchDistance = d;
+      initialZoom = targetZoomLevel;
+    }
+    const scale = d / initialpinchDistance;
     targetZoomLevel = constrain(
-      pinchStartZoom * scale,
+      initialZoom * scale,
       MIN_ZOOM,
       MAX_ZOOM
     );
     return false;
   }
 
-  if (touches.length !== 1) return false;
-
-  const x = touches[0].x;
-  const y = touches[0].y;
-
-  const dx = x - lastTouchX;
-  const dy = y - lastTouchY;
-  const totalDx = x - touchStartX;
-  const totalDy = y - touchStartY;
-
-  // tap → mode確定
-  if (touchMode === "tap" && dist(0, 0, totalDx, totalDy) > TAP_DIST) {
-    if (state === "gallery") {
-      touchMode = "scroll";
-    } else if (state === "visual") {
-      touchMode = "rotate";
-    } else {
-      touchMode = null;
-    }
-  }
-
-  // ---------- scroll ----------
+  // ---------- スクロール処理（ギャラリーモード） ----------
   if (touchMode === "scroll" && state === "gallery") {
-    targetScrollY += dy;
+    // スクロール位置を更新（慣性スクロール用に速度も記録）
+    velocityY = dy * 0.5;  // 速度を計算（減衰係数をかける）
+    targetScrollY = touchStartScrollY + (y - touchStartY);
+    
+    // スクロール範囲を制限
+    const maxScroll = -calculateMaxScroll();
+    targetScrollY = constrain(targetScrollY, maxScroll, 0);
+    
+    return false;  // デフォルトの動作を防ぐ
   }
 
-  // ---------- rotate ----------
+  // ---------- 回転処理（ビジュアルモード） ----------
   if (touchMode === "rotate" && state === "visual") {
     targetRotationY += dx * 0.004;
     targetRotationX -= dy * 0.004;
+    targetRotationX = constrain(targetRotationX, -PI/2, PI/2);  // 回転制限
+    return false;  // デフォルトの動作を防ぐ
   }
 
   lastTouchX = x;
   lastTouchY = y;
-
+  
   return false;
 }
 
@@ -1283,11 +1293,15 @@ function touchEnded() {
   );
 
   // ---------- tap ----------
-  if (touchMode === "tap" && elapsed < TAP_TIME && moved < TAP_DIST) {
-    handleTap(touchStartX, touchStartY);
+  if (touches.length === 0) {
+    if (touchMode === 'potentialTap' || touchMode === null) {
+      // Only process tap if we didn't move much
+      if (dist(touchStartX, touchStartY, touchX, touchY) < TAP_THRESHOLD) {
+        handleTap(touchX, touchY);
+      }
+    }
+    touchMode = null;
   }
-
-  touchMode = null;
   return;
 }
 
@@ -1345,43 +1359,57 @@ function resetView() {
 function handleTap(x, y) {
   if (state === "gallery") {
   if (!allConstellations || allConstellations.length === 0) return;
-
-  const thumbSize = 150;
 	  
   const designWidth = 430;
   galleryScale = min(1, width / designWidth);
 
-  const tx = (x - width / 2) / galleryScale;
-  const ty = (y - height / 2) / galleryScale - scrollY;
-	  
+  x = (x - width / 2) / galleryScale + width / 2;
+  y = (y - height / 2 - scrollY) / galleryScale + height / 2;
+
+  const thumbSize = 150;
   const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
   const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-
+    
   let currentY = topOffset;
 
   // 月ごとに分類（parseDateベース）
-  let grouped = groupByMonth(allConstellations);
+  let grouped = {};
+    for (let m = 0; m < 12; m++) grouped[m] = [];
+    
+    for (let c of allConstellations) {
+      if (!c.created) continue;
+      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+      if (!m) continue;
+      let monthIndex = int(m[2]) - 1;
+      grouped[monthIndex].push(c);
+    }
 
 	// ヒットテスト
     for (let month = 0; month < 12; month++) {
-      const list = grouped[month];
-      if (!list || list.length === 0) continue;
+      let list = grouped[month];
+      if (list.length === 0) continue;
 
-      currentY += 35; // 月タイトル分
+      currentY += 35; // Month header height
 
       for (let i = 0; i < list.length; i++) {
         const c = list[i];
-        const col = i % colCount;
-        const row = floor(i / colCount);
-        const thumbX = rowStartX + col * (thumbSize + gutter);
-        const thumbY = currentY + row * (thumbSize + gutter + 25);
+        let col = i % colCount;
+        let row = floor(i / colCount);
+        let thumbX = rowStartX + col * (thumbSize + gutter);
+        let thumbY = currentY + row * (thumbSize + gutter + 25);
 
         // ヒット判定
-        if (tx >= thumbX && tx <= thumbX + thumbSize &&
-            ty >= thumbY && ty <= thumbY + thumbSize) {
+        if (x >= thumbX && x <= thumbX + thumbSize &&
+            y >= thumbY && y <= thumbY + thumbSize) {
 
-          if (clickSound.isLoaded()) clickSound.play();
-
+          if (clickSound && typeof clickSound.play === 'function') {
+            if (!clickSound.isPlaying()) {
+              clickSound.play();
+            } else {
+              clickSound.stop();
+              clickSound.play();
+            }
+          }
           activeConstellation = c;
           state = "visual";
           updateButtonVisibility();
