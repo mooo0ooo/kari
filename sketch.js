@@ -119,6 +119,13 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
+let galleryLayout = {
+  colCount: 1,
+  thumbSize: 150,
+  gutter: 20,
+  rowStartX: 0,
+  topOffset: 0
+};
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -1497,7 +1504,6 @@ function touchCanceled(e) {
   return false;
 }
 
-// handlePadButtonTap
 function handlePadButtonTap(x, y) {
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
@@ -1748,18 +1754,6 @@ function mouseWheel(event) {
 }
 
 /* =========================================================
-   polygon
-   ========================================================= */
-function polygon(x,y,r,n){
-  beginShape();
-  for(let i=0;i<n;i++){
-    let angle = TWO_PI*i/n;
-    vertex(x+cos(angle)*r,y+sin(angle)*r);
-  }
-  endShape(CLOSE);
-}
-
-/* =========================================================
    findClosestEmotion
    ========================================================= */
 function findClosestEmotion(p,a,d){
@@ -1846,6 +1840,11 @@ function drawGallery2D() {
   let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
   let y = topOffset;
 
+　galleryLayout.thumbSize = thumbSize;
+  galleryLayout.colCount = colCount;
+  galleryLayout.rowStartX = rowStartX;
+  galleryLayout.topOffset = topOffset;
+
   // 月ごとに分類
   let grouped = {};
   for (let m = 0; m < 12; m++) grouped[m] = [];
@@ -1924,6 +1923,12 @@ function drawGallery2D() {
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
 
+function getGalleryPointer() {
+  return {
+    x: (mouseX - width / 2) / galleryScale,
+    y: (mouseY - height / 2 - scrollY) / galleryScale
+  };
+}
 /* =========================================================
    generate2DThumbnail
    ========================================================= */
