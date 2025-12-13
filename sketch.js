@@ -1344,71 +1344,61 @@ function resetView() {
 
 function handleTap(x, y) {
   if (state === "gallery") {
-    if (!allConstellations || allConstellations.length === 0) return;
+  if (!allConstellations || allConstellations.length === 0) return;
 
-    // === 描画と逆の座標変換 ===
-    const designWidth = 430;
-    galleryScale = min(1, width / designWidth);
+  // 座標変換
+  const designWidth = 430;
+  galleryScale = min(1, width / designWidth);
+  const tx = (x - width / 2) / galleryScale;
+  const ty = (y - height / 2 - scrollY) / galleryScale;
 
-    x = (x - width / 2) / galleryScale;
-    y = (y - height / 2 - scrollY) / galleryScale;
+  const thumbSize = 150;
+  const colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+  const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
 
-    const thumbSize = 150;
-    const colCount = max(
-      1,
-      floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter))
-    );
-    const rowStartX =
-      (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  let currentY = topOffset;
 
-    let currentY = topOffset;
-	  
-    // 月ごとに分類
-    let grouped = {};
-    for (let m = 0; m < 12; m++) grouped[m] = [];
-
-    for (let c of allConstellations) {
-      if (!c || !c.created) continue;
-      const date = parseDate(c.created);
-      const monthIndex = date.getMonth();
-      grouped[monthIndex].push(c);
-    }
-
-    // === ヒットテスト ===
-    for (let month = 0; month < 12; month++) {
-      const list = grouped[month];
-      if (!list || list.length === 0) continue;
-
-      currentY += 35; // 月見出し分
-
-      for (let i = 0; i < list.length; i++) {
-        const c = list[i];
-        const col = i % colCount;
-        const row = floor(i / colCount);
-        const thumbX = rowStartX + col * (thumbSize + gutter);
-        const thumbY = currentY + row * (thumbSize + gutter + 25);
-
-        if (
-          x >= thumbX &&
-          x <= thumbX + thumbSize &&
-          y >= thumbY &&
-          y <= thumbY + thumbSize
-        ) {
-          if (clickSound.isLoaded()) clickSound.play();
-          activeConstellation = c;
-          state = "visual";
-          updateButtonVisibility();
-          layoutDOMButtons();
-          resetView();
-          visualStartTime = millis();
-          return;
-        }
-      }
-
-      // 次の月の開始位置
-      currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-    }
+  // 月ごとに分類（parseDateベース）
+  let grouped = {};
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    const date = parseDate(c.created);
+    const monthIndex = date.getMonth();
+    grouped[monthIndex].push(c);
   }
+
+  // ヒットテスト
+  for (let month = 0; month < 12; month++) {
+    const list = grouped[month];
+    if (list.length === 0) continue;
+
+    currentY += 35; // 月見出し分
+
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i];
+      const col = i % colCount;
+      const row = floor(i / colCount);
+      const thumbX = rowStartX + col * (thumbSize + gutter);
+      const thumbY = currentY + row * (thumbSize + gutter + 25);
+
+      if (tx >= thumbX && tx <= thumbX + thumbSize &&
+          ty >= thumbY && ty <= thumbY + thumbSize) {
+        if (clickSound.isLoaded()) clickSound.play();
+        activeConstellation = c;
+        state = "visual";
+        updateButtonVisibility();
+        layoutDOMButtons();
+        resetView();
+        visualStartTime = millis();
+        return;
+      }
+    }
+
+    // 月コンテンツの高さを drawGallery2D と同じ計算で加算
+    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+  }
+}
 
   if (state === "select") {
   const btnSize = padLayout.btnSize * padLayout.scl;
