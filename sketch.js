@@ -394,9 +394,9 @@ function setup() {
 	    selectedLabel = null;
 	  } else {
 	    state = "gallery";
-	    galleryStars = [];
 		targetScrollY = 0;
     	scrollY = 0;
+	    galleryStars = [];
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
@@ -417,7 +417,6 @@ function setup() {
 	  }
 	  updateButtonVisibility();
 	  layoutDOMButtons();
-	  redraw();
   });
 
   resetViewButton.mousePressed(function() {
