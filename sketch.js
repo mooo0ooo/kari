@@ -157,8 +157,6 @@ let topOffset = 40;
 const designWidth = 430;
 let galleryScale = 1;
 
-let activeConstellation = null;
-
 /* =========================================================
    preload
    ========================================================= */
