@@ -95,7 +95,6 @@ let bgStarsNear = [];
 let starDrift = 0;
 let shootingStarTimer = 0;
 let shootingStarInterval = 240;
-let breathPhase = 0;
 
 // タッチイベント
 // 3D操作
