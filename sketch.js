@@ -764,49 +764,40 @@ function draw() {
 	  box(220);
 	  
 	  // 星
-	  for (let p of main.stars) {
-		let px = p.pos.x;
-		let py = p.pos.y;
-		let pz = p.pos.z;
+		for (let p of main.stars) {
+		  push();
+		  translate(p.pos.x, p.pos.y, p.pos.z);
+		  fill(255, 255, 200);
+		  noStroke();
+		  sphere(8);
+		  pop();
+		}
+		
+		// 線
+		if (millis() - visualStartTime > 1200) {
+		  stroke(180, 200, 255, 120);
+		  strokeWeight(2);
+		  blendMode(ADD);
+		
+		  for (let a = 0; a < main.stars.length; a++) {
+		    for (let b = a + 1; b < main.stars.length; b++) {
+		      let A = main.stars[a].pos;
+		      let B = main.stars[b].pos;
+		      line(A.x, A.y, A.z, B.x, B.y, B.z);
+		    }
+		  }
+		}
+		
+		// 日付（3D空間内）
 		push();
-		translate(px, py, pz);
-		fill(255, 255, 200);
-		noStroke();
-		sphere(8);
+		translate(0, 120, 0);
+		fill(255);
+		textAlign(CENTER, CENTER);
+		textSize(14);
+		text(main.created, 0, 0);
 		pop();
-	  }
-	  pop();
-
-	  // 線
-	  if (millis() - visualStartTime > 1200) {
-	    push();
-	    stroke(180, 200, 255, 120);
-	    strokeWeight(2);
-	    blendMode(ADD);
-	
-	    for (let a = 0; a < main.stars.length; a++) {
-	      for (let b = a + 1; b < main.stars.length; b++) {
-	        let aPos = main.stars[a].pos;
-	        let bPos = main.stars[b].pos;
-	        if (aPos && bPos) {
-	          line(
-	            aPos.x, aPos.y, aPos.z,
-	            bPos.x, bPos.y, bPos.z
-	          );
-	        }
-	      }
-	    }
-	    pop();
-	  }
-	
-	  // 日付
-	  push();
-	  translate(0, 120, 0);
-	  fill(255);
-	  textAlign(CENTER, CENTER);
-	  textSize(14);
-	  text(main.created, 0, 0);
-	  pop();
+		
+		pop();
 	
 	  // 月タイトル（画面固定）
 	  if (main.created) {
@@ -830,6 +821,7 @@ function draw() {
 	  // タッチフィードバック
 	  if (touchFeedback && touchFeedback.alpha > 0) {
 	    push();
+		resetMatrix();  
 	    noStroke();
 	    fill(255, 255, 255, touchFeedback.alpha);
 	    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
