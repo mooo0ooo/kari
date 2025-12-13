@@ -127,7 +127,6 @@ let galleryLayout = {
   topOffset: 0
 };
 let galleryButton;
-let galleryLayout = {};
 let scrollY = 0;
 let targetScrollY = 0;
 let galleryStars = [];
@@ -1780,6 +1779,38 @@ function findClosestEmotion(p,a,d){
   }
   return best;
 }
+
+/* =========================================================
+   screenPos
+   ========================================================= */
+function screenPos(x, y, z) {
+  const mv = this._renderer.uMVMatrix.mat4;
+  const p = this._renderer.uPMatrix.mat4;
+
+  let v = [x, y, z, 1];
+
+  let mv_v = [
+    mv[0]*v[0] + mv[4]*v[1] + mv[8]*v[2] + mv[12]*v[3],
+    mv[1]*v[0] + mv[5]*v[1] + mv[9]*v[2] + mv[13]*v[3],
+    mv[2]*v[0] + mv[6]*v[1] + mv[10]*v[2] + mv[14]*v[3],
+    mv[3]*v[0] + mv[7]*v[1] + mv[11]*v[2] + mv[15]*v[3]
+  ];
+
+  let clip = [
+    p[0]*mv_v[0] + p[4]*mv_v[1] + p[8]*mv_v[2] + p[12]*mv_v[3],
+    p[1]*mv_v[0] + p[5]*mv_v[1] + p[9]*mv_v[2] + p[13]*mv_v[3],
+    p[2]*mv_v[0] + p[6]*mv_v[1] + p[10]*mv_v[2] + p[14]*mv_v[3],
+    p[3]*mv_v[0] + p[7]*mv_v[1] + p[11]*mv_v[2] + p[15]*mv_v[3]
+  ];
+
+  let ndcX = clip[0] / clip[3];
+  let ndcY = clip[1] / clip[3];
+
+  let sx = map(ndcX, -1, 1, 0, width);
+  let sy = map(-ndcY, -1, 1, 0, height);
+
+  return createVector(sx, sy);
+}
 	
 /* =========================================================
    drawGallery
@@ -1805,10 +1836,15 @@ function drawGallery2D() {
   }
   pop();
 
+  // 画面中央に配置
+  translate(-width / 2, -height / 2);
+
   // デザイン幅とスケールを計算
-  galleryScale = min(1, width / designWidth);
+  let galleryScale = min(1, width / designWidth);
   
   push();
+  scale(galleryScale);
+  translate(0, scrollY);
 
   // サムネイルサイズとレイアウトを計算
   let thumbSize = 150; 
@@ -1856,8 +1892,10 @@ function drawGallery2D() {
       let row = floor(i / colCount);
       let x = rowStartX + col * (thumbSize + gutter);
       let ty = y + row * (thumbSize + gutter + 25);
-
-	  const { x: mx, y: my } = getGalleryPointer();
+		
+      // タップ/ホバー判定
+      let mx = (mouseX - width/2) / galleryScale;
+      let my = (mouseY - height/2 - scrollY) / galleryScale;
       
       // サムネイルの背景
 	  fill('rgba(5, 5, 20, 0.8)');
@@ -2033,6 +2071,37 @@ function generate2DThumbnail(cons, size) {
   cons.lastAccessed = Date.now();
   return pg;
 }
+/* =========================================================
+   最大スクロール量を計算
+   ========================================================= */
+function calculateMaxScroll() {
+  const thumbSize = 150;
+  const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
+  
+  let totalHeight = topOffset;
+
+  if (!Array.isArray(allConstellations)) {
+    console.warn("allConstellations is not an array:", allConstellations);
+    return 0;
+  }
+
+  const grouped = groupByMonth(allConstellations);
+  
+  for (let month = 0; month < 12; month++) {
+    const monthItems = grouped[month];
+    if (monthItems.length === 0) continue;
+    
+    // 月の見出しの高さ
+    totalHeight += 35;
+    
+    // サムネイル行の高さ
+    const rows = ceil(monthItems.length / itemsPerRow);
+    totalHeight += rows * (thumbSize + gutter + 25) + 20;
+  }
+  
+  return max(0, totalHeight - height + 100);
+}
+
 /* =========================================================
    galleryメモリ管理
    ========================================================= */
