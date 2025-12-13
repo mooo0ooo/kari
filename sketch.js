@@ -343,8 +343,6 @@ function setup() {
 	    length: padValues?.length,
 	    values: padValues
 	  });
-
-	  updateButtonVisibility();
 	
 	  if (!padValues || padValues.length === 0) return;
 
@@ -375,7 +373,9 @@ function setup() {
 	    "myConstellations",
 	    JSON.stringify(allConstellations)
 	  );
+	 
 	　changeState("visual");
+	  updateButtonVisibility();
 	
 	  // リセット
 	  padValues = [];
