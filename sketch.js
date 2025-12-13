@@ -1206,68 +1206,74 @@ function handleTap(x, y) {
   if (state === "gallery") {
     if (!allConstellations || allConstellations.length === 0) return;
 
-　const designWidth = 430;
-  galleryScale = min(1, width / designWidth);
-　x = x / galleryScale;
-  y = (y - scrollY) / galleryScale;
-  
-  // ギャラリーのレイアウトパラメータ
-  const thumbSize = 150 * galleryScale;
-  const colCount = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
-  const rowStartX = (width - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-  
-  // タップ位置をスケールに合わせて調整
-  x = x * (width / 430);
-  y = (y - scrollY) * (width / 430);
-  
-  // 各サムネイルに対してヒットテスト
-  let currentY = topOffset;
-  
-  // 月ごとに分類
-  let grouped = {};
-  for (let m = 0; m < 12; m++) grouped[m] = [];
-  for (let c of allConstellations) {
-    if (!c.created) continue;
-    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    let monthIndex = int(m[2]) - 1;
-    grouped[monthIndex].push(c);
-  }
-  
-  // 各月のサムネイルをチェック
-  for (let month = date.getMonth; month < 12; month++) {
-    let list = grouped[month];
-    if (list.length === 0) continue;
-    
-    // 月の見出しの高さをスキップ
-    currentY += 35;
-    
-    // サムネイルをチェック
-    for (let i = 0; i < list.length; i++) {
-      let col = i % colCount;
-      let row = floor(i / colCount);
-      let thumbX = rowStartX + col * (thumbSize + gutter);
-      let thumbY = currentY + row * (thumbSize + gutter + 25);
-      
-      // タップがサムネイルの範囲内かチェック
-      if (x >= thumbX && x <= thumbX + thumbSize &&
-          y >= thumbY && y <= thumbY + thumbSize) {
+    // === 描画と逆の座標変換 ===
+    const designWidth = 430;
+    galleryScale = min(1, width / designWidth);
 
-		  activeConstellation = list[i];
+    // drawGallery2D と完全一致
+    x = (x - width / 2) / galleryScale;
+    y = (y - height / 2 - scrollY) / galleryScale;
 
-		　state = "visual";
-		  updateButtonVisibility();
-		  layoutDOMButtons();
-		  resetView();
-  		  visualStartTime = millis();
-		  
-          return;
-      }
+    const thumbSize = 150;
+    const colCount = max(
+      1,
+      floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter))
+    );
+    const rowStartX =
+      (width / galleryScale -
+        (thumbSize * colCount + gutter * (colCount - 1))) /
+      2;
+
+    let currentY = topOffset;
+
+    // 月ごとに分類
+    let grouped = {};
+    for (let m = 0; m < 12; m++) grouped[m] = [];
+
+    for (let c of allConstellations) {
+      if (!c.created) continue;
+      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+      if (!m) continue;
+      let monthIndex = int(m[2]) - 1;
+      grouped[monthIndex].push(c);
     }
-    
-    // 次の月の開始位置に移動
-    currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
-  }
+
+    // === ヒットテスト ===
+    for (let month = 0; month < 12; month++) {
+      let list = grouped[month];
+      if (list.length === 0) continue;
+
+      currentY += 35;
+
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+
+        let col = i % colCount;
+        let row = floor(i / colCount);
+        let thumbX = rowStartX + col * (thumbSize + gutter);
+        let thumbY = currentY + row * (thumbSize + gutter + 25);
+
+        if (
+          x >= thumbX &&
+          x <= thumbX + thumbSize &&
+          y >= thumbY &&
+          y <= thumbY + thumbSize
+        ) {
+          activeConstellation = c;
+          state = "visual";
+          updateButtonVisibility();
+          layoutDOMButtons();
+          resetView();
+          visualStartTime = millis();
+          return;
+        }
+      }
+
+      currentY +=
+        ceil(list.length / colCount) *
+          (thumbSize + gutter + 25) +
+        20;
+    }
   }
 
   if (state === "select") {
