@@ -1547,8 +1547,6 @@ function drawGallery2D() {
     grouped[monthIndex].push(c);
   }
 
-  let idx = 0;
-
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     let list = grouped[month];
@@ -1569,24 +1567,24 @@ function drawGallery2D() {
 
     // サムネイルをグリッド状に配置
     for (let i = 0; i < list.length; i++) {
-	    const c = list[i];
-      let col = i % colCount;
-      let row = floor(i / colCount);
-      let tx = rowStartX + col * (thumbSize + gutter);
-      let ty2 = y + row * (thumbSize + gutter + 25);
-	  allConstellations[idx]._gx = tx;
-      allConstellations[idx]._gy = ty2;
-      allConstellations[idx]._gw = thumbSize;
-      allConstellations[idx]._gh = thumbSize;
-	  idx++;
+	  const c = list[i];
+	  let col = i % colCount;
+	  let row = floor(i / colCount);
+	  let tx = rowStartX + col * (thumbSize + gutter);
+	  let ty2 = y + row * (thumbSize + gutter + 25);
+	
+	  c._gx = tx;
+	  c._gy = ty2;
+	  c._gw = thumbSize;
+	  c._gh = thumbSize;
       
       // サムネイルの背景
-	    fill('rgba(5, 5, 20, 0.8)');
-	    stroke('rgba(150, 150, 150, 0.5)');
-	    strokeWeight(1);
-	    rect(tx, ty2, thumbSize, thumbSize, 8);
-		
-	    if (!c.thumbnail) {
+	  fill('rgba(5, 5, 20, 0.8)');
+      stroke('rgba(150, 150, 150, 0.5)');
+      strokeWeight(1);
+      rect(tx, ty2, thumbSize, thumbSize, 8);
+
+      if (!c.thumbnail) {
         c.thumbnail = generate2DThumbnail(c, thumbSize);
       }
       if (c.thumbnail) {
@@ -1613,13 +1611,6 @@ function drawGallery2D() {
   let maxScroll = calculateMaxScroll();
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
-}
-
-function getGalleryPointer() {
-  return {
-    x: (mouseX - width / 2) / galleryScale,
-    y: (mouseY - height / 2 - scrollY) / galleryScale
-  };
 }
 /* =========================================================
    generate2DThumbnail
