@@ -336,7 +336,6 @@ function setup() {
   });
 
 　okButton.mousePressed(() => {
-	  console.log("OKボタンが押されました!");
 	  
 	  // デバッグ用: padValuesの状態を確認
 	  console.log("padValuesの状態:", {
@@ -344,6 +343,8 @@ function setup() {
 	    length: padValues?.length,
 	    values: padValues
 	  });
+
+	  updateButtonVisibility();
 	
 	  if (!padValues || padValues.length === 0) return;
 
