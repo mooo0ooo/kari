@@ -1963,12 +1963,19 @@ function drawGallery2D() {
       // タップ/ホバー判定
       let mx = (mouseX - width/2) / galleryScale;
       let my = (mouseY - height/2 - scrollY) / galleryScale;
-      
+
+　　  let isHovered = (mx > x && mx < x + thumbSize && my > ty && my < ty + thumbSize);
+		
       // サムネイルの背景
 	  fill('rgba(5, 5, 20, 0.8)');
 	  stroke('rgba(150, 150, 150, 0.5)');
 	  strokeWeight(1);
 	  rect(x, ty, thumbSize, thumbSize, 8);
+
+	  // クリック処理
+	  if (isHovered && (mouseIsPressed || isTouching)) {
+	    handleGalleryItemTap(list[i]);
+	  }
 		
 	  if (!list[i].thumbnail) {
 		  list[i].thumbnail = generate2DThumbnail(list[i], thumbSize);
@@ -1995,19 +2002,6 @@ function drawGallery2D() {
   let contentHeight = y + 20;
 
   pop();
-
-　// ギャラリーアイテムの描画部分（drawGallery2D関数内）
-let isHovered = (mx > x && mx < x + thumbSize && my > ty && my < ty + thumbSize);
-
-// ホバー時のスタイル変更
-fill(isHovered ? 'rgba(30, 30, 60, 0.9)' : 'rgba(5, 5, 20, 0.8)');
-stroke(isHovered ? 'rgba(200, 200, 255, 0.7)' : 'rgba(150, 150, 150, 0.5)');
-strokeWeight(isHovered ? 2 : 1);
-
-// タップ/クリック処理
-if (isHovered && (mouseIsPressed || isTouching)) {
-  handleGalleryItemTap(list[i]);
-}
 
   // スクロール範囲を制限
   let maxScroll = max(0, contentHeight - height/galleryScale + 100);
