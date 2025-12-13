@@ -90,13 +90,11 @@ let touchMode = null;
 let touchStartX, touchStartY;
 let pinchStartDist = 0;
 let pinchStartZoom = 1;
-const TAP_DIST = 10;
-const TAP_TIME = 300;
+const TAP_DIST = 20;
+const TAP_TIME = 250;
 
 let rotationX = 0, rotationY = 0;
 let targetRotationX = 0, targetRotationY = 0;
-let isDragging = false;
-let isTouching = false;
 let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
 
@@ -1055,8 +1053,8 @@ function drawButton(x,y,btnSize_,col,index,isSelected,shapeType,sides=4){
    タッチイベント
    ========================================================= */
 function touchStarted() {
+  // ---------- pinch ----------
   if (touches.length === 2 && state === "visual") {
-    // ピンチ開始
     touchMode = "pinch";
     pinchStartDist = dist(
       touches[0].x, touches[0].y,
@@ -1066,96 +1064,48 @@ function touchStarted() {
     return false;
   }
 
+  // ---------- single touch ----------
   if (touches.length === 1) {
     touchStartX = touches[0].x;
     touchStartY = touches[0].y;
     lastTouchX = touchStartX;
     lastTouchY = touchStartY;
     touchStartTime = millis();
-
     touchMode = "tap";
   }
 
   return false;
 }
 
-function checkButtonTouches(touch) {
-  const buttons = [upButton, downButton, addButton, okButton, backButton, galleryButton, resetViewButton]
-    .filter(btn => btn && btn.elt);
-
-  for (const btn of buttons) {
-    try {
-      const rect = btn.elt.getBoundingClientRect();
-      const isTouching = touch.clientX >= rect.left && 
-                        touch.clientX <= rect.right && 
-                        touch.clientY >= rect.top && 
-                        touch.clientY <= rect.bottom;
-      
-      if (isTouching) {
-        // タッチフィードバック
-        const originalTransform = btn.elt.style.transform;
-        const originalOpacity = btn.elt.style.opacity;
-        
-        btn.elt.style.transform = 'scale(0.95)';
-        btn.elt.style.opacity = '0.9';
-        btn.elt.style.transition = 'all 0.1s ease';
-        
-        // タッチ終了時のハンドラを設定
-        const handleTouchEnd = () => {
-          if (btn.mousePressed) {
-            btn.mousePressed();
-          }
-          // スタイルを元に戻す
-          btn.elt.style.transform = originalTransform;
-          btn.elt.style.opacity = originalOpacity;
-          // イベントリスナーを削除
-          document.removeEventListener('touchend', handleTouchEnd);
-        };
-        
-        // タッチ終了イベントを追加
-        document.addEventListener('touchend', handleTouchEnd, { once: true });
-        
-        return true;
-      }
-    } catch (e) {
-      console.warn('Error checking button touch:', e);
-    }
-  }
-  return false;
-}  
-
 function touchMoved() {
   if (!touchMode) return false;
 
-  // -------------------------
-  // pinch（ズーム）
-  // -------------------------
+  // ---------- pinch ----------
   if (touchMode === "pinch" && touches.length === 2) {
-    let d = dist(
+    const d = dist(
       touches[0].x, touches[0].y,
       touches[1].x, touches[1].y
     );
-
-    let scale = d / pinchStartDist;
-    targetZoomLevel = constrain(pinchStartZoom * scale, 0.5, 3);
+    const scale = d / pinchStartDist;
+    targetZoomLevel = constrain(
+      pinchStartZoom * scale,
+      MIN_ZOOM,
+      MAX_ZOOM
+    );
     return false;
   }
 
-  // -------------------------
-  // single touch
-  // -------------------------
   if (touches.length !== 1) return false;
 
-  let x = touches[0].x;
-  let y = touches[0].y;
+  const x = touches[0].x;
+  const y = touches[0].y;
 
-  let dx = x - lastTouchX;
-  let dy = y - lastTouchY;
+  const dx = x - lastTouchX;
+  const dy = y - lastTouchY;
+  const totalDx = x - touchStartX;
+  const totalDy = y - touchStartY;
 
-  let totalDx = x - touchStartX;
-  let totalDy = y - touchStartY;
-
-  // tap → scroll / rotate に確定
+  // tap → mode確定
   if (touchMode === "tap" && dist(0, 0, totalDx, totalDy) > TAP_DIST) {
     if (state === "gallery") {
       touchMode = "scroll";
@@ -1166,16 +1116,12 @@ function touchMoved() {
     }
   }
 
-  // -------------------------
-  // scroll（gallery）
-  // -------------------------
+  // ---------- scroll ----------
   if (touchMode === "scroll" && state === "gallery") {
     targetScrollY += dy;
   }
 
-  // -------------------------
-  // rotate（visual）
-  // -------------------------
+  // ---------- rotate ----------
   if (touchMode === "rotate" && state === "visual") {
     targetRotationY += dx * 0.008;
     targetRotationX -= dy * 0.008;
@@ -1187,19 +1133,16 @@ function touchMoved() {
   return false;
 }
 
-
 function touchEnded() {
   if (!touchMode) return false;
 
-  let elapsed = millis() - touchStartTime;
-  let moved = dist(
+  const elapsed = millis() - touchStartTime;
+  const moved = dist(
     lastTouchX, lastTouchY,
     touchStartX, touchStartY
   );
 
-  // -------------------------
-  // tap 判定
-  // -------------------------
+  // ---------- tap ----------
   if (touchMode === "tap" && elapsed < TAP_TIME && moved < TAP_DIST) {
     handleTap(touchStartX, touchStartY);
   }
@@ -1208,39 +1151,9 @@ function touchEnded() {
   return false;
 }
 
-function calculateMaxScroll() {
-  const thumbSize = 150;
-  const itemsPerRow = max(1, floor((width - outerPad * 2) / (thumbSize + gutter)));
-  
-  let totalRows = 0;
-  const grouped = {};
-  
-  for (let m = 0; m < 12; m++) grouped[m] = [];
-  for (const c of allConstellations) {
-    if (!c.created) continue;
-    const m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    const monthIndex = parseInt(m[2]) - 1;
-    grouped[monthIndex].push(c);
-  }
-  
-  for (let month = 0; month < 12; month++) {
-    const monthItems = grouped[month];
-    if (monthItems.length === 0) continue;
-    
-    totalRows += 1;
-    
-    const itemRows = Math.ceil(monthItems.length / itemsPerRow);
-    totalRows += itemRows;
- 
-    totalRows += 0.5;
-  }
-  
-  const rowHeight = thumbSize + gutter + 25;
-  
-  const contentHeight = totalRows * rowHeight + topOffset + outerPad;
-  
-  return Math.max(0, contentHeight - height + 100);
+function touchCanceled() {
+  touchMode = null;
+  return false;
 }
 
 // 月ごとにグループ化
@@ -1273,10 +1186,6 @@ function groupByMonth(constellations) {
   }
   
   return grouped;
-}
-
-function touchCanceled(event) {
-  return touchEnded(event);
 }
 
 // リセット
@@ -1449,11 +1358,6 @@ function changeState(newState) {
   }
 }
 
-function touchCanceled(e) {
-  e.preventDefault();
-  return false;
-}
-
 function setupButtonInteractions() {
   function addButtonInteraction(btn, callback) {
     if (!btn) return;
@@ -1550,64 +1454,6 @@ function setupButtonInteractions() {
     console.log("リセットボタンが押されました");
     resetView();
   });
-}
-
-// PADボタン
-function checkPadButtonTouch(x, y) {
-  const btnSize = padLayout.btnSize * padLayout.scl;
-  const spacing = padLayout.spacing * padLayout.scl;
-  const hitMargin = 10;
-
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  console.log(`Tap at: ${x}, ${y}`);
-  
-  // P行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY - 120 * padLayout.scl;
-
-	console.log(`P${i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedP = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      redraw();
-      return true;
-    }
-  }
-  
-  // A行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY;
-
-	console.log(`A${i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedA = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      redraw();
-      return true;
-    }
-  }
-  
-  // D行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY + 120 * padLayout.scl;
-
-	console.log(`D{i} button at: ${btnX}, ${btnY}, distance: ${dist(x, y, btnX, btnY)}`);
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedD = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-      redraw();
-      return true;
-    }
-  }
-  return false;
 }
 
 /* =========================================================
