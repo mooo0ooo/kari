@@ -1594,27 +1594,6 @@ function drawGallery2D() {
   updateScrollLimits();
 }
 
-// 背景の星を描画するヘルパー関数
-function drawBackgroundStars() {
-  push();
-  noStroke();
-  for (let s of galleryStars) {
-    if (s.on === undefined) s.on = true;
-    if (random() < 0.02) s.on = !s.on;
-    
-    if (s.on) {
-      const pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-      const starSize = s.baseSize + pulse * random(0.5, 2);
-      fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180);
-      push();
-      translate(s.x, s.y, s.z);
-      sphere(starSize);
-      pop();
-    }
-  }
-  pop();
-}
-
 // ギャラリーレイアウトを更新するヘルパー関数
 function updateGalleryLayout(thumbSize, colCount, rowStartX) {
   galleryLayout.thumbSize = thumbSize;
