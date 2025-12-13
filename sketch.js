@@ -135,7 +135,13 @@ let touchFeedback = { x: 0, y: 0, alpha: 0 };
 let showGrid = true;
 
 // gallery
-let galleryLayout = {};
+let galleryLayout = {
+  colCount: 1,
+  thumbSize: 150,
+  gutter: 20,
+  rowStartX: 0,
+  topOffset: 0
+};
 let galleryButton;
 let scrollY = 0;
 let targetScrollY = 0;
@@ -147,8 +153,9 @@ const SCROLL_AMOUNT = 150;
 let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
-const designWidth = 1200;
+const designWidth = 430;
 let galleryScale = 1;
+
 
 class ShootingStar {
   constructor() {
@@ -374,6 +381,7 @@ function setup() {
 
 
   galleryButton.mousePressed(() => {
+	  activeConstellation = null;
 	  if (state === "gallery") {
 	    state = "select";
 	    galleryStars = [];
@@ -382,7 +390,7 @@ function setup() {
 	    selectedLabel = null;
 	  } else {
 	    state = "gallery";
-		targetScrollY = 0;
+		  targetScrollY = 0;
     	scrollY = 0;
 	    galleryStars = [];
 	    // ギャラリー用の星を生成
@@ -405,7 +413,6 @@ function setup() {
 	  }
 	  updateButtonVisibility();
 	  layoutDOMButtons();
-	  redraw();
   });
 
   resetViewButton.mousePressed(function() {
@@ -1142,12 +1149,10 @@ function touchCanceled() {
 // 月ごとにグループ化
 function groupByMonth(constellations) {
   const grouped = {};
-  // 月ごとの配列を初期化
   for (let i = 0; i < 12; i++) {
     grouped[i] = [];
   }
 
-  // 入力の検証
   if (!Array.isArray(constellations)) {
     console.warn("Invalid constellations data in groupByMonth:", constellations);
     return grouped;
@@ -1157,28 +1162,12 @@ function groupByMonth(constellations) {
     if (!c || !c.created) continue;
     
     try {
-      // 日付をパース
-      let date;
-      // 正規表現で日付を抽出（既存の形式に対応）
-      const match = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (match) {
-        // 月は0から始まるため-1する
-        const month = parseInt(match[2], 10) - 1;
-        if (month >= 0 && month < 12) {
-          grouped[month].push(c);
-          continue; // 成功したら次へ
-        }
-      }
+      const date = parseDate(c.created);
+      if (isNaN(date.getTime())) continue;
       
-      // 正規表現が失敗した場合はparseDateを試す
-      date = parseDate(c.created);
-      if (date && !isNaN(date.getTime())) {
-        const month = date.getMonth();
-        if (month >= 0 && month < 12) {
-          grouped[month].push(c);
-        }
-      } else {
-        console.warn("Invalid date format:", c.created);
+      const month = date.getMonth();
+      if (month >= 0 && month < 12) {
+        grouped[month].push(c);
       }
     } catch (e) {
       console.warn("Error processing date:", c.created, e);
@@ -1210,44 +1199,22 @@ function resetView() {
 function handleTap(x, y) {
   if (state === "gallery") {
     if (!allConstellations || allConstellations.length === 0) return;
-	const gx = (x - width/2) / galleryScale;
-    const gy = (y - height/2 - scrollY) / galleryScale;
+	  let gx = (x - width / 2) / galleryScale;
+	  let gy = (y - height / 2 - scrollY) / galleryScale;
 
-    for (let i = allConstellations.length - 1; i >= 0; i--) {
-      const c = allConstellations[i];
-      if (!c._gx || !c._gy) continue;
+    for (let c of allConstellations) {
+	    if (!c._gx || !c._gy) continue;
 	
-	  if (gx >= c._gx && gx <= c._gx + c._gw &&
-          gy >= c._gy && gy <= c._gy + c._gh) {
-        if (clickSound && clickSound.isLoaded()) clickSound.play();
-	          activeConstellation = JSON.parse(JSON.stringify(c));
-		// 星のデータを準備
-        points = activeConstellation.stars.map(s => ({
-          pos: createVector(s.pos.x, s.pos.y, s.pos.z || 0),
-          emo: s.emo || { P: 0, A: 0, D: 0, en: "Unknown", ja: "不明" }
-        }));
-        
-        // 背景の星を再生成
-        stars = [];
-        for (let i = 0; i < 400; i++) {
-          stars.push({
-            x: random(-2000, 2000),
-            y: random(-2000, 2000),
-            z: random(-2000, 2000),
-            twinkle: random(1000),
-            baseSize: random(1, 4)
-          });
-        }
-	    // 状態を更新
-        state = "visual";
-        updateButtonVisibility();
-        visualStartTime = millis();
-        resetView();
-        redraw();
-        return true;
-      }
+	    if (gx >= c._gx && gx <= c._gx + c._gw &&
+	        gy >= c._gy && gy <= c._gy + c._gh) {
+	          if (clickSound && clickSound.isLoaded()) clickSound.play();
+	          activeConstellation = c;
+	          state = "visual";
+	          visualStartTime = millis();
+	          resetView();
+	          return;
+          }
     }
-	return false;
   }
 
   if (state === "select") {
@@ -1525,150 +1492,131 @@ function screenPos(x, y, z) {
    drawGallery
    ========================================================= */
 function drawGallery2D() {
-  // 定数を定義
-  const THUMBNAIL_REFRESH_RATE = 120;
-  const STAR_TWINKLE_RATE = 0.02;
-  const STAR_ALPHA = 180;
-  const MONTH_TITLE_SIZE = 24;
-  const DATE_TEXT_SIZE = 12;
-  const THUMBNAIL_RADIUS = 8;
-  
-  // サムネイルのクリーンアップ（120フレームに1回）
-  if (frameCount % THUMBNAIL_REFRESH_RATE === 0) {
-    cleanupThumbnails();
+  if (frameCount % 120 === 0) {
+	  cleanupThumbnails();
   }
-  
-  // 背景をリセット
   resetMatrix();
   camera();
-  background(5, 5, 20);
+  background(5, 5, 20); 
   
   // 背景の星を描画
-  drawBeautifulStars();
-  
+  push();
+  noStroke();
+  for (let s of galleryStars) {
+    if (s.on === undefined) s.on = true;
+    if (random() < 0.02) s.on = !s.on;
+    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
+    let starSize = s.baseSize + pulse * random(0.5, 2);
+    fill(200 + random(-20, 20), 200 + random(-20, 20), 255, 180);
+    push();
+    translate(s.x, s.y, s.z);
+    sphere(starSize);
+    pop();
+  }
+  pop();
+
   // 画面中央に配置
   translate(-width / 2, -height / 2);
-  
-  // スケールを計算
+
+  // デザイン幅とスケールを計算
   galleryScale = min(1, width / designWidth);
   
   push();
   scale(galleryScale);
   translate(0, scrollY);
-  
-  // サムネイルのレイアウトを計算
-  const thumbSize = 150;
-  const availableWidth = width / galleryScale - outerPad * 2;
-  const colCount = max(1, floor(availableWidth / (thumbSize + gutter)));
-  const rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
-  
-  // レイアウト情報を更新
-  if (!galleryLayout) {
-	  galleryLayout = {};
-  }
+
+  // サムネイルサイズとレイアウトを計算
+  let thumbSize = 150; 
+  let colCount = max(1, floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter)));
+  let rowStartX = (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
+  let y = topOffset;
+
   galleryLayout.thumbSize = thumbSize;
   galleryLayout.colCount = colCount;
   galleryLayout.rowStartX = rowStartX;
-  galleryLayout.topOffset = topOffset || 20;
-  
+  galleryLayout.topOffset = topOffset;
+
   // 月ごとに分類
-  const grouped = groupByMonth(allConstellations);
-  let currentY = topOffset || 20;
-	
+  let grouped = {};
+  for (let m = 0; m < 12; m++) grouped[m] = [];
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    let monthIndex = int(m[2]) - 1;
+    grouped[monthIndex].push(c);
+  }
+
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
-    const monthItems = grouped[month];
-    if (monthItems.length === 0) continue;
-	  
-    // 月の見出しを描画
-    currentY = drawMonthHeader(month, currentY);
+    let list = grouped[month];
+    if (list.length === 0) continue;
+
+    // 月の見出し
+    fill(255);
+    textSize(24);
+    textAlign(LEFT, TOP);
+    let monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    text(monthNames[month], 20, y);  
+    y += 35;
+
+	  let monthContentHeight = ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
+
+    // サムネイルをグリッド状に配置
+    for (let i = 0; i < list.length; i++) {
+	    const c = list[i];
+      let col = i % colCount;
+      let row = floor(i / colCount);
+      let tx = rowStartX + col * (thumbSize + gutter);
+      let ty2 = y + row * (thumbSize + gutter + 25);
+	    c._gx = tx;
+	    c._gy = ty2;
+	    c._gw = thumbSize;
+	    c._gh = thumbSize;
+      
+      // サムネイルの背景
+	    fill('rgba(5, 5, 20, 0.8)');
+	    stroke('rgba(150, 150, 150, 0.5)');
+	    strokeWeight(1);
+	    rect(tx, ty2, thumbSize, thumbSize, 8);
+		
+	    if (!c.thumbnail) {
+        c.thumbnail = generate2DThumbnail(c, thumbSize);
+      }
+      if (c.thumbnail) {
+        image(c.thumbnail, tx, ty2, thumbSize, thumbSize);
+      }
+		
+      // 日付を表示
+      const date = parseDate(c.created);
+      let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      fill(200, 220, 255);
+      textSize(12);
+      textAlign(CENTER, TOP);
+      text(formattedDate, tx + thumbSize/2, ty2 + thumbSize + 5);
+    }
     
-    // サムネイルを描画
-    currentY = drawThumbnails(monthItems, currentY, thumbSize, colCount, rowStartX);
+    // 次の月の開始位置を計算
+    y += monthContentHeight;;
   }
-  
+
   pop();
-  
+
   // スクロール範囲を制限
-  updateScrollLimits();
-}
-
-// 月の見出しを描画するヘルパー関数
-function drawMonthHeader(month, yPos) {
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  
-  fill(255);
-  textSize(24);
-  textAlign(LEFT, TOP);
-  text(monthNames[month], 20, yPos);
-  
-  return yPos + 35; // 次のY位置を返す
-}
-
-// サムネイルを描画するヘルパー関数
-function drawThumbnail(item, x, y, size) {
-  if (!item) return;
-  
-  // サムネイルの背景
-  fill('rgba(5, 5, 20, 0.8)');
-  stroke('rgba(150, 150, 150, 0.5)');
-  strokeWeight(1);
-  rect(x, y, size, size, 8);
-  
-  // サムネイル画像を生成または取得
-  if (!item.thumbnail) {
-    item.thumbnail = generate2DThumbnail(item, size);
-  }
-  
-  // サムネイルを描画
-  if (item.thumbnail) {
-    image(item.thumbnail, x, y, size, size);
-  }
-  
-  // 日付を表示
-  drawThumbnailDate(item, x, y, size);
-}
-
-/**
- * サムネイルの日付を描画
- */
-function drawThumbnailDate(item, x, y, size) {
-  if (!item.created) return;
-  
-  const date = parseDate(item.created);
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekday = weekdays[date.getDay()];
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  
-  const formattedDate = `${month}/${day}(${weekday}) ${hours}:${minutes}`;
-  
-  fill(200, 220, 255);
-  textSize(12);
-  textAlign(CENTER, TOP);
-  text(formattedDate, x + size/2, y + size + 5);
-}
-
-// サムネイルの位置情報を更新するヘルパー関数
-function updateThumbnailPosition(item, x, y, size) {
-  if (!item) return;
-  
-  item._gx = x;
-  item._gy = y;
-  item._gw = size;
-  item._gh = size;
-}
-
-// スクロール範囲を更新するヘルパー関数
-function updateScrollLimits() {
-  const maxScroll = calculateMaxScroll();
+  let maxScroll = calculateMaxScroll();
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
+}
+
+function getGalleryPointer() {
+  return {
+    x: (mouseX - width / 2) / galleryScale,
+    y: (mouseY - height / 2 - scrollY) / galleryScale
+  };
 }
 /* =========================================================
    generate2DThumbnail
@@ -1821,7 +1769,7 @@ function calculateMaxScroll() {
     totalHeight += rows * (thumbSize + gutter + 25) + 20;
   }
   
-  return max(0, (document.body.scrollHeight - window.innerHeight) / galleryScale);
+  return max(0, totalHeight - height + 100);
 }
 
 /* =========================================================
