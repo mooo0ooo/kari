@@ -1208,8 +1208,14 @@ function touchStarted() {
   if (touches.length === 1) {
     touchStartX = touches[0].x;
     touchStartY = touches[0].y;
+	lastTouchX = touchStartX;
+    lastTouchY = touchStartY;
+	touchStartTime = millis();
     touchMode = 'potentialTap';
-    return false; // Prevent default
+	if (state === 'gallery') {
+      touchStartScrollY = targetScrollY;
+    }
+    return false;
   }
   return true;
 }
@@ -1218,23 +1224,20 @@ function touchMoved() {
   if (!touchMode || touches.length !== 1) return false;
 
   const touch = touches[0];
-  const x = touch.x;
-  const y = touch.y;
-  const dx = x - lastTouchX;
-  const dy = y - lastTouchY;
-  const totalDx = x - touchStartX;
-  const totalDy = y - touchStartY;
-  const moveDist = dist(0, 0, totalDx, totalDy);
+  lastTouchX = touch.x;
+  lastTouchY = touch.y;
+  const dx = touch.x - touchStartX;
+  const dy = touch.y - touchStartY;
+  const moveDist = Math.sqrt(dx * dx + dy * dy);
 
   // タップ判定用のしきい値（ピクセル）
   const TAP_THRESHOLD = 8;
   
   // モードの確定
   if (moveDist > TAP_THRESHOLD) {
-    if (touchMode === "tap") {
-      // しきい値を超えた時点でモードを確定
-      touchMode = state === "gallery" ? "scroll" : "rotate";
-    }
+    if (touchMode === 'potentialTap' && moveDist > TAP_THRESHOLD) {
+	    touchMode = state === 'gallery' ? 'scroll' : 'rotate';
+	  }
   }
 
   // ピンチジェスチャー（2本指）
@@ -1258,15 +1261,15 @@ function touchMoved() {
 
   // ---------- スクロール処理（ギャラリーモード） ----------
   if (touchMode === "scroll" && state === "gallery") {
-    // スクロール位置を更新（慣性スクロール用に速度も記録）
-    velocityY = dy * 0.5;  // 速度を計算（減衰係数をかける）
-    targetScrollY = touchStartScrollY + (y - touchStartY);
+    const dy = touch.y - touchStartY;
+    targetScrollY = touchStartScrollY + dy;
+    velocityY = dy * 0.5;
     
     // スクロール範囲を制限
     const maxScroll = -calculateMaxScroll();
     targetScrollY = constrain(targetScrollY, maxScroll, 0);
     
-    return false;  // デフォルトの動作を防ぐ
+    return false;
   }
 
   // ---------- 回転処理（ビジュアルモード） ----------
@@ -1295,14 +1298,13 @@ function touchEnded() {
   // ---------- tap ----------
   if (touches.length === 0) {
     if (touchMode === 'potentialTap' || touchMode === null) {
-      // Only process tap if we didn't move much
       if (dist(touchStartX, touchStartY, touchX, touchY) < TAP_THRESHOLD) {
-        handleTap(touchX, touchY);
+        handleTap(lastTouchX, lastTouchY);
       }
     }
     touchMode = null;
   }
-  return;
+  return false;
 }
 
 function touchCanceled() {
