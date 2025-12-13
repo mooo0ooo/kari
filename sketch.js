@@ -1061,7 +1061,7 @@ function touchStarted() {
       touches[1].x, touches[1].y
     );
     pinchStartZoom = targetZoomLevel;
-    return false;
+    return;
   }
 
   // ---------- single touch ----------
@@ -1074,7 +1074,7 @@ function touchStarted() {
     touchMode = "tap";
   }
 
-  return false;
+  return;
 }
 
 function touchMoved() {
@@ -1148,7 +1148,7 @@ function touchEnded() {
   }
 
   touchMode = null;
-  return false;
+  return;
 }
 
 function touchCanceled() {
