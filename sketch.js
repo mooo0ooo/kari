@@ -1579,8 +1579,8 @@ function drawGallery2D() {
   
   // 月ごとに分類
   const grouped = groupByMonth(allConstellations);
-  currentY = drawThumbnails(monthItems, currentY, thumbSize, colCount, rowStartX);
-  
+  let currentY = topOffset || 20;
+	
   // 月ごとに描画
   for (let month = 0; month < 12; month++) {
     const monthItems = grouped[month];
