@@ -1350,7 +1350,6 @@ function handleTap(x, y) {
     const designWidth = 430;
     galleryScale = min(1, width / designWidth);
 
-    // drawGallery2D と完全一致
     x = (x - width / 2) / galleryScale;
     y = (y - height / 2 - scrollY) / galleryScale;
 
@@ -1360,38 +1359,34 @@ function handleTap(x, y) {
       floor((width / galleryScale - outerPad * 2) / (thumbSize + gutter))
     );
     const rowStartX =
-      (width / galleryScale -
-        (thumbSize * colCount + gutter * (colCount - 1))) /
-      2;
+      (width / galleryScale - (thumbSize * colCount + gutter * (colCount - 1))) / 2;
 
     let currentY = topOffset;
-
+	  
     // 月ごとに分類
     let grouped = {};
     for (let m = 0; m < 12; m++) grouped[m] = [];
 
     for (let c of allConstellations) {
-      if (!c.created) continue;
-      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (!m) continue;
-      let monthIndex = int(m[2]) - 1;
+      if (!c || !c.created) continue;
+      const date = parseDate(c.created);
+      const monthIndex = date.getMonth();
       grouped[monthIndex].push(c);
     }
 
     // === ヒットテスト ===
     for (let month = 0; month < 12; month++) {
-      let list = grouped[month];
-      if (list.length === 0) continue;
+      const list = grouped[month];
+      if (!list || list.length === 0) continue;
 
-      currentY += 35;
+      currentY += 35; // 月見出し分
 
       for (let i = 0; i < list.length; i++) {
         const c = list[i];
-
-        let col = i % colCount;
-        let row = floor(i / colCount);
-        let thumbX = rowStartX + col * (thumbSize + gutter);
-        let thumbY = currentY + row * (thumbSize + gutter + 25);
+        const col = i % colCount;
+        const row = floor(i / colCount);
+        const thumbX = rowStartX + col * (thumbSize + gutter);
+        const thumbY = currentY + row * (thumbSize + gutter + 25);
 
         if (
           x >= thumbX &&
@@ -1399,7 +1394,7 @@ function handleTap(x, y) {
           y >= thumbY &&
           y <= thumbY + thumbSize
         ) {
-		  if (clickSound.isLoaded()) clickSound.play();
+          if (clickSound.isLoaded()) clickSound.play();
           activeConstellation = c;
           state = "visual";
           updateButtonVisibility();
@@ -1410,10 +1405,8 @@ function handleTap(x, y) {
         }
       }
 
-      currentY +=
-        ceil(list.length / colCount) *
-          (thumbSize + gutter + 25) +
-        20;
+      // 次の月の開始位置
+      currentY += ceil(list.length / colCount) * (thumbSize + gutter + 25) + 20;
     }
   }
 
