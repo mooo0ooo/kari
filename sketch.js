@@ -131,6 +131,8 @@ let outerPad = 20;
 let gutter = 12;
 let topOffset = 40;
 
+let activeConstellation = null;
+
 /* =========================================================
    preload
    ========================================================= */
@@ -713,7 +715,8 @@ function draw() {
 	  pop();
 	
 	  if (allConstellations.length === 0) return;
-	  let latest = allConstellations[allConstellations.length - 1];
+	  let latest = activeConstellation 
+          || allConstellations[allConstellations.length - 1];
 	  let latestMonth = -1;
 	
 	  if (latest?.created) {
@@ -1416,6 +1419,16 @@ function handleGalleryTap(x, y) {
       // タップがサムネイルの範囲内かチェック
       if (x >= thumbX && x <= thumbX + thumbSize &&
           y >= thumbY && y <= thumbY + thumbSize) {
+
+		  activeConstellation = list[i];
+
+		　state = "visual";
+		  updateButtonVisibility();
+		  layoutDOMButtons();
+
+		  resetView();
+  		  visualStartTime = millis();
+		  
         // 既に選択されているサムネイルをタップした場合は閉じる
         if (selectedThumbnail === list[i]) {
           targetZoom = 0;
