@@ -1129,13 +1129,22 @@ function touchEnded() {
     touchStartX, touchStartY
   );
 
-  // ---------- tap ----------
-  if (touchMode === "tap" && elapsed < TAP_TIME && moved < TAP_DIST) {
+  const isGalleryTap =
+    state === "gallery" &&
+    elapsed < TAP_TIME &&
+    moved < TAP_DIST * 1.5;
+
+  const isStrictTap =
+    touchMode === "tap" &&
+    elapsed < TAP_TIME &&
+    moved < TAP_DIST;
+
+  if (isGalleryTap || isStrictTap) {
     handleTap(touchStartX, touchStartY);
   }
 
   touchMode = null;
-  return;
+  return false;
 }
 
 function touchCanceled() {
