@@ -307,7 +307,6 @@ function setup() {
 	
 	  if (!padValues || padValues.length === 0) return;
 
-	  // ★ 星データを先に作る
 	  let now = new Date();
 	  let timestamp = now.toLocaleString();
 	
@@ -335,12 +334,7 @@ function setup() {
 	    "myConstellations",
 	    JSON.stringify(allConstellations)
 	  );
-	
-	  // visual
-	  state = "visual";
-	  visualStartTime = millis();
-	  resetView();
-	  updateButtonVisibility();
+	　changeState("visual");
 	
 	  // リセット
 	  padValues = [];
