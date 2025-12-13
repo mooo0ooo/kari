@@ -774,7 +774,7 @@ function draw() {
 	  box(220);
 
 	  breathPhase += 0.008;
-	  let breath = 0.92 + 0.08 * sin(breathPhase);
+	  breath = 0.92 + 0.08 * sin(breathPhase);
 	  
 	  // 星
 	  for (let p of main.stars) {
