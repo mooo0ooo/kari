@@ -61,6 +61,8 @@ let centerX, centerY;
 
 let canvas;
 
+let clickSound;
+
 let padValues = [];
 let points = [];
 let stars = [];
