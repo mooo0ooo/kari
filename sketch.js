@@ -1172,7 +1172,7 @@ function groupByMonth(constellations) {
     if (!c || !c.created) continue;
     
     try {
-      const date = new Date(c.created);
+      const date = parseDate(c.created);
       if (isNaN(date.getTime())) continue;
       
       const month = date.getMonth();
@@ -1197,14 +1197,6 @@ function resetView() {
   targetRotationY = 0;
   zoomLevel = 1;
   targetZoomLevel = 1;
-  
-  // 慣性をリセット
-  velocityX = 0;
-  velocityY = 0;
-  
-  // タッチ状態をリセット
-  isTouching = false;
-  isDragging = false;
   
   // カメラをリセット
   camera();
@@ -1243,7 +1235,7 @@ function handleTap(x, y) {
   }
   
   // 各月のサムネイルをチェック
-  for (let month = 0; month < 12; month++) {
+  for (let month = date.getMonth; month < 12; month++) {
     let list = grouped[month];
     if (list.length === 0) continue;
     
@@ -1279,7 +1271,7 @@ function handleTap(x, y) {
   }
 
   if (state === "select") {
-    const btnSize = padLayout.btnSize * padLayout.scl;
+  const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
   const centerY = height / 2;
@@ -1531,6 +1523,9 @@ function screenPos(x, y, z) {
    drawGallery
    ========================================================= */
 function drawGallery2D() {
+　if (frameCount % 120 === 0) {
+	  cleanupThumbnails();
+  }
   resetMatrix();
   camera();
   background(5, 5, 20); 
@@ -1555,7 +1550,7 @@ function drawGallery2D() {
   translate(-width / 2, -height / 2);
 
   // デザイン幅とスケールを計算
-  let galleryScale = min(1, width / designWidth);
+  galleryScale = min(1, width / designWidth);
   
   push();
   scale(galleryScale);
@@ -1627,7 +1622,7 @@ function drawGallery2D() {
 	  }
       
       // 日付を表示
-      let date = new Date(list[i].created);
+      const date = parseDate(c.created);
       let weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       let formattedDate = `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]}) ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
       fill(200, 220, 255);
@@ -1645,7 +1640,7 @@ function drawGallery2D() {
   pop();
 
   // スクロール範囲を制限
-  let maxScroll = max(0, contentHeight - height/galleryScale + 100);
+  let maxScroll = calculateMaxScroll();
   targetScrollY = constrain(targetScrollY, -maxScroll, 0);
   scrollY = constrain(scrollY, -maxScroll, 0);
 }
@@ -1936,11 +1931,3 @@ function loadConstellations() {
     }
   }
 }
-
-window.setup = setup;
-window.draw = draw;
-window.windowResized = windowResized;
-window.mouseWheel = mouseWheel;
-window.touchStarted = touchStarted;
-window.touchMoved = touchMoved;
-window.touchEnded = touchEnded;
