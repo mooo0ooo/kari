@@ -1399,6 +1399,7 @@ function handleTap(x, y) {
           y >= thumbY &&
           y <= thumbY + thumbSize
         ) {
+		  if (clickSound.isLoaded()) clickSound.play();
           activeConstellation = c;
           state = "visual";
           updateButtonVisibility();
