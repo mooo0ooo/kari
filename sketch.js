@@ -910,7 +910,7 @@ function draw() {
   } 
   else if (visualSource === "select") {
     // セレクトからの場合の表示
-    if (millis() - visualMessageTimer >= 4000) {
+    if (millis() - visualMessageTimer >= 40000) {
       text("今日の思い出を写真に残しましょう", 0, textY);
     }
   }
