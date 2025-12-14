@@ -835,335 +835,158 @@ function draw() {
     }
   }
   else if (state === "gallery") {
-    scrollY = lerp(scrollY, targetScrollY, 0.2);
-    drawGallery2D();
-  }
-  else if (state === "visual") {
-	  resetMatrix();
-	  background(5, 5, 20);
-	  drawBeautifulStars();
-	  camera();
-	  
-	  // 3D操作
-	  rotationX = lerp(rotationX, targetRotationX, 0.18);
-	  rotationY = lerp(rotationY, targetRotationY, 0.18);
-	  rotateX(rotationX);
-	  rotateY(rotationY);
-	  zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
-	  scale(zoomLevel);
-	  
-	  // 既存の星の描画
-	  push(); 
-	  noStroke();
-	  for (let s of stars) {
-	    if (random() < 0.02) s.on = !s.on;
-	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-	    let blink = (s.on ? 1 : 0);
-	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-	    let intensity = blink * pulse;
-	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
-	    let alpha = map(intensity, 0, 1, 10, 255);
-	    let r = 200 + random(-20, 20);
-	    let g = 200 + random(-20, 20);
-	    let b = 255;
-	    fill(r, g, b, alpha);
-	    push();
-	    translate(s.x, s.y, s.z);
-	    sphere(starSize);
-	    pop();
-	  }
-	  pop();
-	  
-	  if (allConstellations.length === 0) return;
-	  let latest = activeConstellation || allConstellations[allConstellations.length - 1];
-	  if (!latest) return;
-	
-	  // テキスト表示
-	  push();
-	  translate(0, 90, 200);
-	  textAlign(CENTER, TOP);
-	  textSize(16);
-	  fill(200, 220, 255, 200);
-	  let textY = 0;
-	  
-	  if (visualSource === "gallery") {
-	    // ギャラリーからの場合の表示
-	    if (latest.stars && latest.stars.length > 0) {
-	      
-	      // 感情を表示
-	      if (uniqueEmotions.size > 0) {
-	        text("選択された感情:", 0, textY);
-	        textY += 25;
-	        
-	        for (const emo of uniqueEmotions.values()) {
-	          text(`・${emo.ja} (${emo.en})`, 0, textY);
-	          textY += 20;
-	        }
-	        textY += 15;
-	      }
-	    }
-	    
-	    text("写真フォルダで思い出を振り返りましょう", 0, textY);
-	  } 
-	  else if (visualSource === "select") {
-	    // セレクトからの場合の表示
-	    if (millis() - visualMessageTimer >= 40000) {
-	      text("今日の思い出を写真に残しましょう", 0, textY);
-	    }
-	  }
-	  pop();
-	  
-	  // 過去の日記を表示（selectからのみ）
-	  if (visualSource === "select" && allConstellations.length > 1) {
-	    // 最新の日付から月を取得
-	    else if (state === "visual") {
+    else if (state === "visual") {
+
   resetMatrix();
   background(5, 5, 20);
   drawBeautifulStars();
   camera();
-  
+
   // 3D操作
   rotationX = lerp(rotationX, targetRotationX, 0.18);
   rotationY = lerp(rotationY, targetRotationY, 0.18);
   rotateX(rotationX);
   rotateY(rotationY);
+
   zoomLevel = lerp(zoomLevel, targetZoomLevel, 0.12);
   scale(zoomLevel);
-  
-  // 既存の星の描画
-  push(); 
+
+  // 星空
+  push();
   noStroke();
   for (let s of stars) {
     if (random() < 0.02) s.on = !s.on;
     if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
-    let blink = (s.on ? 1 : 0);
     let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-    let intensity = blink * pulse;
-    let starSize = s.baseSize + intensity * random(0.5, 2.0);
-    let alpha = map(intensity, 0, 1, 10, 255);
-    let r = 200 + random(-20, 20);
-    let g = 200 + random(-20, 20);
-    let b = 255;
-    fill(r, g, b, alpha);
+    let size = s.baseSize + pulse * 1.5;
+    fill(220, 230, 255, 180);
     push();
     translate(s.x, s.y, s.z);
-    sphere(starSize);
+    sphere(size);
     pop();
   }
   pop();
-  
-  if (allConstellations.length === 0) return;
-  let latest = activeConstellation || allConstellations[allConstellations.length - 1];
+
+  if (!allConstellations.length) return;
+  const latest = activeConstellation || allConstellations.at(-1);
   if (!latest) return;
 
-  // テキスト表示
+  /* ===============================
+     テキスト（Z=200で統一）
+  =============================== */
   push();
   translate(0, 150, 200);
   textAlign(CENTER, TOP);
   textSize(16);
   fill(200, 220, 255, 200);
-  let textY = 0;
-  
-  if (visualSource === "gallery") {
-    // ギャラリーからの場合の表示
-    if (latest.stars && latest.stars.length > 0) {
-      const uniqueEmotions = new Map();
-      
-      // ユニークな感情を収集
-      for (const star of latest.stars) {
-        if (star.emo) {
-          const key = `${star.emo.ja}-${star.emo.en}`;
-          if (!uniqueEmotions.has(key)) {
-            uniqueEmotions.set(key, star.emo);
-          }
-        }
-      }
-      
-      // 感情を表示
-      if (uniqueEmotions.size > 0) {
-        text("選択された感情:", 0, textY);
-        textY += 25;
-        
-        for (const emo of uniqueEmotions.values()) {
-          text(`・${emo.ja} (${emo.en})`, 0, textY);
-          textY += 20;
-        }
-        textY += 15;
-      }
+
+  // select → visual の案内文（4秒後）
+  if (
+    visualSource === "select" &&
+    millis() - visualMessageTimer >= 4000
+  ) {
+    text("今日の思い出を写真に残しましょう", 0, 0);
+  }
+
+  // gallery → visual のときだけ感情表示
+  if (visualSource === "gallery" && latest.stars) {
+    let y = 0;
+    const uniqueEmotions = new Map();
+
+    for (const star of latest.stars) {
+      if (!star.emo) continue;
+      const key = `${star.emo.ja}-${star.emo.en}`;
+      uniqueEmotions.set(key, star.emo);
     }
-    
-    text("写真フォルダで思い出を振り返りましょう", 0, textY);
-  } 
-  else if (visualSource === "select") {
-    // セレクトからの場合の表示（4秒後に表示）
-    if (millis() - visualMessageTimer >= 4000) {
-      text("今日の思い出を写真に残しましょう", 0, textY);
+
+    if (uniqueEmotions.size) {
+      text("選択された感情:", 0, y);
+      y += 25;
+      for (const emo of uniqueEmotions.values()) {
+        text(`・${emo.ja} (${emo.en})`, 0, y);
+        y += 20;
+      }
     }
   }
   pop();
 
-  // 過去の日記を表示（selectからのみ）
-  if (visualSource === "select" && allConstellations.length > 1) {
-    // 最新の日付から月を取得
-    let latestMonth = -1;
-    if (latest?.created) {
-      let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (m) latestMonth = int(m[2]);
-    }
+  /* ===============================
+     select → visual の過去日記
+  =============================== */
+  if (visualSource === "select" && latest.created) {
 
-    // 同じ月の星座を収集
-    let sameMonthConstellations = [];
-    for (let c of allConstellations) {
-      if (!c.created) continue;
-      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-      if (!m) continue;
-      if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
-    }
+    const m = latest.created.match(/(\d+)\D+(\d+)/);
+    if (m) {
+      const year = int(m[1]);
+      const month = int(m[2]);
 
-    // 表示リストを作成
-    let displayList = [...sameMonthConstellations];
-    let idx = displayList.indexOf(latest);
-    if (idx !== -1) displayList.splice(idx, 1);
+      const sameMonth = allConstellations.filter(c => {
+        if (!c.created) return false;
+        const mm = c.created.match(/(\d+)\D+(\d+)/);
+        return mm && int(mm[1]) === year && int(mm[2]) === month && c !== latest;
+      });
 
-    // 日記を横一列に配置
-    if (displayList.length > 0) {
-      const spacing = width / (displayList.length + 1);
-      
-      displayList.forEach((constellation, i) => {
+      const spacing = width / (sameMonth.length + 1);
+
+      sameMonth.forEach((c, i) => {
         push();
-        const x = (i + 1) * spacing - width/2;
-        translate(x, 0, -500);
-        
-        // 星座の枠
+        translate((i + 1) * spacing - width / 2, 0, -500);
+
         stroke(150, 80);
         noFill();
-        box(220);
-        
-        // 星を描画
-        if (constellation.stars) {
-          for (let p of constellation.stars) {
+        box(180);
+
+        if (c.stars) {
+          noStroke();
+          fill(255, 240, 200);
+          for (let p of c.stars) {
             if (!p.pos) continue;
-            
-            let px = p.pos.x || 0;
-            let py = p.pos.y || 0;
-            let pz = p.pos.z || 0;
-            
             push();
-            translate(px, py, pz);
-            let flicker = 220 + 35 * sin(frameCount * 0.1);
-            fill(255, 255, 200, flicker * 0.7);
-            noStroke();
+            translate(p.pos.x, p.pos.y, p.pos.z);
             sphere(5);
             pop();
           }
         }
-        
-        // 線を描画
-        if (constellation.stars) {
-          push();
-          stroke(180, 200, 255, 63);
-          strokeWeight(2);
-          blendMode(ADD);
-          
-          for (let a = 0; a < constellation.stars.length; a++) {
-            for (let b = a + 1; b < constellation.stars.length; b++) {
-              let aPos = constellation.stars[a]?.pos;
-              let bPos = constellation.stars[b]?.pos;
-              if (aPos && bPos) {
-                line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-              }
-            }
-          }
-          pop();
-        }
-        
-        // 日付表示
-        push();
-        translate(0, 120, 0);
-        fill(255, 200);
-        textAlign(CENTER, CENTER);
-        textSize(12);
-        if (constellation.created) {
-          text(constellation.created, 0, 0);
-        }
-        pop();
-        
         pop();
       });
     }
   }
 
-  // 最新の星座を手前に表示（常に表示）
+  /* ===============================
+     最新星座（手前）
+  =============================== */
   push();
   translate(0, 0, 200);
   scale(1.5);
-  
-  // 星座の枠
+
   stroke(150, 80);
   noFill();
   box(220);
-  
-  // 星を描画
+
   if (latest.stars) {
+    noStroke();
+    fill(255, 255, 200);
     for (let p of latest.stars) {
       if (!p.pos) continue;
-      
-      let px = p.pos.x || 0;
-      let py = p.pos.y || 0;
-      let pz = p.pos.z || 0;
-      
       push();
-      translate(px, py, pz);
-      let flicker = 220 + 35 * sin(frameCount * 0.1);
-      fill(255, 255, 200, flicker);
-      noStroke();
+      translate(p.pos.x, p.pos.y, p.pos.z);
       sphere(8);
       pop();
     }
   }
-  
-  // 線を描画
-  if (millis() - visualStartTime > 1200 && latest.stars) {
-    push();
-    stroke(180, 200, 255, 90);
-    strokeWeight(2);
-    blendMode(ADD);
-    
-    for (let a = 0; a < latest.stars.length; a++) {
-      for (let b = a + 1; b < latest.stars.length; b++) {
-        let aPos = latest.stars[a]?.pos;
-        let bPos = latest.stars[b]?.pos;
-        if (aPos && bPos) {
-          line(aPos.x, aPos.y, aPos.z, bPos.x, bPos.y, bPos.z);
-        }
-      }
-    }
-    pop();
-  }
-  
-  // 日付表示
+
+  // 日付
   push();
   translate(0, 120, 0);
   fill(255);
   textAlign(CENTER, CENTER);
   textSize(14);
-  if (latest.created) {
-    text(latest.created, 0, 0);
-  }
+  text(latest.created || "", 0, 0);
   pop();
-  
-  pop(); // 最新の星座の描画用のpop
-  
-  // タッチフィードバック
-  if (touchFeedback && touchFeedback.alpha > 0) {
-    push();
-    noStroke();
-    fill(255, 255, 255, touchFeedback.alpha);
-    ellipse(touchFeedback.x, touchFeedback.y, 30, 30);
-    touchFeedback.alpha -= 5;
-    pop();
-  }
+
+  pop();
 }
+
 }
 /* =========================================================
    drawPADButtons
