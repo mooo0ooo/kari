@@ -928,7 +928,7 @@ function draw() {
 		  push();
 		  translate(0, 0, 200);
 		  scale(1.5);
-		  drawSingleConstellation(constellation, true);
+		  drawSingleConstellation(latest, true);
 		  pop();
 	  }
 	
@@ -989,7 +989,7 @@ function draw() {
 	      translate(x, y, -500);
 	    }
 	
-	    drawSingleConstellation(constellation, isLatest);
+	    drawSingleConstellation(c, isLatest);
 	    pop();
 	  }
     }
