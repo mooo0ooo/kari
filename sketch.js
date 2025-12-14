@@ -942,6 +942,7 @@ function draw() {
 			}
 		}
 		pop();
+		}
 			
 	    stroke(150, 80);
 	    noFill();
@@ -1017,7 +1018,6 @@ function draw() {
 	    touchFeedback.alpha -= 5;
 	    pop();
 	  }
-	} 
   }
 }
 
