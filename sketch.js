@@ -414,7 +414,7 @@ function setup() {
 
 	  state = "visual";
 	  visualSource = "select";
-	  visualMessageTimer = millis() + 4000;
+	  visualMessageTimer = millis();
 	  visualStartTime = millis();
 	  updateButtonVisibility();
 	  resetVisualView();
@@ -911,46 +911,38 @@ function draw() {
 		textAlign(CENTER, TOP);
 		textSize(16);
 		fill(200, 220, 255, 200);
-		
 		let textY = 0;
-        const uniqueEmotions = new Map();
-        for (const star of constellation.stars) {
-          if (star.emo) {
-            const key = `${star.emo.ja}-${star.emo.en}`;
-            if (!uniqueEmotions.has(key)) {
-              uniqueEmotions.set(key, star.emo);
-            }
-          }
-        }
-			
 		// 感情を表示
-		textY += 10;
-        text("選択された感情:", 0, textY);
-        textY += 25;
-	    // 各感情を表示
-		for (const emo of uniqueEmotions.values()) {
-          text(`・${emo.ja} (${emo.en})`, 0, textY);
-          textY += 20;
-        }
-        textY += 15;
-		// メッセージを表示
-        if (visualSource === "select") {
-          if (millis() > visualMessageTimer) {
-            text("今日の思い出を写真に残してみませんか？", 0, textY);
-            textY += 25;
-          }
-        } else if (visualSource === "gallery") {
-          text("写真フォルダで思い出を振り返りましょう", 0, textY);
-          textY += 25;
-        }
-        pop();
-      } else {
-        let col = i % 5;
-        let arow = floor(i / 5);
-        translate(-600 + col * 250, -300 + arow * 250, -800);
-        scale(0.6);
-      }
-	
+		if (visualSouce === "gallery") {
+			const uniqueEmotions = new Map();
+			for (const star of constellation.stars) {
+				if (star.emo) {
+					const key = '${star.emo.ja} - ${star.emo.en}';
+					if (!uniqueEmotions.has(key)) {
+						uniqueEmotions.sat(key, star.emo);
+					}
+				}
+			}
+
+			// 選択された感情を表示
+			text("選択された感情：", 0, textY);
+			texyY += 25;
+
+			for (const emo of uniqueEmotions.values()) {
+				text(`・${emo.ja} (${emo.en})`, 0, textY);
+   				textY += 20;
+			}
+
+			textY += 15;
+			text("写真フォルダで思い出を振り返りましょう", 0,textY);
+		}
+		else if (visualSource === "select") {
+			if (millis() - visualMessageTimer >= 4000) {
+				text("今日の思い出を写真に残してみませんか？", 0, textY);
+			}
+		}
+		pop();
+			
 	    stroke(150, 80);
 	    noFill();
 	    box(220);
