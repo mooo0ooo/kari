@@ -997,18 +997,23 @@ function draw() {
 }
 
 /* =========================================================
-   visualDraw
+   visual 過去の日記
    ========================================================= */
 function drawSingleConstellation(constellation, highlight = false) {
+  // ===== 透明度コントロール =====
+  const frameAlpha = highlight ? 120 : 30;
+  const starAlpha  = highlight ? 255 : 80;
+  const lineAlpha  = highlight ? 200 : 40;
+	
   /* 枠 */
-  stroke(150, 80);
+  stroke(150, frameAlpha);
   noFill();
   box(220);
 
   /* 星 */
   if (constellation.stars) {
     noStroke();
-    fill(255, 240, 200);
+    fill(255, 240, 200, starAlpha);
     for (let p of constellation.stars) {
       if (!p.pos) continue;
       push();
@@ -1020,7 +1025,7 @@ function drawSingleConstellation(constellation, highlight = false) {
 
   /* 線 */
   if (constellation.stars) {
-    stroke(200, 220, 255, highlight ? 200 : 80);
+    stroke(200, 220, 255, lineAlpha);
     strokeWeight(highlight ? 2 : 1);
     blendMode(ADD);
 
@@ -1038,7 +1043,7 @@ function drawSingleConstellation(constellation, highlight = false) {
   if (constellation.created) {
     push();
     translate(0, 120, 0);
-    fill(255, highlight ? 255 : 160);
+	fill(200, 220, 255, highlight ? 220 : 60);
     textAlign(CENTER, CENTER);
     textSize(14);
     text(constellation.created, 0, 0);
