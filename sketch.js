@@ -882,7 +882,7 @@ function draw() {
 
 	  // テキスト表示
   push();
-  translate(0, 150, 0);
+  translate(0, 150, 200);
   textAlign(CENTER, TOP);
   textSize(16);
   fill(200, 220, 255, 200);
@@ -892,16 +892,6 @@ function draw() {
     // ギャラリーからの場合の表示
     if (latest.stars && latest.stars.length > 0) {
       const uniqueEmotions = new Map();
-      
-      // ユニークな感情を収集
-      for (const star of latest.stars) {
-        if (star.emo) {
-          const key = `${star.emo.ja}-${star.emo.en}`;
-          if (!uniqueEmotions.has(key)) {
-            uniqueEmotions.set(key, star.emo);
-          }
-        }
-      }
       
       // 感情を表示
       if (uniqueEmotions.size > 0) {
@@ -919,9 +909,9 @@ function draw() {
     text("写真フォルダで思い出を振り返りましょう", 0, textY);
   } 
   else if (visualSource === "select") {
-    // セレクトからの場合の表示（4秒後に表示）
+    // セレクトからの場合の表示
     if (millis() - visualMessageTimer >= 4000) {
-      text("今日の思い出を写真に残してみませんか？", 0, textY);
+      text("今日の思い出を写真に残しましょう", 0, textY);
     }
   }
   pop();
