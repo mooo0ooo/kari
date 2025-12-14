@@ -914,79 +914,101 @@ function draw() {
 	  /* ===============================
 	     select → visual の過去日記
 	  =============================== */
-	  if (visualSource === "select" && latest.created) {
-	
-	    const m = latest.created.match(/(\d+)\D+(\d+)/);
-	    if (m) {
-	      const year = int(m[1]);
-	      const month = int(m[2]);
-	
-	      const sameMonth = allConstellations.filter(c => {
-	        if (!c.created) return false;
-	        const mm = c.created.match(/(\d+)\D+(\d+)/);
-	        return mm && int(mm[1]) === year && int(mm[2]) === month && c !== latest;
-	      });
-	
-	      const spacing = width / (sameMonth.length + 1);
-	
-	      sameMonth.forEach((c, i) => {
-	        push();
-	        translate((i + 1) * spacing - width / 2, 0, -500);
-	
-	        stroke(150, 80);
-	        noFill();
-	        box(180);
-	
-	        if (c.stars) {
-	          noStroke();
-	          fill(255, 240, 200);
-	          for (let p of c.stars) {
-	            if (!p.pos) continue;
-	            push();
-	            translate(p.pos.x, p.pos.y, p.pos.z);
-	            sphere(5);
-	            pop();
-	          }
-	        }
-	        pop();
-	      });
-	    }
-	  }
-	
 	  /* ===============================
-	     最新星座（手前）
-	  =============================== */
-	  push();
-	  translate(0, 0, 200);
-	  scale(1.5);
-	
-	  stroke(150, 80);
-	  noFill();
-	  box(220);
-	
-	  if (latest.stars) {
-	    noStroke();
-	    fill(255, 255, 200);
-	    for (let p of latest.stars) {
-	      if (!p.pos) continue;
-	      push();
-	      translate(p.pos.x, p.pos.y, p.pos.z);
-	      sphere(8);
-	      pop();
-	    }
-	  }
-	
-	  // 日付
-	  push();
-	  translate(0, 120, 0);
-	  fill(255);
-	  textAlign(CENTER, CENTER);
-	  textSize(14);
-	  text(latest.created || "", 0, 0);
-	  pop();
-	
-	  pop();
-	}
+   select → visual の過去日記（旧ロジック準拠）
+=============================== */
+
+if (visualSource === "select" && latest?.created) {
+
+  // 最新の月を取得
+  let latestMonth = -1;
+  let m0 = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+  if (m0) latestMonth = int(m0[2]);
+
+  // 同じ月の星座を収集
+  let sameMonthConstellations = [];
+  for (let c of allConstellations) {
+    if (!c.created) continue;
+    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+    if (!m) continue;
+    if (int(m[2]) === latestMonth) {
+      sameMonthConstellations.push(c);
+    }
+  }
+
+  // 表示リスト（latest を最後＝手前に）
+  let displayList = [...sameMonthConstellations];
+  let idx = displayList.indexOf(latest);
+  if (idx !== -1) displayList.splice(idx, 1);
+  displayList.push(latest);
+
+  // 横幅は画面サイズにフィット
+  const spacing = width / displayList.length;
+
+  for (let i = 0; i < displayList.length; i++) {
+    let constellation = displayList[i];
+    push();
+
+    if (i === displayList.length - 1) {
+      // 最新（手前）
+      translate(0, 0, 200);
+      scale(1.5);
+    } else {
+      // 過去（奥）
+      let x = (i - (displayList.length - 2) / 2) * spacing;
+      translate(x, 0, -500);
+    }
+
+    // 枠
+    stroke(150, 80);
+    noFill();
+    box(220);
+
+    // 星
+    if (constellation.stars) {
+      noStroke();
+      fill(255, 240, 200);
+      for (let p of constellation.stars) {
+        if (!p.pos) continue;
+        push();
+        translate(p.pos.x, p.pos.y, p.pos.z);
+        sphere(i === displayList.length - 1 ? 8 : 5);
+        pop();
+      }
+    }
+
+    // 線（最新のみ）
+    if (i === displayList.length - 1 && constellation.stars) {
+      stroke(180, 200, 255, 90);
+      strokeWeight(2);
+      blendMode(ADD);
+      for (let a = 0; a < constellation.stars.length; a++) {
+        for (let b = a + 1; b < constellation.stars.length; b++) {
+          let aPos = constellation.stars[a]?.pos;
+          let bPos = constellation.stars[b]?.pos;
+          if (aPos && bPos) {
+            line(
+              aPos.x, aPos.y, aPos.z,
+              bPos.x, bPos.y, bPos.z
+            );
+          }
+        }
+      }
+    }
+
+    // 日付（最新のみ）
+    if (i === displayList.length - 1 && constellation.created) {
+      push();
+      translate(0, 120, 0);
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(14);
+      text(constellation.created, 0, 0);
+      pop();
+    }
+
+    pop();
+  }
 }
 /* =========================================================
    drawPADButtons
