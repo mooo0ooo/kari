@@ -913,40 +913,38 @@ function draw() {
 		textSize(16);
 		fill(200, 220, 255, 200);
 		
-		const elapsed = millis() - visualStartTime;
 		let textY = 0;
-			
-		if (visualFrom === "gallery") {
-		  text("選択された感情:", 0, textY);
-		  textY += 25;
-		
-		  const uniqueEmotions = new Map();
-		  for (const star of constellation.stars) {
+
+	    const uniqueEmotions = new Map();
+		for (const star of constellation.stars) {
 		    if (star.emo) {
 		      const key = `${star.emo.ja}-${star.emo.en}`;
 		      if (!uniqueEmotions.has(key)) {
 		        uniqueEmotions.set(key, star.emo);
 		      }
-		    }
-		  }
-		
+		     }
+	    }
+		// 感情を表示
+		text("選択された感情:", 0, textY);
+		textY += 25;
 		  for (const emo of uniqueEmotions.values()) {
 		    text(`・${emo.ja} (${emo.en})`, 0, textY);
 		    textY += 20;
 		  }
-		
-		  textY += 15;
+	    // 各感情を表示
+		for (const emo of uniqueEmotions.values()) {
+		  text(`・${emo.ja} (${emo.en})`, 0, textY);
+		  textY += 20;
 		}
-		// 案内文
-		if (visualFrom === "gallery") {
-		  text("写真フォルダで思い出を振り返ってみませんか？", 0, textY + 10);
-		}
-		else if (visualFrom === "select" && elapsed >= 4000) {
-		  text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
-		}
-		
+		textY += 15;
+		text("今日の思い出を写真に残してみませんか？", 0, textY);
 		pop();
-		}
+	    } else {
+	      let col = i % 5;
+	      let arow = floor(i / 5);
+	      translate(-600 + col * 250, -300 + arow * 250, -800);
+	      scale(0.6);
+	    }
 	
 	    stroke(150, 80);
 	    noFill();
