@@ -913,20 +913,20 @@ function draw() {
 		fill(200, 220, 255, 200);
 		let textY = 0;
 		// 感情を表示
-		if (visualSouce === "gallery") {
+		if (visualSource === "gallery") {
 			const uniqueEmotions = new Map();
 			for (const star of constellation.stars) {
 				if (star.emo) {
 					const key = '${star.emo.ja} - ${star.emo.en}';
 					if (!uniqueEmotions.has(key)) {
-						uniqueEmotions.sat(key, star.emo);
+						uniqueEmotions.set(key, star.emo);
 					}
 				}
 			}
 
 			// 選択された感情を表示
 			text("選択された感情：", 0, textY);
-			texyY += 25;
+			textY += 25;
 
 			for (const emo of uniqueEmotions.values()) {
 				text(`・${emo.ja} (${emo.en})`, 0, textY);
