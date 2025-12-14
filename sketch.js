@@ -102,7 +102,8 @@ let touchStartTime = 0;
 let touchStartPos = { x: 0, y: 0 };
 
 const ZOOM_ANIMATION_THRESHOLD = 0.5;
-const TAP_THRESHOLD = 5;
+const TAP_THRESHOLD = 8;
+const TAP_MAX_DURATION = 300;
 const TAP_MAX_DURATION = 200;
 // ズーム
 let zoomLevel = 1;
@@ -1206,8 +1207,8 @@ function touchStarted() {
       touches[1].x, touches[1].y
     );
     pinchStartZoom = targetZoomLevel;
-    initialpinchDistance = pinchStartDist; // 初期化を追加
-    initialZoom = targetZoomLevel; // 初期化を追加
+    initialpinchDistance = pinchStartDist;
+    initialZoom = targetZoomLevel;
     return false;
   }
 	
@@ -1215,10 +1216,12 @@ function touchStarted() {
   if (touches.length === 1) {
     currentTouchX = touches[0].x;
     currentTouchY = touches[0].y;
+	lastTouchX = currentTouchX;
+    lastTouchY = currentTouchY;
     lastProcessedTouchX = currentTouchX;
     lastProcessedTouchY = currentTouchY;
-    touchStartX = currentTouchX; // 追加
-    touchStartY = currentTouchY; // 追加
+    touchStartX = currentTouchX;
+    touchStartY = currentTouchY;
     touchStartTime = millis();
     touchMode = 'potentialTap';
     
@@ -1239,9 +1242,6 @@ function touchMoved() {
   const moveX = currentTouchX - lastProcessedTouchX;
   const moveY = currentTouchY - lastProcessedTouchY;
   const moveDist = Math.sqrt(moveX * moveX + moveY * moveY);
-	
-  // タップ判定用のしきい値（ピクセル）
-  const TAP_THRESHOLD = 8;
   
   // モードの確定
   if (moveDist > TAP_THRESHOLD) {
@@ -1392,7 +1392,7 @@ function handleTap(x, y) {
     
   let currentY = topOffset;
 
-  // 月ごとに分類（parseDateベース）
+  // 月ごとに分類
   let grouped = {};
     for (let m = 0; m < 12; m++) grouped[m] = [];
     
@@ -1446,6 +1446,8 @@ function handleTap(x, y) {
   }
 	
   if (state === "select") {
+  x = (x - width / 2) / padLayout.scl + width / 2;
+  y = (y - height / 2) / padLayout.scl + height / 2;
   const btnSize = padLayout.btnSize * padLayout.scl;
   const spacing = padLayout.spacing * padLayout.scl;
   const centerX = width / 2;
