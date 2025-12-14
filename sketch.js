@@ -68,7 +68,6 @@ let padValues = [];
 let points = [];
 let stars = [];
 let selectedLabel = null;
-let visualFrom = null; 
 
 let state = "select"; 
 let addButton, okButton;
