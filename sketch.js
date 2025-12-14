@@ -881,7 +881,7 @@ function draw() {
 	  if (!latest) return;
 	
 	  push();
-	  translate(0, 150, 200);
+	  translate(0, 200, 200);
 	  textAlign(CENTER, TOP);
 	  textSize(16);
 	  fill(200, 220, 255, 200);
@@ -919,6 +919,16 @@ function draw() {
 		}
 		
 		pop();
+
+	  /* ===============================
+     gallery → visual
+     → タッチした日記だけ手前
+  =============================== */
+
+  if (visualSource === "gallery" && activeConstellation) {
+    drawSingleConstellation(activeConstellation, true);
+    return;
+  }
 	
 	  /* ===============================
 	     select → visual の過去日記
