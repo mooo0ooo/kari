@@ -874,24 +874,21 @@ function draw() {
 	  const latest = activeConstellation || allConstellations.at(-1);
 	  if (!latest) return;
 	
-	  /* ===============================
-	     テキスト（Z=200で統一）
-	  =============================== */
 	  push();
-	  translate(0, 150, 200);
+	  translate(0, 90, 200);
 	  textAlign(CENTER, TOP);
 	  textSize(16);
 	  fill(200, 220, 255, 200);
 	
-	  // select → visual の案内文（4秒後）
+	  // select → visual の案内文
 	  if (
 	    visualSource === "select" &&
-	    millis() - visualMessageTimer >= 4000
+	    millis() - visualMessageTimer >= 40000
 	  ) {
 	    text("今日の思い出を写真に残しましょう", 0, 0);
 	  }
 	
-	  // gallery → visual のときだけ感情表示
+	  // 感情表示
 	  if (visualSource === "gallery" && latest.stars) {
 	    let y = 0;
 	    const uniqueEmotions = new Map();
@@ -909,6 +906,7 @@ function draw() {
 	        text(`・${emo.ja} (${emo.en})`, 0, y);
 	        y += 20;
 	      }
+		  text("写真フォルダで思い出を振り返りましょう", 0, 0);
 	    }
 	  }
 	  pop();
