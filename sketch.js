@@ -921,12 +921,61 @@ function draw() {
 		pop();
 
 	  /* ===============================
-     gallery → visual
-     → タッチした日記だけ手前
+     gallery → visual → タッチした日記だけ手前
   =============================== */
 
   if (visualSource === "gallery" && activeConstellation) {
-    drawSingleConstellation(activeConstellation, true);
+    /* --- 枠 --- */
+        stroke(150, 80);
+        noFill();
+        box(220);
+
+        /* --- 星 --- */
+        if (constellation.stars) {
+          noStroke();
+          fill(255, 240, 200);
+          for (let p of constellation.stars) {
+            if (!p.pos) continue;
+            push();
+            translate(p.pos.x, p.pos.y, p.pos.z);
+            sphere(8);
+            pop();
+          }
+        }
+
+        /* --- 線 --- */
+        if (constellation.stars) {
+          stroke(200, 220, 255, 200);
+          strokeWeight(2);
+          blendMode(ADD);
+
+          for (let a = 0; a < constellation.stars.length; a++) {
+            for (let b = a + 1; b < constellation.stars.length; b++) {
+              let aPos = constellation.stars[a]?.pos;
+              let bPos = constellation.stars[b]?.pos;
+              if (aPos && bPos) {
+                line(
+                  aPos.x, aPos.y, aPos.z,
+                  bPos.x, bPos.y, bPos.z
+                );
+              }
+            }
+          }
+          blendMode(BLEND);
+        }
+
+        /* --- 日付（全て表示） --- */
+        if (constellation.created) {
+          push();
+          translate(0, 120, 0);
+          fill(255, isLatest ? 255 : 160);
+          textAlign(CENTER, CENTER);
+          textSize(14);
+          text(constellation.created, 0, 0);
+          pop();
+        }
+
+        pop();
     return;
   }
 	
@@ -958,18 +1007,25 @@ function draw() {
       displayList.push(latest);
 	
 	  /* --- グリッド設定 --- */
-	  const cols = floor(width / 260);
-	  const spacingX = 260;
-	  const spacingY = 260;
-		
-	  for (let i = 0; i < displayList.length; i++) {
-	  let constellation = displayList[i];
-	  let isLatest = (i === displayList.length - 1);
-	
-	  let col = i % cols;
-	  let row = floor(i / cols);
+	  let cols;
+      if (width < 600) cols = 2;
+      else if (width < 1000) cols = 3;
+      else cols = 4;
 
-	  push();
+      const spacingX = 260;
+      const spacingY = 260;
+
+      for (let i = 0; i < displayList.length; i++) {
+        let c = displayList[i];
+        let isLatest = (i === displayList.length - 1);
+
+        let col = i % cols;
+        let row = floor(i / cols);
+
+        let rowCount = min(cols, displayList.length - row * cols);
+        let offsetX = (rowCount - 1) / 2;
+
+        push();
 	    
 		if (isLatest) {
           translate(0, 0, 200);
