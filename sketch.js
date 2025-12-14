@@ -943,7 +943,7 @@ function draw() {
 		    text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
 		}
 		pop();
-	    } else {
+	    } else if (visualFrom === "select" && elapsed >= 5000){
 	      let col 	= i % 5;
 	      let arow = floor(i / 5);
 	      translate(-600 + col * 250, -300 + arow * 250, -800);
