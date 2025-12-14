@@ -1316,7 +1316,7 @@ function touchEnded() {
       );
       
       if (elapsed < TAP_MAX_DURATION && moved < TAP_THRESHOLD) {
-        if (state === 'gallery') {
+        if (state === 'gallery' || state === 'select') {
           handleTap(currentTouchX, currentTouchY);
         }
       }
