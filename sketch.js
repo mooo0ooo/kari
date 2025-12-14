@@ -1040,13 +1040,24 @@ function drawSingleConstellation(constellation, highlight = false) {
 
   /* 日付 */
   if (constellation.created) {
-    push();
-    translate(0, 120, 0);
-	fill(200, 220, 255, highlight ? 220 : 60);
-    textAlign(CENTER, CENTER);
-    textSize(14);
-    text(constellation.created, 0, 0);
-    pop();
+	  push();
+	  translate(0, 120, 0);
+	  fill(200, 220, 255, highlight ? 220 : 60);
+	  textAlign(CENTER, CENTER);
+	  textSize(14);
+	  
+	  const date = new Date(constellation.created);
+	  if (!isNaN(date.getTime())) {
+	    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+	    const formattedDate = 
+	      `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}` +
+	      `(${weekdays[date.getDay()]}) ` +
+	      `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+	    text(formattedDate, 0, 0);
+	  } else {
+	    text(constellation.created, 0, 0);
+	  }
+	  pop();
   }
 }
 
