@@ -912,37 +912,40 @@ function draw() {
 		textAlign(CENTER, TOP);
 		textSize(16);
 		fill(200, 220, 255, 200);
+		
+		const elapsed = millis() - visualStartTime;
 		let textY = 0;
 			
-		// 重複を除いて感情を収集
-		const uniqueEmotions = new Map();
-		for (const star of constellation.stars) {
-		  if (star.emo) {
-		    const emoKey = `${star.emo.ja}-${star.emo.en}`;
-		    if (!uniqueEmotions.has(emoKey)) {
-		      uniqueEmotions.set(emoKey, star.emo);
-		    }
-		  }
-		}
-		// 感情を表示
-		if (visualFrom !== "select") {
-		    text("選択された感情:", 0, textY);
-		    textY += 25;
+		if (visualFrom === "gallery") {
+		  text("選択された感情:", 0, textY);
+		  textY += 25;
 		
-		    for (const emo of uniqueEmotions.values()) {
-		      text(`・${emo.ja} (${emo.en})`, 0, textY);
-		      textY += 20;
+		  const uniqueEmotions = new Map();
+		  for (const star of constellation.stars) {
+		    if (star.emo) {
+		      const key = `${star.emo.ja}-${star.emo.en}`;
+		      if (!uniqueEmotions.has(key)) {
+		        uniqueEmotions.set(key, star.emo);
+		      }
 		    }
-		    textY += 15;
 		  }
+		
+		  for (const emo of uniqueEmotions.values()) {
+		    text(`・${emo.ja} (${emo.en})`, 0, textY);
+		    textY += 20;
+		  }
+		
+		  textY += 15;
+		}
 		// 案内文
 		if (visualFrom === "gallery") {
-		    text("写真フォルダで思い出を振り返ってみませんか？", 0, textY + 10);
-		  }
-		  else if (visualFrom === "select" && elapsed >= 5000) {
-		    text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
-		  }
-		  pop();
+		  text("写真フォルダで思い出を振り返ってみませんか？", 0, textY + 10);
+		}
+		else if (visualFrom === "select" && elapsed >= 4000) {
+		  text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
+		}
+		
+		pop();
 		}
 	
 	    stroke(150, 80);
