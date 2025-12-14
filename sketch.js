@@ -880,7 +880,7 @@ function draw() {
 	
 	  // テキスト表示
 	  push();
-	  translate(0, 150, 200);
+	  translate(0, 90, 200);
 	  textAlign(CENTER, TOP);
 	  textSize(16);
 	  fill(200, 220, 255, 200);
@@ -907,7 +907,7 @@ function draw() {
 	  } 
 	  else if (visualSource === "select") {
 	    // セレクトからの場合の表示
-	    if (millis() - visualMessageTimer >= 4000) {
+	    if (millis() - visualMessageTimer >= 40000) {
 	      text("今日の思い出を写真に残しましょう", 0, textY);
 	    }
 	  }
@@ -915,44 +915,47 @@ function draw() {
 	  
 	  // 過去の日記を表示（selectからのみ）
 	  if (visualSource === "select" && allConstellations.length > 1) {
-	    push();
-	    translate(0, 0, -500); // 奥に配置
-	    
-	    // 現在の日付を取得
-	    const currentDate = new Date();
-	    const currentYear = currentDate.getFullYear();
-	    const currentMonth = currentDate.getMonth() + 1; // 0-11 → 1-12
-	    
-	    // 同じ月の日記をフィルタリング
-	    const monthlyDiaries = allConstellations.filter(c => {
-	      if (!c.created) return false;
-	      const diaryDate = new Date(c.created);
-	      return diaryDate.getFullYear() === currentYear && 
-	             (diaryDate.getMonth() + 1) === currentMonth;
-	    });
-	    
-	    // 最新の日記を除く（現在表示中のもの）
-	    const pastDiaries = monthlyDiaries.length > 1 ? monthlyDiaries.slice(0, -1) : [];
-	    
+	    // 最新の日付から月を取得
+	    let latestMonth = -1;
+	    if (latest?.created) {
+	      let m = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	      if (m) latestMonth = int(m[2]);
+	    }
+	    // 同じ月の星座を収集
+	    let sameMonthConstellations = [];
+	    for (let c of allConstellations) {
+	      if (!c.created) continue;
+	      let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	      if (!m) continue;
+	      if (int(m[2]) === latestMonth) sameMonthConstellations.push(c);
+	    }
+	    // 表示リストを作成（最新のものは除く）
+	    let displayList = [...sameMonthConstellations];
+	    let idx = displayList.indexOf(latest);
+	    if (idx !== -1) displayList.splice(idx, 1);
 	    // 日記を横一列に配置
-	    if (pastDiaries.length > 0) {
-	      const spacing = width / (pastDiaries.length + 1);
-	      pastDiaries.forEach((diary, index) => {
+	    if (displayList.length > 0) {
+	      const spacing = width / (displayList.length + 1);
+	      
+	      push();
+	      translate(0, 0, -500); // 奥に配置
+	      
+	      displayList.forEach((constellation, i) => {
 	        push();
-	        const x = (index + 1) * spacing - width/2;
+	        const x = (i + 1) * spacing - width/2;
 	        translate(x, 0, 0);
 	        
 	        // 日付表示
-	        fill(255, 200);
-	        textAlign(CENTER, CENTER);
-	        textSize(12);
-	        if (diary.created) {
-	          text(diary.created, 0, 50);
+	        if (constellation.created) {
+	          fill(255, 200);
+	          textAlign(CENTER, CENTER);
+	          textSize(12);
+	          text(constellation.created, 0, 50);
 	        }
 	        
 	        // 星の描画（シンプルな表現）
-	        if (diary.stars) {
-	          for (let p of diary.stars) {
+	        if (constellation.stars) {
+	          for (let p of constellation.stars) {
 	            if (!p.pos) continue;
 	            push();
 	            translate(p.pos.x || 0, p.pos.y || 0, p.pos.z || 0);
@@ -964,8 +967,8 @@ function draw() {
 	        }
 	        pop();
 	      });
+	      pop();
 	    }
-	    pop();
 	  }
 	  
 	  // 星座の描画
