@@ -68,6 +68,7 @@ let padValues = [];
 let points = [];
 let stars = [];
 let selectedLabel = null;
+let visualFrom = null; 
 
 let state = "select"; 
 let addButton, okButton;
@@ -409,6 +410,7 @@ function setup() {
 	    return;
 	  }
 
+	  visualFrom = "select";
 	  state = "visual";
 	  updateButtonVisibility();
 	  resetVisualView();
@@ -912,6 +914,7 @@ function draw() {
 		
 		// テキストのY座標
 		let textY = 0;
+			
 		// 重複を除いて感情を収集
 		const uniqueEmotions = new Map();
 		for (const star of constellation.stars) {
@@ -923,18 +926,25 @@ function draw() {
 		  }
 		}
 		// 感情を表示
-		text("選択された感情:", 0, textY);
-		textY += 25;
-		// 各感情を表示
-		for (const emo of uniqueEmotions.values()) {
-		  text(`・${emo.ja} (${emo.en})`, 0, textY);
-		  textY += 20;
+		if (visualFrom !== "select") {
+		  text("選択された感情:", 0, textY);
+		  textY += 25;
+		
+		  for (const emo of uniqueEmotions.values()) {
+		    text(`・${emo.ja} (${emo.en})`, 0, textY);
+		    textY += 20;
+		  }
+		  textY += 15;
 		}
-		textY += 15;
-		text("今日の思い出を写真に残してみませんか？", 0, textY);
+		// 案内文
+		if (visualFrom === "gallery") {
+		    text("写真フォルダで思い出を振り返ってみませんか？", 0, textY + 10);
+		} else {
+		    text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
+		}
 		pop();
 	    } else {
-	      let col = i % 5;
+	      let col 	= i % 5;
 	      let arow = floor(i / 5);
 	      translate(-600 + col * 250, -300 + arow * 250, -800);
 	      scale(0.6);
@@ -1430,6 +1440,7 @@ function handleTap(x, y) {
             }
           }
           activeConstellation = c;
+		  visualFrom = "gallery";
           state = "visual";
           updateButtonVisibility();
           layoutDOMButtons();
@@ -1445,60 +1456,60 @@ function handleTap(x, y) {
   }
 	
   if (state === "select") {
-  x = (x - width / 2) / padLayout.scl + width / 2;
-  y = (y - height / 2) / padLayout.scl + height / 2;
-  const btnSize = padLayout.btnSize * padLayout.scl;
-  const spacing = padLayout.spacing * padLayout.scl;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const hitMargin = 10;
-
-  // P行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY - 120 * padLayout.scl;
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedP = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	  if (padClickSound.isLoaded()) padClickSound.play();
-      console.log(`P${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
-      redraw();
-      return true;
-    }
-  }
-  
-  // A行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY;
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedA = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	  if (padClickSound.isLoaded()) padClickSound.play();
-      console.log(`A${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
-      redraw();
-      return true;
-    }
-  }
-  
-  // D行のボタン
-  for (let i = 0; i < 7; i++) {
-    const btnX = centerX + (i - 3) * (btnSize + spacing);
-    const btnY = centerY + 120 * padLayout.scl;
-    
-    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
-      selectedD = i;
-      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
-	  if (padClickSound.isLoaded()) padClickSound.play();
-      console.log(`D${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
-      redraw();
-      return true;
-    }
-  }
-  
-  return false;
+	  x = (x - width / 2) / padLayout.scl + width / 2;
+	  y = (y - height / 2) / padLayout.scl + height / 2;
+	  const btnSize = padLayout.btnSize * padLayout.scl;
+	  const spacing = padLayout.spacing * padLayout.scl;
+	  const centerX = width / 2;
+	  const centerY = height / 2;
+	  const hitMargin = 10;
+	
+	  // P行のボタン
+	  for (let i = 0; i < 7; i++) {
+	    const btnX = centerX + (i - 3) * (btnSize + spacing);
+	    const btnY = centerY - 120 * padLayout.scl;
+	    
+	    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
+	      selectedP = i;
+	      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+		  if (padClickSound.isLoaded()) padClickSound.play();
+	      console.log(`P${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
+	      redraw();
+	      return true;
+	    }
+	  }
+	  
+	  // A行のボタン
+	  for (let i = 0; i < 7; i++) {
+	    const btnX = centerX + (i - 3) * (btnSize + spacing);
+	    const btnY = centerY;
+	    
+	    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
+	      selectedA = i;
+	      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+		  if (padClickSound.isLoaded()) padClickSound.play();
+	      console.log(`A${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
+	      redraw();
+	      return true;
+	    }
+	  }
+	  
+	  // D行のボタン
+	  for (let i = 0; i < 7; i++) {
+	    const btnX = centerX + (i - 3) * (btnSize + spacing);
+	    const btnY = centerY + 120 * padLayout.scl;
+	    
+	    if (dist(x, y, btnX, btnY) < (btnSize/2 + hitMargin)) {
+	      selectedD = i;
+	      touchFeedback = { x: btnX, y: btnY, alpha: 150 };
+		  if (padClickSound.isLoaded()) padClickSound.play();
+	      console.log(`D${i} tapped at ${x}, ${y} (button at ${btnX}, ${btnY})`);
+	      redraw();
+	      return true;
+	    }
+	  }
+	  
+	  return false;
   }
 }
 
