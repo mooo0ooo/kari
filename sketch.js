@@ -906,14 +906,12 @@ function draw() {
 	      translate(0, 0, 200);
 	      scale(1.5);
 
-		// テキスト表示部分を修正
+		// テキスト
 		push();
 		translate(0, 150, 0);
 		textAlign(CENTER, TOP);
 		textSize(16);
 		fill(200, 220, 255, 200);
-		
-		// テキストのY座標
 		let textY = 0;
 			
 		// 重複を除いて感情を収集
@@ -928,28 +926,23 @@ function draw() {
 		}
 		// 感情を表示
 		if (visualFrom !== "select") {
-		  text("選択された感情:", 0, textY);
-		  textY += 25;
+		    text("選択された感情:", 0, textY);
+		    textY += 25;
 		
-		  for (const emo of uniqueEmotions.values()) {
-		    text(`・${emo.ja} (${emo.en})`, 0, textY);
-		    textY += 20;
+		    for (const emo of uniqueEmotions.values()) {
+		      text(`・${emo.ja} (${emo.en})`, 0, textY);
+		      textY += 20;
+		    }
+		    textY += 15;
 		  }
-		  textY += 15;
-		}
 		// 案内文
 		if (visualFrom === "gallery") {
 		    text("写真フォルダで思い出を振り返ってみませんか？", 0, textY + 10);
-		} else {
+		  }
+		  else if (visualFrom === "select" && elapsed >= 5000) {
 		    text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
-		}
-		pop();
-	    } else if (visualFrom === "select" && elapsed >= 5000){
-	      let col 	= i % 5;
-	      let arow = floor(i / 5);
-	      translate(-600 + col * 250, -300 + arow * 250, -800);
-	      scale(0.6);
-	    }
+		  }
+		  pop();
 	
 	    stroke(150, 80);
 	    noFill();
