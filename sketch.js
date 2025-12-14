@@ -794,7 +794,7 @@ function drawBeautifulStars() {
   drawBeautifulStars.timer++;
 
   // 出現頻度
-  if (drawBeautifulStars.timer > 180) {
+  if (drawBeautifulStars.timer > 120) {
     drawBeautifulStars.timer = 0;
     stars.push(new ShootingStar());
   }
