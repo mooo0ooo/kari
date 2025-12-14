@@ -71,6 +71,7 @@ let selectedLabel = null;
 
 let state = "select"; 
 let visualSource = "select";
+let visualMessageTimer = 0;
 
 let addButton, okButton;
 let backButton;
@@ -413,6 +414,7 @@ function setup() {
 
 	  state = "visual";
 	  visualSource = "select";
+	  visualMessageTimer = millis() + 4000;
 	  visualStartTime = millis();
 	  updateButtonVisibility();
 	  resetVisualView();
