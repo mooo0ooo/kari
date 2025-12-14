@@ -917,7 +917,7 @@ function draw() {
 			const uniqueEmotions = new Map();
 			for (const star of constellation.stars) {
 				if (star.emo) {
-					const key = '${star.emo.ja} - ${star.emo.en}';
+					const key = `${star.emo.ja} - ${star.emo.en}`;
 					if (!uniqueEmotions.has(key)) {
 						uniqueEmotions.set(key, star.emo);
 					}
