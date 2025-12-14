@@ -1443,6 +1443,7 @@ function handleTap(x, y) {
           }
           activeConstellation = c;
 		  visualSource = "gallery";
+		  visualMessageTimer = 0;
           state = "visual";
           updateButtonVisibility();
           layoutDOMButtons();
