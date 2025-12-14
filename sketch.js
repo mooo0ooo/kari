@@ -924,7 +924,7 @@ function draw() {
      gallery → visual → タッチした日記だけ手前
 	  =============================== */
 	
-	  if (visualSource === "gallery" && constellation) {
+	  if (visualSource === "gallery" && latest) {
 		  push();
 		  translate(0, 0, 200);
 		  scale(1.5);
