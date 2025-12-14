@@ -70,6 +70,8 @@ let stars = [];
 let selectedLabel = null;
 
 let state = "select"; 
+let visualSource = "select";
+
 let addButton, okButton;
 let backButton;
 
@@ -410,6 +412,7 @@ function setup() {
 	  }
 
 	  state = "visual";
+	  visualSource = "select";
 	  visualStartTime = millis();
 	  updateButtonVisibility();
 	  resetVisualView();
@@ -481,10 +484,6 @@ function setup() {
 	    galleryStars = [];
 		targetScrollY = 0;
     	scrollY = 0;
-		// スクロールボタンを再作成
-	    if (upButton) upButton.remove();
-	    if (downButton) downButton.remove();
-	    createScrollButtons();
 	    // ギャラリー用の星を生成
 	    for (let i = 0; i < 400; i++) {
 	      galleryStars.push({
@@ -912,37 +911,43 @@ function draw() {
 		fill(200, 220, 255, 200);
 		
 		let textY = 0;
-
-	    const uniqueEmotions = new Map();
-		for (const star of constellation.stars) {
-		    if (star.emo) {
-		      const key = `${star.emo.ja}-${star.emo.en}`;
-		      if (!uniqueEmotions.has(key)) {
-		        uniqueEmotions.set(key, star.emo);
-		      }
-		     }
-	    }
+        const uniqueEmotions = new Map();
+        for (const star of constellation.stars) {
+          if (star.emo) {
+            const key = `${star.emo.ja}-${star.emo.en}`;
+            if (!uniqueEmotions.has(key)) {
+              uniqueEmotions.set(key, star.emo);
+            }
+          }
+        }
+			
 		// 感情を表示
-		text("選択された感情:", 0, textY);
-		textY += 25;
-		  for (const emo of uniqueEmotions.values()) {
-		    text(`・${emo.ja} (${emo.en})`, 0, textY);
-		    textY += 20;
-		  }
+		textY += 10;
+        text("選択された感情:", 0, textY);
+        textY += 25;
 	    // 各感情を表示
 		for (const emo of uniqueEmotions.values()) {
-		  text(`・${emo.ja} (${emo.en})`, 0, textY);
-		  textY += 20;
-		}
-		textY += 15;
-		text("今日の思い出を写真に残してみませんか？", 0, textY);
-		pop();
-	    } else {
-	      let col = i % 5;
-	      let arow = floor(i / 5);
-	      translate(-600 + col * 250, -300 + arow * 250, -800);
-	      scale(0.6);
-	    }
+          text(`・${emo.ja} (${emo.en})`, 0, textY);
+          textY += 20;
+        }
+        textY += 15;
+		// メッセージを表示
+        if (visualSource === "select") {
+          if (millis() > visualMessageTimer) {
+            text("今日の思い出を写真に残してみませんか？", 0, textY);
+            textY += 25;
+          }
+        } else if (visualSource === "gallery") {
+          text("写真フォルダで思い出を振り返りましょう", 0, textY);
+          textY += 25;
+        }
+        pop();
+      } else {
+        let col = i % 5;
+        let arow = floor(i / 5);
+        translate(-600 + col * 250, -300 + arow * 250, -800);
+        scale(0.6);
+      }
 	
 	    stroke(150, 80);
 	    noFill();
@@ -989,7 +994,8 @@ function draw() {
 	
 	    pop();
 	  }
-	
+	  
+	  // 日付ラベル
 	  if (allConstellations.length > 0) {
 	   let ref = activeConstellation || allConstellations[allConstellations.length - 1];
 	   let m = ref?.created?.match(/(\d+)\D+(\d+)\D+(\d+)/);
@@ -1434,7 +1440,7 @@ function handleTap(x, y) {
             }
           }
           activeConstellation = c;
-		  visualFrom = "gallery";
+		  visualSource = "gallery";
           state = "visual";
           updateButtonVisibility();
           layoutDOMButtons();
