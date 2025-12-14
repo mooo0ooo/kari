@@ -104,7 +104,6 @@ let touchStartPos = { x: 0, y: 0 };
 const ZOOM_ANIMATION_THRESHOLD = 0.5;
 const TAP_THRESHOLD = 8;
 const TAP_MAX_DURATION = 300;
-const TAP_MAX_DURATION = 200;
 // ズーム
 let zoomLevel = 1;
 let targetZoomLevel = 1;
