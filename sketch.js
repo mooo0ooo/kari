@@ -924,11 +924,11 @@ function draw() {
      gallery → visual → タッチした日記だけ手前
 	  =============================== */
 	
-	  if (visualSource === "gallery" && activeConstellation) {
+	  if (visualSource === "gallery" && constellation) {
 		  push();
 		  translate(0, 0, 200);
 		  scale(1.5);
-		  drawSingleConstellation(activeConstellation, true);
+		  drawSingleConstellation(constellation, true);
 		  pop();
 	  }
 	
@@ -989,7 +989,7 @@ function draw() {
 	      translate(x, y, -500);
 	    }
 	
-	    drawSingleConstellation(c, isLatest);
+	    drawSingleConstellation(constellation, isLatest);
 	    pop();
 	  }
     }
