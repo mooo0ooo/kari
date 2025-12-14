@@ -855,17 +855,23 @@ function draw() {
 	  scale(zoomLevel);
 	
 	  // 星空
-	  push();
+	  push(); 
 	  noStroke();
 	  for (let s of stars) {
 	    if (random() < 0.02) s.on = !s.on;
 	    if (s.baseSize === undefined) s.baseSize = random(1.0, 4.0);
+	    let blink = (s.on ? 1 : 0);
 	    let pulse = 0.5 + 0.5 * sin(frameCount * 0.02 + s.twinkle);
-	    let size = s.baseSize + pulse * 1.5;
-	    fill(220, 230, 255, 180);
+	    let intensity = blink * pulse;
+	    let starSize = s.baseSize + intensity * random(0.5, 2.0);
+	    let alpha = map(intensity, 0, 1, 10, 255);
+	    let r = 200 + random(-20, 20);
+	    let g = 200 + random(-20, 20);
+	    let b = 255;
+	    fill(r, g, b, alpha);
 	    push();
 	    translate(s.x, s.y, s.z);
-	    sphere(size);
+	    sphere(starSize);
 	    pop();
 	  }
 	  pop();
@@ -883,134 +889,115 @@ function draw() {
 	  // select → visual の案内文
 	  if (
 	    visualSource === "select" &&
-	    millis() - visualMessageTimer >= 40000
+	    millis() - visualMessageTimer >= 7000
 	  ) {
 	    text("今日の思い出を写真に残しましょう", 0, 0);
 	  }
 	
 	  // 感情表示
 	  if (visualSource === "gallery" && latest.stars) {
-	    let y = 0;
-	    const uniqueEmotions = new Map();
-	
-	    for (const star of latest.stars) {
-	      if (!star.emo) continue;
-	      const key = `${star.emo.ja}-${star.emo.en}`;
-	      uniqueEmotions.set(key, star.emo);
-	    }
-	
-	    if (uniqueEmotions.size) {
-	      text("選択された感情:", 0, y);
-	      y += 25;
-	      for (const emo of uniqueEmotions.values()) {
-	        text(`・${emo.ja} (${emo.en})`, 0, y);
-	        y += 20;
-	      }
-		  text("写真フォルダで思い出を振り返りましょう", 0, 0);
-	    }
+	      text("写真フォルダで思い出を振り返りましょう", 0, 0);
 	  }
 	  pop();
 	
 	  /* ===============================
 	     select → visual の過去日記
 	  =============================== */
-	  /* ===============================
-   select → visual の過去日記（旧ロジック準拠）
-=============================== */
 
-if (visualSource === "select" && latest?.created) {
+	if (visualSource === "select" && latest?.created) {
+	
+	  // 最新の月を取得
+	  let latestMonth = -1;
+	  let m0 = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+	  if (m0) latestMonth = int(m0[2]);
+	
+	  // 同じ月の星座を収集
+	  let sameMonth = [];
+      for (let c of allConstellations) {
+        if (!c.created) continue;
+        let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
+        if (m && int(m[2]) === latestMonth) {
+          sameMonth.push(c);
+        }
+      }
+	
+	  // 表示リスト（latest を最後＝手前に）
+	  let displayList = [...sameMonth];
+      let idx = displayList.indexOf(latest);
+      if (idx !== -1) displayList.splice(idx, 1);
+      displayList.push(latest);
+	
+	  // 横幅は画面サイズにフィット
+	  const spacing = width / displayList.length;
+	
+	  for (let i = 0; i < displayList.length; i++) {
+        let constellation = displayList[i];
+        let isLatest = (i === displayList.length - 1);
 
-  // 最新の月を取得
-  let latestMonth = -1;
-  let m0 = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-  if (m0) latestMonth = int(m0[2]);
-
-  // 同じ月の星座を収集
-  let sameMonthConstellations = [];
-  for (let c of allConstellations) {
-    if (!c.created) continue;
-    let m = c.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-    if (!m) continue;
-    if (int(m[2]) === latestMonth) {
-      sameMonthConstellations.push(c);
-    }
-  }
-
-  // 表示リスト（latest を最後＝手前に）
-  let displayList = [...sameMonthConstellations];
-  let idx = displayList.indexOf(latest);
-  if (idx !== -1) displayList.splice(idx, 1);
-  displayList.push(latest);
-
-  // 横幅は画面サイズにフィット
-  const spacing = width / displayList.length;
-
-  for (let i = 0; i < displayList.length; i++) {
-    let constellation = displayList[i];
-    push();
-
-    if (i === displayList.length - 1) {
-      // 最新（手前）
-      translate(0, 0, 200);
-      scale(1.5);
-    } else {
-      // 過去（奥）
-      let x = (i - (displayList.length - 2) / 2) * spacing;
-      translate(x, 0, -500);
-    }
-
-    // 枠
-    stroke(150, 80);
-    noFill();
-    box(220);
-
-    // 星
-    if (constellation.stars) {
-      noStroke();
-      fill(255, 240, 200);
-      for (let p of constellation.stars) {
-        if (!p.pos) continue;
         push();
-        translate(p.pos.x, p.pos.y, p.pos.z);
-        sphere(i === displayList.length - 1 ? 8 : 5);
+	    
+		if (isLatest) {
+          translate(0, 0, 200);
+          scale(1.5);
+        } else {
+          let x = (i - (displayList.length - 2) / 2) * spacing;
+          translate(x, 0, -500);
+        }
+
+        /* --- 枠 --- */
+        stroke(150, 80);
+        noFill();
+        box(220);
+
+        /* --- 星 --- */
+        if (constellation.stars) {
+          noStroke();
+          fill(255, 240, 200);
+          for (let p of constellation.stars) {
+            if (!p.pos) continue;
+            push();
+            translate(p.pos.x, p.pos.y, p.pos.z);
+            sphere(8); // ← 奥も最新も同じ
+            pop();
+          }
+        }
+
+        /* --- 線（全て描く・奥は薄く） --- */
+        if (constellation.stars) {
+          stroke(180, 200, 255, isLatest ? 120 : 60);
+          strokeWeight(isLatest ? 2 : 1);
+          blendMode(ADD);
+
+          for (let a = 0; a < constellation.stars.length; a++) {
+            for (let b = a + 1; b < constellation.stars.length; b++) {
+              let aPos = constellation.stars[a]?.pos;
+              let bPos = constellation.stars[b]?.pos;
+              if (aPos && bPos) {
+                line(
+                  aPos.x, aPos.y, aPos.z,
+                  bPos.x, bPos.y, bPos.z
+                );
+              }
+            }
+          }
+          blendMode(BLEND);
+        }
+
+        /* --- 日付（全て表示） --- */
+        if (constellation.created) {
+          push();
+          translate(0, 120, 0);
+          fill(255, isLatest ? 255 : 160);
+          textAlign(CENTER, CENTER);
+          textSize(14);
+          text(constellation.created, 0, 0);
+          pop();
+        }
+
         pop();
       }
     }
-
-    // 線（最新のみ）
-    if (i === displayList.length - 1 && constellation.stars) {
-      stroke(180, 200, 255, 90);
-      strokeWeight(2);
-      blendMode(ADD);
-      for (let a = 0; a < constellation.stars.length; a++) {
-        for (let b = a + 1; b < constellation.stars.length; b++) {
-          let aPos = constellation.stars[a]?.pos;
-          let bPos = constellation.stars[b]?.pos;
-          if (aPos && bPos) {
-            line(
-              aPos.x, aPos.y, aPos.z,
-              bPos.x, bPos.y, bPos.z
-            );
-          }
-        }
-      }
-    }
-
-    // 日付（最新のみ）
-    if (i === displayList.length - 1 && constellation.created) {
-      push();
-      translate(0, 120, 0);
-      fill(255);
-      textAlign(CENTER, CENTER);
-      textSize(14);
-      text(constellation.created, 0, 0);
-      pop();
-    }
-
-    pop();
   }
-}
-}
 }
 /* =========================================================
    drawPADButtons
