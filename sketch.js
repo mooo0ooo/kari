@@ -1000,9 +1000,9 @@ function draw() {
    ========================================================= */
 function drawSingleConstellation(constellation, highlight = false) {
   // ===== 透明度コントロール =====
-  const frameAlpha = highlight ? 120 : 30;
-  const starAlpha  = highlight ? 255 : 80;
-  const lineAlpha  = highlight ? 200 : 40;
+  const frameAlpha = highlight ? 120 : 20;
+  const starAlpha  = highlight ? 255 : 50;
+  const lineAlpha  = highlight ? 200 : 30;
 	
   /* 枠 */
   stroke(150, frameAlpha);
