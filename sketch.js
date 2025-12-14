@@ -896,9 +896,28 @@ function draw() {
 	
 	  // 感情表示
 	  if (visualSource === "gallery" && latest.stars) {
-	      text("写真フォルダで思い出を振り返りましょう", 0, 0);
-	  }
-	  pop();
+	      text("写真フォルダで思い出を振り返りましょう", 0, yOffset);
+  		  yOffset += 30;
+		  const uniqueEmotions = new Map();
+		  for (const star of latest.stars) {
+		    if (!star.emo) continue;
+		    const key = `${star.emo.ja}-${star.emo.en}`;
+		    uniqueEmotions.set(key, star.emo);
+		  }
+		
+		  if (uniqueEmotions.size > 0) {
+		    textSize(14);
+		    text("選択された感情:", 0, yOffset);
+		    yOffset += 22;
+		
+		    for (const emo of uniqueEmotions.values()) {
+		      text(`・${emo.ja} (${emo.en})`, 0, yOffset);
+		      yOffset += 20;
+		    }
+		  }
+		}
+		
+		pop();
 	
 	  /* ===============================
 	     select → visual の過去日記
