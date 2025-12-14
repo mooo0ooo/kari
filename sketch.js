@@ -881,9 +881,9 @@ function draw() {
 	  if (!latest) return;
 	
 	  push();
-	  translate(0, 200, 200);
+	  translate(0, 220, 200);
 	  textAlign(CENTER, TOP);
-	  textSize(16);
+	  textSize(18);
 	  fill(200, 220, 255, 200);
 	  let yOffset = 0;
 	
@@ -922,62 +922,15 @@ function draw() {
 
 	  /* ===============================
      gallery → visual → タッチした日記だけ手前
-  =============================== */
-
-  if (visualSource === "gallery" && activeConstellation) {
-    /* --- 枠 --- */
-        stroke(150, 80);
-        noFill();
-        box(220);
-
-        /* --- 星 --- */
-        if (constellation.stars) {
-          noStroke();
-          fill(255, 240, 200);
-          for (let p of constellation.stars) {
-            if (!p.pos) continue;
-            push();
-            translate(p.pos.x, p.pos.y, p.pos.z);
-            sphere(8);
-            pop();
-          }
-        }
-
-        /* --- 線 --- */
-        if (constellation.stars) {
-          stroke(200, 220, 255, 200);
-          strokeWeight(2);
-          blendMode(ADD);
-
-          for (let a = 0; a < constellation.stars.length; a++) {
-            for (let b = a + 1; b < constellation.stars.length; b++) {
-              let aPos = constellation.stars[a]?.pos;
-              let bPos = constellation.stars[b]?.pos;
-              if (aPos && bPos) {
-                line(
-                  aPos.x, aPos.y, aPos.z,
-                  bPos.x, bPos.y, bPos.z
-                );
-              }
-            }
-          }
-          blendMode(BLEND);
-        }
-
-        /* --- 日付（全て表示） --- */
-        if (constellation.created) {
-          push();
-          translate(0, 120, 0);
-          fill(255, isLatest ? 255 : 160);
-          textAlign(CENTER, CENTER);
-          textSize(14);
-          text(constellation.created, 0, 0);
-          pop();
-        }
-
-        pop();
-    return;
-  }
+	  =============================== */
+	
+	  if (visualSource === "gallery" && activeConstellation) {
+		  push();
+		  translate(0, 0, 200);
+		  scale(1.5);
+		  drawSingleConstellation(activeConstellation, true);
+		  pop();
+	  }
 	
 	  /* ===============================
 	     select → visual の過去日記
@@ -986,9 +939,14 @@ function draw() {
 	if (visualSource === "select" && latest?.created) {
 	
 	  // 最新の月を取得
-	  let latestMonth = -1;
-	  let m0 = latest.created.match(/(\d+)\D+(\d+)\D+(\d+)/);
-	  if (m0) latestMonth = int(m0[2]);
+	  let latestMonth = int(latest.created.match(/\d+\D+(\d+)/)[1]);
+	  let list = allConstellations.filter(c => {
+	    let m = c.created?.match(/\d+\D+(\d+)/);
+	    return m && int(m[1]) === latestMonth;
+	  });
+
+	  list = list.filter(c => c !== latest);
+  	  list.push(latest);
 	
 	  // 同じ月の星座を収集
 	  let sameMonth = [];
@@ -1007,90 +965,87 @@ function draw() {
       displayList.push(latest);
 	
 	  /* --- グリッド設定 --- */
-	  let cols;
-      if (width < 600) cols = 2;
-      else if (width < 1000) cols = 3;
-      else cols = 4;
+	  let baseCols = width < 600 ? 2 : width < 1000 ? 3 : 4;
+	  let cols = baseCols + 2; 
+      let spacingX = 260;
+	  let spacingY = 260;
+	  let startRow = -2; 
 
-      const spacingX = 260;
-      const spacingY = 260;
-
-      for (let i = 0; i < displayList.length; i++) {
-        let c = displayList[i];
-        let isLatest = (i === displayList.length - 1);
-
-        let col = i % cols;
-        let row = floor(i / cols);
-
-        let rowCount = min(cols, displayList.length - row * cols);
-        let offsetX = (rowCount - 1) / 2;
-
-        push();
+      for (let i = 0; i < list.length; i++) {
+	    let c = list[i];
+	    let isLatest = (c === latest);
+	
+	    let col = i % cols;
+	    let row = floor(i / cols) + startRow;
+	
+	    push();
 	    
 		if (isLatest) {
-          translate(0, 0, 200);
-          scale(1.5);
-        } else {
-          let x = (col - (cols - 1) / 2) * spacingX;
+	      translate(0, 0, 200);
+	      scale(1.5);
+	    } else {
+	      let x = (col - (cols - 1) / 2) * spacingX;
 	      let y = row * spacingY;
 	      translate(x, y, -500);
-        }
-
-        /* --- 枠 --- */
-        stroke(150, 80);
-        noFill();
-        box(220);
-
-        /* --- 星 --- */
-        if (constellation.stars) {
-          noStroke();
-          fill(255, 240, 200);
-          for (let p of constellation.stars) {
-            if (!p.pos) continue;
-            push();
-            translate(p.pos.x, p.pos.y, p.pos.z);
-            sphere(8);
-            pop();
-          }
-        }
-
-        /* --- 線 --- */
-        if (constellation.stars) {
-          stroke(200, 220, 255, 200);
-          strokeWeight(2);
-          blendMode(ADD);
-
-          for (let a = 0; a < constellation.stars.length; a++) {
-            for (let b = a + 1; b < constellation.stars.length; b++) {
-              let aPos = constellation.stars[a]?.pos;
-              let bPos = constellation.stars[b]?.pos;
-              if (aPos && bPos) {
-                line(
-                  aPos.x, aPos.y, aPos.z,
-                  bPos.x, bPos.y, bPos.z
-                );
-              }
-            }
-          }
-          blendMode(BLEND);
-        }
-
-        /* --- 日付（全て表示） --- */
-        if (constellation.created) {
-          push();
-          translate(0, 120, 0);
-          fill(255, isLatest ? 255 : 160);
-          textAlign(CENTER, CENTER);
-          textSize(14);
-          text(constellation.created, 0, 0);
-          pop();
-        }
-
-        pop();
-      }
+	    }
+	
+	    drawSingleConstellation(c, isLatest);
+	    pop();
+	  }
     }
   }
 }
+
+/* =========================================================
+   visualDraw
+   ========================================================= */
+function drawSingleConstellation(constellation, highlight = false) {
+  /* 枠 */
+  stroke(150, 80);
+  noFill();
+  box(220);
+
+  /* 星 */
+  if (constellation.stars) {
+    noStroke();
+    fill(255, 240, 200);
+    for (let p of constellation.stars) {
+      if (!p.pos) continue;
+      push();
+      translate(p.pos.x, p.pos.y, p.pos.z);
+      sphere(highlight ? 8 : 6);
+      pop();
+    }
+  }
+
+  /* 線 */
+  if (constellation.stars) {
+    stroke(200, 220, 255, highlight ? 200 : 80);
+    strokeWeight(highlight ? 2 : 1);
+    blendMode(ADD);
+
+    for (let a = 0; a < constellation.stars.length; a++) {
+      for (let b = a + 1; b < constellation.stars.length; b++) {
+        let A = constellation.stars[a]?.pos;
+        let B = constellation.stars[b]?.pos;
+        if (A && B) line(A.x, A.y, A.z, B.x, B.y, B.z);
+      }
+    }
+    blendMode(BLEND);
+  }
+
+  /* 日付 */
+  if (constellation.created) {
+    push();
+    translate(0, 120, 0);
+    fill(255, highlight ? 255 : 160);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text(constellation.created, 0, 0);
+    pop();
+  }
+}
+
 /* =========================================================
    drawPADButtons
    ========================================================= */
