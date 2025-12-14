@@ -996,6 +996,7 @@ function draw() {
     touchFeedback.alpha -= 5;
     pop();
   }
+  }
 }
 /* =========================================================
    drawPADButtons
