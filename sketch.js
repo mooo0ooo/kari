@@ -881,10 +881,11 @@ function draw() {
 	  if (!latest) return;
 	
 	  push();
-	  translate(0, 90, 200);
+	  translate(0, 150, 200);
 	  textAlign(CENTER, TOP);
 	  textSize(16);
 	  fill(200, 220, 255, 200);
+	  let yOffset = 0;
 	
 	  // select → visual の案内文
 	  if (
@@ -940,27 +941,33 @@ function draw() {
         }
       }
 	
-	  // 表示リスト（latest を最後＝手前に）
+	  // 表示リスト
 	  let displayList = [...sameMonth];
       let idx = displayList.indexOf(latest);
       if (idx !== -1) displayList.splice(idx, 1);
       displayList.push(latest);
 	
-	  // 横幅は画面サイズにフィット
-	  const spacing = width / displayList.length;
-	
+	  /* --- グリッド設定 --- */
+	  const cols = floor(width / 260);
+	  const spacingX = 260;
+	  const spacingY = 260;
+		
 	  for (let i = 0; i < displayList.length; i++) {
-        let constellation = displayList[i];
-        let isLatest = (i === displayList.length - 1);
+	  let constellation = displayList[i];
+	  let isLatest = (i === displayList.length - 1);
+	
+	  let col = i % cols;
+	  let row = floor(i / cols);
 
-        push();
+	  push();
 	    
 		if (isLatest) {
           translate(0, 0, 200);
           scale(1.5);
         } else {
-          let x = (i - (displayList.length - 2) / 2) * spacing;
-          translate(x, 0, -500);
+          let x = (col - (cols - 1) / 2) * spacingX;
+	      let y = row * spacingY;
+	      translate(x, y, -500);
         }
 
         /* --- 枠 --- */
@@ -976,15 +983,15 @@ function draw() {
             if (!p.pos) continue;
             push();
             translate(p.pos.x, p.pos.y, p.pos.z);
-            sphere(8); // ← 奥も最新も同じ
+            sphere(8);
             pop();
           }
         }
 
-        /* --- 線（全て描く・奥は薄く） --- */
+        /* --- 線 --- */
         if (constellation.stars) {
-          stroke(180, 200, 255, isLatest ? 120 : 60);
-          strokeWeight(isLatest ? 2 : 1);
+          stroke(200, 220, 255, 200);
+          strokeWeight(2);
           blendMode(ADD);
 
           for (let a = 0; a < constellation.stars.length; a++) {
