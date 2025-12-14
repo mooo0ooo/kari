@@ -410,7 +410,6 @@ function setup() {
 	    return;
 	  }
 
-	  visualFrom = "select";
 	  state = "visual";
 	  visualStartTime = millis();
 	  updateButtonVisibility();
