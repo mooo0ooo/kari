@@ -412,6 +412,7 @@ function setup() {
 
 	  visualFrom = "select";
 	  state = "visual";
+	  visualStartTime = millis();
 	  updateButtonVisibility();
 	  resetVisualView();
 	  console.log("状態をvisualに設定しました。現在のstate:", state);
