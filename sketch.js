@@ -839,7 +839,7 @@ function draw() {
     scrollY = lerp(scrollY, targetScrollY, 0.2);
     drawGallery2D();
   }
-　else if (state === "visual") {
+  else if (state === "visual") {
 	  resetMatrix();
 	  background(5, 5, 20);
 	  drawBeautifulStars();
@@ -943,6 +943,7 @@ function draw() {
 		    text("写真を撮って思い出を残してみませんか？", 0, textY + 10);
 		  }
 		  pop();
+		}
 	
 	    stroke(150, 80);
 	    noFill();
